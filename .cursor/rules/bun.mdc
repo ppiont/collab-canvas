@@ -1,0 +1,7 @@
+---
+description: Building frontends
+alwaysApply: false
+---
+
+- always use bun instead of npm
+- always use bunx instead of npx
