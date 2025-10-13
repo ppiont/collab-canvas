@@ -1,3 +1,7 @@
+<script lang="ts">
+	let { data } = $props();
+</script>
+
 <div class="container">
 	<header>
 		<h1>CollabCanvas</h1>
@@ -29,7 +33,11 @@
 		</div>
 
 		<div class="cta">
-			<a href="/canvas" class="button">Open Canvas</a>
+			{#if data.session}
+				<a href="/canvas" class="button">Open Canvas</a>
+			{:else}
+				<a href="/auth/signin" class="button">Sign In to Start</a>
+			{/if}
 		</div>
 	</main>
 

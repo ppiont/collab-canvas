@@ -26,10 +26,10 @@
 **Priority:** CRITICAL - Required for "deployed and publicly accessible"
 - [x] Initialize SvelteKit with Bun: `bunx sv create collab-canvas`
 - [x] Configure svelte-adapter-bun
-- [ ] Create Railway project and link GitHub
-- [ ] Add railway.json configuration
-- [ ] Create basic landing page
-- [ ] Test deployment: push to main → Railway builds → URL accessible
+- [x] Create Railway project and link GitHub
+- [x] Add railway.json configuration
+- [x] Create basic landing page
+- [x] Test deployment: push to main → Railway builds → URL accessible
 
 **Validates:** Deployment infrastructure
 
@@ -37,10 +37,10 @@
 
 ### Task 0.2: Install Core Dependencies
 **Priority:** CRITICAL - Foundation for all features
-- [ ] `bun add svelte-konva konva yjs y-partykit @supabase/supabase-js @supabase/ssr`
-- [ ] `bun add -d @types/konva`
-- [ ] Verify Railway build succeeds with dependencies
-- [ ] Create lib/ directory structure
+- [x] `bun add svelte-konva konva yjs y-partykit @supabase/supabase-js @supabase/ssr`
+- [x] ~~`bun add -d @types/konva`~~ (Not needed - Konva has built-in types)
+- [x] Verify Railway build succeeds with dependencies
+- [x] Create lib/ directory structure
 
 **Validates:** Dependencies install correctly
 
@@ -48,13 +48,15 @@
 
 ### Task 0.3: Supabase Project Setup
 **Priority:** CRITICAL - Required for authentication
-- [ ] Create Supabase project
-- [ ] Enable Google OAuth provider
-- [ ] Add redirect URLs (localhost + Railway)
-- [ ] Create document-snapshots storage bucket
-- [ ] Add env vars to Railway
-- [ ] Create lib/supabase.ts client
-- [ ] Note: No documents table needed - single global room
+- [x] Create Supabase project
+- [x] Enable Email Auth (Email + Password & Magic Link)
+- [x] Add redirect URLs (localhost + Railway)
+- [x] Create document-snapshots storage bucket with policies
+- [x] Add env vars to Railway
+- [x] Create lib/supabase.ts client
+- [x] Create auth hooks (server + client)
+- [x] Create sign-in/sign-up/signout pages
+- [x] Note: No documents table needed - single global room
 
 **Validates:** Authentication infrastructure ready
 
