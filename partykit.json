@@ -2,5 +2,8 @@
     "name": "collab-canvas",
     "main": "partykit/server.ts",
     "compatibilityDate": "2024-01-01",
-    "vars": {}
+    "vars": {},
+    "parties": {
+        "yjs": "partykit/server.ts"
+    }
 }

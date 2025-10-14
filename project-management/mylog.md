@@ -17,3 +17,9 @@ Struggling a lot with PartyKit's global edge service. Can't deploy. Dev server w
 Phase 2: skipped Google Auth, made Claude adapt project plan.
 
 Phase 4: Tested, fixed online counter. Decided to makde Cursor add shape resizing and drag mode hint ad hoc.
+
+Phase 5 and 6. Lots of UI/UX was polished during this. Learning to manage context window and utilize AI to write commit msg and PRs.
+
+```sh
+bunx partykit deploy --domain collab-canvas.piontek0.workers.dev
+```

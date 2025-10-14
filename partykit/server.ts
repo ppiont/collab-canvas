@@ -6,8 +6,6 @@ import { onConnect } from "y-partykit";
  * 
  * Handles real-time CRDT synchronization using Y-PartyKit
  * Supports collaborative editing in the global "main" room
- * 
- * Based on: https://docs.partykit.io/reference/y-partykit-api/
  */
 export default class YjsServer implements Party.Server {
     constructor(public party: Party.Room) { }
@@ -18,18 +16,17 @@ export default class YjsServer implements Party.Server {
      */
     onConnect(conn: Party.Connection) {
         return onConnect(conn, this.party, {
-            // Enable persistence using snapshot mode (recommended)
-            // Stores latest document state between sessions
-            persist: { mode: "snapshot" }
+            // ✅ Correct: Just use boolean true
+            persist: true
 
             // Future Phase 7: Add callback for external storage (Supabase)
             // callback: {
-            // 	async handler(yDoc) {
-            // 		// Save to Supabase Storage
-            // 		await this.saveToSupabase(yDoc);
-            // 	},
-            // 	debounceWait: 60000, // Save every 60 seconds
-            // 	debounceMaxWait: 120000
+            //     handler: async (yDoc) => {
+            //         // Save to Supabase Storage
+            //         await this.saveToSupabase(yDoc);
+            //     },
+            //     debounceWait: 60000, // Save every 60 seconds
+            //     debounceMaxWait: 120000
             // }
         });
     }
