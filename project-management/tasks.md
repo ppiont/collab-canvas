@@ -167,11 +167,11 @@
 
 ### Task 4.1: Yjs Document Initialization
 **Priority:** CRITICAL - MVP Req: "Real-time sync"
-- [ ] Create lib/collaboration.ts
-- [ ] Initialize Y.Doc and objectsMap
-- [ ] Bind Svelte store to Yjs Y.Map
-- [ ] Rectangles now stored in Yjs (no PartyKit yet)
-- [ ] Test: CRUD operations work via Yjs locally
+- [x] Create lib/collaboration.ts
+- [x] Initialize Y.Doc and objectsMap
+- [x] Bind Svelte store to Yjs Y.Map
+- [x] Rectangles now stored in Yjs (no PartyKit yet)
+- [x] Test: CRUD operations work via Yjs locally
 
 **Validates:** Yjs integration
 
@@ -179,11 +179,11 @@
 
 ### Task 4.2: Connect to PartyKit
 **Priority:** CRITICAL - MVP Req: "Real-time sync"
-- [ ] Create YPartyKitProvider with hardcoded room ID ("main")
-- [ ] Pass Supabase token as query param
-- [ ] Add connection status indicator (green/red)
-- [ ] Handle connection/disconnection events
-- [ ] Test: WebSocket connects (check Network tab)
+- [x] Create YPartyKitProvider with hardcoded room ID ("main")
+- [x] Pass Supabase token as query param
+- [x] Add connection status indicator (green/red)
+- [x] Handle connection/disconnection events
+- [x] Test: WebSocket connects (check Network tab)
 
 **Validates:** WebSocket connection
 
@@ -191,11 +191,11 @@
 
 ### Task 4.3: Real-Time Rectangle Sync
 **Priority:** CRITICAL - MVP Req: "Real-time sync between 2+ users"
-- [ ] Yjs updates broadcast automatically via PartyKit
-- [ ] Test with 2 browser windows
-- [ ] Add subtle visual feedback for remote updates
-- [ ] Test: create, move, delete syncs <100ms
-- [ ] Verify: no duplicates or corruption
+- [x] Yjs updates broadcast automatically via PartyKit
+- [x] Test with 2 browser windows
+- [x] Add subtle visual feedback for remote updates
+- [x] Test: create, move, delete syncs <100ms
+- [x] Verify: no duplicates or corruption
 
 **Validates:** ✓ Real-time sync between 2+ users (CORE FEATURE COMPLETE)
 
@@ -281,7 +281,7 @@
 - [x] Phase 2: Authentication + User Profile ✓
 - [x] Phase 3: Create objects ✓
 - [x] Phase 3: Move objects ✓
-- [ ] Phase 4: Real-time sync 2+ users
+- [x] Phase 4: Real-time sync 2+ users ✓
 - [ ] Phase 5: Multiplayer cursors with labels
 - [ ] Phase 6: Presence awareness
 - [ ] Phase 7: Persistence layer

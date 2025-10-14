@@ -2,7 +2,15 @@
 	import { onMount } from 'svelte';
 	import Konva from 'konva';
 	import Toolbar from '$lib/components/Toolbar.svelte';
-	import { rectangles, addRectangle, updateRectangle } from '$lib/stores/rectangles';
+	import ConnectionStatus from '$lib/components/ConnectionStatus.svelte';
+	import {
+		rectangles,
+		addRectangle,
+		updateRectangle,
+		deleteRectangle,
+		initializeYjsSync
+	} from '$lib/stores/rectangles';
+	import { initializeProvider, disconnectProvider } from '$lib/collaboration';
 	import type { Rectangle } from '$lib/types';
 	import { DEFAULT_RECTANGLE } from '$lib/types';
 
@@ -23,8 +31,20 @@
 	// Toolbar state
 	let isCreateMode = $state(false);
 
-	// Rectangles from store
+	// Rectangles from store (now synced via Yjs)
 	let rectanglesList = $state<Rectangle[]>([]);
+
+	// Selection state
+	let selectedRectId = $state<string | null>(null);
+	let transformer: Konva.Transformer | null = null;
+
+	// Subscribe to rectangles store (updated by Yjs)
+	$effect(() => {
+		const unsubscribe = rectangles.subscribe((value) => {
+			rectanglesList = value;
+		});
+		return unsubscribe;
+	});
 
 	// Update canvas size on mount and resize
 	function updateSize() {
@@ -38,14 +58,6 @@
 			gridLayer?.batchDraw();
 		}
 	}
-
-	// Subscribe to rectangles store
-	$effect(() => {
-		const unsubscribe = rectangles.subscribe((value) => {
-			rectanglesList = value;
-		});
-		return unsubscribe;
-	});
 
 	/**
 	 * Darken a hex color by a percentage
@@ -109,11 +121,14 @@
 	function renderRectangles() {
 		if (!shapesLayer) return;
 
-		shapesLayer.destroyChildren();
+		// Remove only rectangle shapes, keep transformer
+		const existingRects = shapesLayer.find('.rectangle');
+		existingRects.forEach((rect) => rect.destroy());
 
 		rectanglesList.forEach((rect) => {
 			const konvaRect = new Konva.Rect({
 				id: rect.id,
+				name: 'rectangle',
 				x: rect.x,
 				y: rect.y,
 				width: rect.width,
@@ -124,24 +139,152 @@
 				draggable: rect.draggable
 			});
 
-			// Handle rectangle drag
+			// Hover effect
+			konvaRect.on('mouseenter', () => {
+				if (!stage) return;
+				stage.container().style.cursor = 'move';
+				if (selectedRectId !== rect.id) {
+					konvaRect.strokeWidth(rect.strokeWidth + 1);
+					shapesLayer.batchDraw();
+				}
+			});
+
+			konvaRect.on('mouseleave', () => {
+				if (!stage) return;
+				stage.container().style.cursor = 'default';
+				if (selectedRectId !== rect.id) {
+					konvaRect.strokeWidth(rect.strokeWidth);
+					shapesLayer.batchDraw();
+				}
+			});
+
+			// Visual feedback while dragging
+			konvaRect.on('dragstart', () => {
+				if (!stage) return;
+				konvaRect.opacity(0.7);
+				konvaRect.shadowColor('black');
+				konvaRect.shadowBlur(10);
+				konvaRect.shadowOffset({ x: 5, y: 5 });
+				konvaRect.shadowOpacity(0.3);
+				stage.container().style.cursor = 'grabbing';
+			});
+
 			konvaRect.on('dragend', (e) => {
+				if (!stage) return;
+				// Reset visual feedback
+				konvaRect.opacity(1);
+				konvaRect.shadowColor('');
+				konvaRect.shadowBlur(0);
+				stage.container().style.cursor = 'move';
+
+				// Update position in Yjs
 				updateRectangle(rect.id, {
 					x: e.target.x(),
 					y: e.target.y()
 				});
 			});
 
+			// Click to select
+			konvaRect.on('click tap', (e) => {
+				// Don't select if we're in create mode
+				if (isCreateMode) return;
+
+				e.cancelBubble = true;
+				selectRectangle(rect.id);
+			});
+
+			// Handle resize (via transformer)
+			konvaRect.on('transformend', () => {
+				// Get updated dimensions
+				const scaleX = konvaRect.scaleX();
+				const scaleY = konvaRect.scaleY();
+
+				// Calculate new dimensions
+				const newWidth = Math.max(5, konvaRect.width() * scaleX);
+				const newHeight = Math.max(5, konvaRect.height() * scaleY);
+
+				// Reset scale
+				konvaRect.scaleX(1);
+				konvaRect.scaleY(1);
+
+				console.log('Transform end:', {
+					id: rect.id,
+					newWidth,
+					newHeight,
+					x: konvaRect.x(),
+					y: konvaRect.y()
+				});
+
+				// Update in Yjs
+				updateRectangle(rect.id, {
+					x: konvaRect.x(),
+					y: konvaRect.y(),
+					width: newWidth,
+					height: newHeight
+				});
+			});
+
 			shapesLayer.add(konvaRect);
 		});
+
+		// Update transformer selection
+		updateTransformerSelection();
 
 		shapesLayer.batchDraw();
 	}
 
 	/**
-	 * Handle stage click to create rectangles
+	 * Update transformer to attach to selected rectangle
+	 */
+	function updateTransformerSelection() {
+		if (!transformer || !shapesLayer) return;
+
+		if (selectedRectId) {
+			const selectedNode = shapesLayer.findOne(`#${selectedRectId}`);
+			if (selectedNode) {
+				transformer.nodes([selectedNode]);
+				transformer.moveToTop();
+			} else {
+				transformer.nodes([]);
+			}
+		} else {
+			transformer.nodes([]);
+		}
+	}
+
+	/**
+	 * Select a rectangle to show resize handles
+	 */
+	function selectRectangle(id: string) {
+		selectedRectId = id;
+		updateTransformerSelection();
+		shapesLayer?.batchDraw();
+	}
+
+	/**
+	 * Deselect rectangle
+	 */
+	function deselectRectangle() {
+		selectedRectId = null;
+		if (transformer) {
+			transformer.nodes([]);
+			shapesLayer?.batchDraw();
+		}
+	}
+
+	/**
+	 * Handle stage click to create rectangles or deselect
 	 */
 	function handleStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
+		// If clicked on empty canvas (not a shape)
+		if (e.target === stage) {
+			// Deselect if not in create mode
+			if (!isCreateMode) {
+				deselectRectangle();
+				return;
+			}
+		}
+
 		// Only create if in create mode
 		if (!isCreateMode) return;
 
@@ -182,6 +325,20 @@
 		updateSize();
 		console.log('Canvas dimensions:', { width, height });
 
+		// Initialize Yjs collaboration
+		console.log('Initializing Yjs collaboration...');
+		initializeYjsSync();
+
+		// Initialize PartyKit provider
+		const token = data.session?.access_token || '';
+		initializeProvider(
+			data.user.id,
+			data.userProfile?.displayName || 'Anonymous',
+			data.userProfile?.color || '#3b82f6',
+			token
+		);
+		console.log('PartyKit provider initialized');
+
 		// Create Konva stage
 		stage = new Konva.Stage({
 			container: containerDiv,
@@ -198,6 +355,36 @@
 		// Shapes layer
 		shapesLayer = new Konva.Layer();
 		stage.add(shapesLayer);
+
+		// Create transformer (once)
+		transformer = new Konva.Transformer({
+			borderStroke: '#667eea',
+			borderStrokeWidth: 2,
+			anchorFill: '#667eea',
+			anchorStroke: '#5568d3',
+			anchorSize: 10,
+			anchorCornerRadius: 2,
+			rotateEnabled: false,
+			keepRatio: false,
+			enabledAnchors: [
+				'top-left',
+				'top-right',
+				'bottom-left',
+				'bottom-right',
+				'middle-left',
+				'middle-right',
+				'top-center',
+				'bottom-center'
+			],
+			boundBoxFunc: (oldBox, newBox) => {
+				// Limit minimum size
+				if (newBox.width < 5 || newBox.height < 5) {
+					return oldBox;
+				}
+				return newBox;
+			}
+		});
+		shapesLayer.add(transformer);
 
 		// Handle click to create rectangles
 		stage.on('click', handleStageClick);
@@ -222,9 +409,30 @@
 
 		console.log('Konva stage created successfully');
 
+		// Keyboard shortcuts
+		const handleKeyDown = (e: KeyboardEvent) => {
+			// Escape to deselect
+			if (e.key === 'Escape') {
+				deselectRectangle();
+				if (isCreateMode) {
+					isCreateMode = false;
+				}
+			}
+			// Delete key to remove selected rectangle
+			if (e.key === 'Delete' || e.key === 'Backspace') {
+				if (selectedRectId) {
+					deleteRectangle(selectedRectId);
+					deselectRectangle();
+				}
+			}
+		};
+
 		window.addEventListener('resize', updateSize);
+		window.addEventListener('keydown', handleKeyDown);
 		return () => {
 			window.removeEventListener('resize', updateSize);
+			window.removeEventListener('keydown', handleKeyDown);
+			disconnectProvider();
 			stage.destroy();
 		};
 	});
@@ -278,6 +486,9 @@
 <div class="canvas-container" onwheel={handleWheel}>
 	<!-- Toolbar -->
 	<Toolbar bind:isCreateMode />
+
+	<!-- Connection Status -->
+	<ConnectionStatus />
 
 	<!-- Zoom indicator -->
 	<div class="zoom-indicator">

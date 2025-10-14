@@ -2,12 +2,12 @@
 	import { supabase } from '$lib/supabase';
 	import { goto } from '$app/navigation';
 
-	let email = '';
-	let password = '';
-	let loading = false;
-	let error = '';
-	let message = '';
-	let mode: 'signin' | 'signup' | 'magic' = 'signin';
+	let email = $state('');
+	let password = $state('');
+	let loading = $state(false);
+	let error = $state('');
+	let message = $state('');
+	let mode = $state<'signin' | 'signup' | 'magic'>('signin');
 
 	async function handleEmailPassword() {
 		if (!email || !password) {
