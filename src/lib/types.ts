@@ -16,6 +16,8 @@ export interface Rectangle {
     draggable: boolean;
     createdBy: string; // User ID
     createdAt: number; // Unix timestamp (ms)
+    draggedBy?: string; // User ID of who's currently dragging (temporary state)
+    zIndex: number; // Z-order for stacking (higher = on top)
 }
 
 /**
@@ -26,6 +28,7 @@ export const DEFAULT_RECTANGLE: Partial<Rectangle> = {
     width: 150,
     height: 100,
     strokeWidth: 2,
-    draggable: true
+    draggable: true,
+    zIndex: 0
 };
 
