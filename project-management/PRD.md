@@ -3,7 +3,7 @@
 ## MVP Acceptance Criteria
 
 ### Functional Requirements
-- [ ] Users can authenticate with Google OAuth
+- [ ] Users can authenticate with Email/Password or Magic Link
 - [ ] Users can create rectangles on canvas
 - [ ] Users can drag rectangles to move them
 - [ ] Users can pan and zoom canvas
@@ -35,7 +35,7 @@
 - **Shape types:** Rectangle only (no circles, text, or other shapes)
 - **No selection/manipulation:** Create and move only (no resize, rotate, delete UI)
 - **No viewport culling:** Simple rendering (optimization if needed later)
-- **Authentication:** Google OAuth via Supabase
+- **Authentication:** Email Authentication (Password + Magic Link) via Supabase
 - **Persistence:** 60-second snapshot interval to Supabase Storage
 - **Deployment:** Railway + PartyKit on Cloudflare
 
@@ -45,7 +45,7 @@
 
 This PRD defines requirements for a collaborative canvas application MVP that enables real-time multi-user design collaboration in a single global room. The system supports rectangle creation and manipulation with sub-100ms synchronization, multiplayer cursor tracking, and persistent state storage.
 
-**Core capabilities:** Users authenticate via Google OAuth, join a shared global canvas, create/move rectangles, see collaborators' cursors in real-time, and return to find their work preserved. The architecture uses Yjs CRDTs for conflict-free synchronization, PartyKit for edge-deployed WebSocket infrastructure, Konva.js for 60 FPS canvas rendering, and Supabase for authentication and persistence.
+**Core capabilities:** Users authenticate via email (password or magic link), join a shared global canvas, create/move rectangles, see collaborators' cursors in real-time, and return to find their work preserved. The architecture uses Yjs CRDTs for conflict-free synchronization, PartyKit for edge-deployed WebSocket infrastructure, Konva.js for 60 FPS canvas rendering, and Supabase for authentication and persistence.
 
 **Success criteria:** 2+ concurrent users editing simultaneously with <100ms object sync latency, <50ms cursor latency, 60 FPS rendering, and full state persistence surviving server restarts.
 
@@ -66,7 +66,7 @@ This PRD defines requirements for a collaborative canvas application MVP that en
 - **Cursor Broadcasting:** PartyKit Awareness API (separate from document sync)
 
 ### Backend Services
-- **Authentication:** Supabase Auth with OAuth (Google provider)
+- **Authentication:** Supabase Auth (Email providers: Password + Magic Link)
 - **Database:** Supabase PostgreSQL with Row-Level Security
 - **Persistence:** Supabase Storage for Yjs state snapshots
 - **Deployment:** Railway (native Bun support, WebSocket-friendly)
@@ -394,11 +394,12 @@ export default class CanvasRoom implements Party.Server {
 
 Supabase Auth manages user authentication. No custom database tables needed for MVP.
 
-**OAuth Configuration:**
-- Provider: Google
+**Email Authentication Configuration:**
+- Enabled Providers: Email/Password and Magic Link (OTP)
 - Redirect URLs: 
   - Development: `http://localhost:5173/auth/callback`
   - Production: `https://your-app.railway.app/auth/callback`
+- Email templates: Use Supabase default templates for confirmation and magic link emails
 
 ### Supabase Storage
 
@@ -487,18 +488,20 @@ async function loadSnapshot() {
 ---
 
 ### Phase 2: Authentication (4 hours)
-**Goal:** Users can sign in with Google OAuth
+**Goal:** Users can sign in with Email
 
 **Tasks:**
-- Configure Supabase OAuth (Google provider)
+- Configure Supabase Email Authentication (Password + Magic Link providers)
 - Implement `hooks.server.ts` with Supabase SSR
-- Create sign-in page with Google button
+- Create sign-in page with email/password and magic link options
 - Add protected route middleware
 - Implement user profile indicator in navbar
 - Add sign-out functionality
 
 **Acceptance Criteria:**
-- ✅ Clicking "Sign in with Google" redirects to Google OAuth
+- ✅ Users can sign up with email/password
+- ✅ Users can sign in with email/password
+- ✅ Users can sign in with magic link (OTP)
 - ✅ After auth, session persists across refreshes
 - ✅ Canvas route requires authentication
 - ✅ Can sign out successfully
@@ -607,7 +610,7 @@ async function loadSnapshot() {
 ## MVP Acceptance Criteria Summary
 
 ### Functional Requirements
-- ✅ Users can authenticate with Google OAuth
+- ✅ Users can authenticate with Email/Password or Magic Link
 - ✅ Users can create rectangles on canvas
 - ✅ Users can drag rectangles to move them
 - ✅ Users can select and resize rectangles

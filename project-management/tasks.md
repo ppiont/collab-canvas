@@ -3,7 +3,7 @@
 ## Key Decisions
 - **Single global room:** Everyone uses `/canvas` (no room IDs, no document management)
 - **Shape type:** Rectangle only
-- **Authentication:** Google OAuth via Supabase
+- **Authentication:** Email Authentication via Supabase
 - **Persistence:** Saves to Supabase Storage on 60s interval
 - **Deployment:** Railway + PartyKit on Cloudflare
 
@@ -119,30 +119,9 @@
 ## Phase 2: Authentication & User Profile
 **Goal:** Users can sign in and have collaborative identity (name + color)
 
-### Task 2.1: Auth Hooks & Session Management ✅ COMPLETED in Task 0.3
-**Priority:** CRITICAL - MVP Req: "User authentication"
-- [x] Create src/hooks.server.ts with Supabase
-- [x] Set up cookie-based sessions
-- [x] Create src/hooks.client.ts
-- [x] Add locals type definitions (app.d.ts)
+**Note:** Auth infrastructure (hooks, sign-in page, protected routes) completed in Phase 0, Task 0.3
 
-**Validates:** Auth plumbing ✅
-
----
-
-### Task 2.2: Sign-In Page ✅ COMPLETED in Task 0.3
-**Priority:** CRITICAL - MVP Req: "User authentication"
-- [x] Create routes/auth/signin/+page.svelte
-- [x] ~~Add "Sign in with Google" button~~ (Using Email/Password + Magic Link instead)
-- [x] ~~Implement signInWithOAuth() handler~~ (Using Email auth)
-- [x] Create routes/auth/callback/+server.ts
-- [x] Redirect to /canvas after auth
-
-**Validates:** Email auth flow works ✅
-
----
-
-### Task 2.3: User Profile & Canvas Route Setup
+### Task 2.1: User Profile & Canvas Route Setup
 **Priority:** CRITICAL - MVP Req: "users have names for multiplayer"
 - [ ] Create routes/canvas/+page.server.ts to load session
 - [ ] Create lib/user-utils.ts with helper functions:
@@ -325,29 +304,29 @@
 
 ## Bare Minimum Path
 
-**Complete all 19 tasks in Phase 0-7:**
+**Complete all 17 tasks in Phase 0-7:**
 
 1. Phase 0: Infrastructure (4 tasks)
 2. Phase 1: Canvas + shapes + pan/zoom (3 tasks)
-3. Phase 2: Authentication (3 tasks)
+3. Phase 2: User Profile (1 task - auth completed in Phase 0)
 4. Phase 3: Create + move (2 tasks)
 5. Phase 4: Real-time sync (3 tasks)
 6. Phase 5: Cursors (2 tasks)
 7. Phase 6: Presence (1 task)
 8. Phase 7: Persistence (2 tasks)
 
-**Complete all 19 → MVP Done**
+**Complete all 17 → MVP Done**
 
 ---
 
 ## What Can Be Cut?
 
-Nothing. All 19 tasks are required for MVP.
+Nothing. All 17 tasks are required for MVP.
 
-**19 Required Tasks:**
+**17 Required Tasks:**
 - Phase 0: 0.1, 0.2, 0.3, 0.4 (4 tasks)
 - Phase 1: 1.1, 1.2, 1.3 (3 tasks)
-- Phase 2: 2.1, 2.2, 2.3 (3 tasks)
+- Phase 2: 2.1 (1 task)
 - Phase 3: 3.1, 3.2 (2 tasks)
 - Phase 4: 4.1, 4.2, 4.3 (3 tasks)
 - Phase 5: 5.1, 5.2 (2 tasks)
