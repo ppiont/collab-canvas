@@ -234,12 +234,12 @@
 
 ### Task 6.1: Online Users List
 **Priority:** CRITICAL - MVP Req: "Presence awareness (who's online)"
-- [ ] Create Sidebar component
-- [ ] Extract users from provider.awareness.getStates()
-- [ ] Display list: name, colored indicator
-- [ ] Update on awareness change
-- [ ] Highlight current user as "You"
-- [ ] Test: join/leave updates list
+- [x] Create Sidebar component
+- [x] Extract users from provider.awareness.getStates()
+- [x] Display list: name, colored indicator
+- [x] Update on awareness change
+- [x] Highlight current user as "You"
+- [x] Test: join/leave updates list
 
 **Validates:** ✓ Presence awareness (CORE FEATURE COMPLETE)
 

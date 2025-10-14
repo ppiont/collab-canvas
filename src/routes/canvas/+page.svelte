@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Konva from 'konva';
+	import type { Awareness } from 'y-protocols/awareness';
 	import Toolbar from '$lib/components/Toolbar.svelte';
 	import ConnectionStatus from '$lib/components/ConnectionStatus.svelte';
 	import {
@@ -15,6 +16,29 @@
 	import { DEFAULT_RECTANGLE } from '$lib/types';
 
 	let { data } = $props();
+
+	// Type for awareness user state
+	interface AwarenessUser {
+		id: string;
+		name: string;
+		color: string;
+	}
+
+	interface AwarenessCursor {
+		x: number;
+		y: number;
+	}
+
+	interface AwarenessState {
+		user?: AwarenessUser;
+		cursor?: AwarenessCursor;
+	}
+
+	interface AwarenessChanges {
+		added: number[];
+		updated: number[];
+		removed: number[];
+	}
 
 	let containerDiv: HTMLDivElement;
 	let stage: Konva.Stage;
@@ -40,16 +64,42 @@
 	let transformer: Konva.Transformer | null = null;
 
 	// Phase 5: Cursor state
-	let remoteCursors = $state<Map<number, { x: number; y: number; user: any }>>(new Map());
+	let remoteCursors = $state<
+		Map<
+			number,
+			{
+				x: number;
+				y: number;
+				user: AwarenessUser;
+			}
+		>
+	>(new Map());
 	let lastCursorUpdate = 0;
 	const CURSOR_THROTTLE_MS = 30; // 30ms = ~33 updates/sec for smooth movement
 	let cursorNodes = new Map<number, Konva.Group>(); // Track cursor nodes by clientId
 	let pulseAnimation: Konva.Animation | null = null; // Single animation for all indicators
 
+	// Phase 6: Follow mode
+	let followingUserId = $state<string | null>(null);
+	let followTween: Konva.Tween | null = null;
+
+	// Track local drag state to prevent render interruption
+	let locallyDraggingId: string | null = null;
+
+	// Cache provider awareness instance to avoid repeated subscribe/unsubscribe
+	let cachedAwareness: Awareness | null = null;
+
+	// Maintain running maxZIndex for O(1) z-order updates
+	let maxZIndex = $state(0);
+
 	// Subscribe to rectangles store (updated by Yjs)
 	$effect(() => {
 		const unsubscribe = rectangles.subscribe((value) => {
 			rectanglesList = value;
+			// Update running maxZIndex when rectangles change
+			if (value.length > 0) {
+				maxZIndex = Math.max(...value.map((r) => r.zIndex || 0));
+			}
 		});
 		return unsubscribe;
 	});
@@ -124,16 +174,55 @@
 	}
 
 	/**
+	 * Helper: Apply counter-scale to maintain constant visual size regardless of zoom
+	 */
+	function getCounterScale() {
+		return { scaleX: 1 / stageScale, scaleY: 1 / stageScale };
+	}
+
+	/**
+	 * Helper: Set up cursor node event handlers (click, mouseenter, mouseleave)
+	 */
+	function setupCursorEventHandlers(group: Konva.Group, userId: string) {
+		group.listening(true);
+		group.on('click', () => {
+			centerOnUser(userId);
+		});
+		group.on('mouseenter', () => {
+			if (stage) stage.container().style.cursor = 'pointer';
+		});
+		group.on('mouseleave', () => {
+			if (stage) stage.container().style.cursor = 'default';
+		});
+	}
+
+	/**
 	 * Render all rectangles from store to Konva layer
 	 */
 	function renderRectangles() {
 		if (!shapesLayer) return;
 
 		// Remove only rectangle shapes, keep transformer
+		// But preserve the shape we're currently dragging locally
 		const existingRects = shapesLayer.find('.rectangle');
-		existingRects.forEach((rect) => rect.destroy());
+		existingRects.forEach((rect) => {
+			// Don't destroy the shape we're currently dragging
+			if (rect.id() !== locallyDraggingId) {
+				rect.destroy();
+			}
+		});
 
-		rectanglesList.forEach((rect) => {
+		// Sort rectangles by zIndex before rendering (lower zIndex renders first = bottom)
+		const sortedRectangles = [...rectanglesList].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+
+		sortedRectangles.forEach((rect) => {
+			// Skip recreating the shape we're currently dragging
+			if (rect.id === locallyDraggingId) {
+				return;
+			}
+			// Check if someone else is dragging this shape
+			const isDraggedByOther = rect.draggedBy && rect.draggedBy !== data.user.id;
+
 			const konvaRect = new Konva.Rect({
 				id: rect.id,
 				name: 'rectangle',
@@ -144,14 +233,20 @@
 				fill: rect.fill,
 				stroke: rect.stroke,
 				strokeWidth: rect.strokeWidth,
-				draggable: rect.draggable
+				draggable: rect.draggable && !isDraggedByOther, // Disable dragging if someone else is dragging
+				// Visual feedback for shapes being dragged by others
+				opacity: isDraggedByOther ? 0.5 : 1,
+				shadowColor: isDraggedByOther ? '#667eea' : '',
+				shadowBlur: isDraggedByOther ? 8 : 0,
+				shadowOpacity: isDraggedByOther ? 0.6 : 0
 			});
 
 			// Hover effect
 			konvaRect.on('mouseenter', () => {
 				if (!stage) return;
-				stage.container().style.cursor = 'move';
-				if (selectedRectId !== rect.id) {
+				// Show "not-allowed" cursor if someone else is dragging
+				stage.container().style.cursor = isDraggedByOther ? 'not-allowed' : 'move';
+				if (selectedRectId !== rect.id && !isDraggedByOther) {
 					konvaRect.strokeWidth(rect.strokeWidth + 1);
 					shapesLayer.batchDraw();
 				}
@@ -160,7 +255,7 @@
 			konvaRect.on('mouseleave', () => {
 				if (!stage) return;
 				stage.container().style.cursor = 'default';
-				if (selectedRectId !== rect.id) {
+				if (selectedRectId !== rect.id && !isDraggedByOther) {
 					konvaRect.strokeWidth(rect.strokeWidth);
 					shapesLayer.batchDraw();
 				}
@@ -175,6 +270,34 @@
 				konvaRect.shadowOffset({ x: 5, y: 5 });
 				konvaRect.shadowOpacity(0.3);
 				stage.container().style.cursor = 'grabbing';
+
+				// Move to top locally immediately
+				konvaRect.moveToTop();
+
+				// Broadcast cursor position when drag starts
+				broadcastCursorImmediate();
+
+				// Track that we're dragging locally
+				locallyDraggingId = rect.id;
+
+				// Move to top for all users by setting highest zIndex
+				updateRectangle(rect.id, {
+					draggedBy: data.user.id,
+					zIndex: maxZIndex + 1
+				});
+			});
+
+			// Update cursor during drag
+			konvaRect.on('dragmove', (e) => {
+				// Broadcast cursor position while dragging
+				broadcastCursorImmediate();
+
+				// Broadcast shape position in real-time during drag
+				// This will update for other users, but won't re-render locally
+				updateRectangle(rect.id, {
+					x: e.target.x(),
+					y: e.target.y()
+				});
 			});
 
 			konvaRect.on('dragend', (e) => {
@@ -185,11 +308,18 @@
 				konvaRect.shadowBlur(0);
 				stage.container().style.cursor = 'move';
 
-				// Update position in Yjs
+				// Clear local drag tracking
+				locallyDraggingId = null;
+
+				// Update position in Yjs and clear drag state
 				updateRectangle(rect.id, {
 					x: e.target.x(),
-					y: e.target.y()
+					y: e.target.y(),
+					draggedBy: undefined // Clear drag state
 				});
+
+				// Broadcast final cursor position after drop
+				broadcastCursorImmediate();
 			});
 
 			// Click to select
@@ -234,6 +364,14 @@
 
 			shapesLayer.add(konvaRect);
 		});
+
+		// If we're dragging a shape locally, ensure it stays on top
+		if (locallyDraggingId) {
+			const draggedNode = shapesLayer.findOne(`#${locallyDraggingId}`);
+			if (draggedNode) {
+				draggedNode.moveToTop();
+			}
+		}
 
 		// Update transformer selection
 		updateTransformerSelection();
@@ -281,10 +419,98 @@
 	}
 
 	/**
+	 * Center viewport on a user's cursor position
+	 * @param shouldFollow - If true, enable continuous follow mode
+	 */
+	function centerOnUser(userId: string, shouldFollow = false) {
+		if (!stage || !cachedAwareness) return;
+
+		// Enable follow mode if requested
+		if (shouldFollow) {
+			followingUserId = userId;
+			console.log('Following user:', userId);
+		}
+
+		// Find the user's cursor position
+		let cursorX = 0;
+		let cursorY = 0;
+		let found = false;
+
+		cachedAwareness.getStates().forEach((state: AwarenessState, clientId: number) => {
+			if (state.user?.id === userId && state.cursor) {
+				cursorX = state.cursor.x;
+				cursorY = state.cursor.y;
+				found = true;
+			}
+		});
+
+		if (!found) {
+			console.log('User cursor not found:', userId);
+			return;
+		}
+
+		// Calculate the center of the viewport in canvas coordinates
+		const viewportCenterX = width / 2;
+		const viewportCenterY = height / 2;
+
+		// Calculate new stage position to center the cursor
+		// stage position = viewport center - (cursor position * scale)
+		const newX = viewportCenterX - cursorX * stageScale;
+		const newY = viewportCenterY - cursorY * stageScale;
+
+		// Stop any existing follow tween
+		if (followTween) {
+			followTween.destroy();
+			followTween = null;
+		}
+
+		// Use faster animation for follow mode
+		const duration = shouldFollow ? 0.3 : 0.5;
+
+		// Smooth tween to new position
+		followTween = new Konva.Tween({
+			node: stage,
+			duration, // 300ms for follow mode, 500ms for single click
+			x: newX,
+			y: newY,
+			easing: Konva.Easings.EaseInOut,
+			onUpdate: () => {
+				// Update cursor positions during animation
+				renderCursors();
+			},
+			onFinish: () => {
+				// Final update after animation completes
+				renderCursors();
+				// Clear the tween reference when done (unless still following)
+				if (!followingUserId) {
+					followTween = null;
+				}
+			}
+		});
+		followTween.play();
+
+		console.log('Centering on user:', userId, 'at', { x: cursorX, y: cursorY });
+	}
+
+	/**
+	 * Stop following a user
+	 */
+	function stopFollowing() {
+		if (followingUserId) {
+			console.log('Stopped following user:', followingUserId);
+			followingUserId = null;
+		}
+		if (followTween) {
+			followTween.destroy();
+			followTween = null;
+		}
+	}
+
+	/**
 	 * Phase 5: Broadcast cursor position via Yjs awareness (throttled)
 	 */
 	function broadcastCursor(e: Konva.KonvaEventObject<MouseEvent>) {
-		if (!stage) return;
+		if (!stage || !cachedAwareness) return;
 
 		const now = Date.now();
 		if (now - lastCursorUpdate < CURSOR_THROTTLE_MS) return;
@@ -299,18 +525,31 @@
 		const pos = transform.point(pointer);
 
 		// Update awareness with cursor position
-		let providerValue: any = null;
-		const unsubscribe = provider.subscribe((value) => {
-			providerValue = value;
+		cachedAwareness.setLocalStateField('cursor', {
+			x: pos.x,
+			y: pos.y
 		});
-		unsubscribe();
+	}
 
-		if (providerValue && providerValue.awareness) {
-			providerValue.awareness.setLocalStateField('cursor', {
-				x: pos.x,
-				y: pos.y
-			});
-		}
+	/**
+	 * Broadcast cursor position immediately (without throttling)
+	 * Used for drag events where we want instant updates
+	 */
+	function broadcastCursorImmediate() {
+		if (!stage || !cachedAwareness) return;
+
+		const pointer = stage.getPointerPosition();
+		if (!pointer) return;
+
+		// Transform to canvas coordinates (account for pan/zoom)
+		const transform = stage.getAbsoluteTransform().copy().invert();
+		const pos = transform.point(pointer);
+
+		// Update awareness with cursor position
+		cachedAwareness.setLocalStateField('cursor', {
+			x: pos.x,
+			y: pos.y
+		});
 	}
 
 	/**
@@ -321,19 +560,9 @@
 	 * Nodes are marked with 'type' (full/indicator) and 'shouldPulse' attributes.
 	 */
 	function renderCursors() {
-		if (!cursorsLayer || !stage) return;
+		if (!cursorsLayer || !stage || !cachedAwareness) return;
 
-		// Get current provider
-		let providerValue: any = null;
-		const unsubscribe = provider.subscribe((value) => {
-			providerValue = value;
-		});
-		unsubscribe();
-
-		if (!providerValue || !providerValue.awareness) return;
-
-		const awareness = providerValue.awareness;
-		const localClientId = awareness.clientID;
+		const localClientId = cachedAwareness.clientID;
 
 		// Get viewport bounds in canvas coordinates
 		const stagePos = stage.position();
@@ -352,7 +581,7 @@
 		const activeClients = new Set<number>();
 
 		// Iterate through all awareness states
-		awareness.getStates().forEach((state: any, clientId: number) => {
+		cachedAwareness.getStates().forEach((state: AwarenessState, clientId: number) => {
 			// Skip local user
 			if (clientId === localClientId) return;
 
@@ -378,14 +607,22 @@
 				if (!cursorGroup || cursorGroup.getAttr('type') !== 'full') {
 					// Need to create/recreate full cursor
 					if (cursorGroup) {
+						cursorGroup.remove(); // Remove from layer first
 						cursorGroup.destroy();
+						cursorNodes.delete(clientId); // Clean up map
 					}
 
+					const counterScale = getCounterScale();
 					cursorGroup = new Konva.Group({
 						x: cursor.x,
-						y: cursor.y
+						y: cursor.y,
+						...counterScale
 					});
 					cursorGroup.setAttr('type', 'full');
+					cursorGroup.setAttr('userId', user.id); // Store user ID for click handler
+
+					// Make clickable
+					setupCursorEventHandlers(cursorGroup, user.id);
 
 					// Simple triangle cursor with outline
 					const cursorPath = new Konva.Line({
@@ -443,13 +680,20 @@
 
 					// Only animate if position changed significantly (avoid micro-movements)
 					if (distance > 1) {
+						const counterScale = getCounterScale();
 						new Konva.Tween({
 							node: cursorGroup,
 							duration: 0.12, // 120ms smooth interpolation (tuned for 30ms updates)
 							x: cursor.x,
 							y: cursor.y,
+							...counterScale,
 							easing: Konva.Easings.EaseOut
 						}).play();
+					} else {
+						// Even if not moving, update scale in case zoom changed
+						const counterScale = getCounterScale();
+						cursorGroup.scaleX(counterScale.scaleX);
+						cursorGroup.scaleY(counterScale.scaleY);
 					}
 				}
 			} else {
@@ -530,15 +774,23 @@
 				if (!cursorGroup || cursorGroup.getAttr('type') !== 'indicator') {
 					// Need to create/recreate indicator
 					if (cursorGroup) {
+						cursorGroup.remove(); // Remove from layer first
 						cursorGroup.destroy();
+						cursorNodes.delete(clientId); // Clean up map
 					}
 
+					const counterScale = getCounterScale();
 					cursorGroup = new Konva.Group({
 						x: edgeX,
 						y: edgeY,
-						rotation: (angle * 180) / Math.PI // Rotate to point toward cursor
+						rotation: (angle * 180) / Math.PI, // Rotate to point toward cursor
+						...counterScale
 					});
 					cursorGroup.setAttr('type', 'indicator');
+					cursorGroup.setAttr('userId', user.id); // Store user ID for click handler
+
+					// Make clickable
+					setupCursorEventHandlers(cursorGroup, user.id);
 
 					// Droplet: circle back + triangle front
 					const dropletCircle = new Konva.Circle({
@@ -596,12 +848,14 @@
 					// Only animate if position changed significantly
 					if (distance > 1) {
 						// Rotate the group to point toward cursor
+						const counterScale = getCounterScale();
 						new Konva.Tween({
 							node: cursorGroup,
 							duration: 0.12, // 120ms smooth interpolation (tuned for 30ms updates)
 							x: edgeX,
 							y: edgeY,
 							rotation: (angle * 180) / Math.PI,
+							...counterScale,
 							easing: Konva.Easings.EaseOut
 						}).play();
 
@@ -615,6 +869,11 @@
 								easing: Konva.Easings.EaseOut
 							}).play();
 						}
+					} else {
+						// Even if not moving, update scale in case zoom changed
+						const counterScale = getCounterScale();
+						cursorGroup.scaleX(counterScale.scaleX);
+						cursorGroup.scaleY(counterScale.scaleY);
 					}
 				}
 			}
@@ -623,6 +882,7 @@
 		// Remove nodes for users who left
 		cursorNodes.forEach((node, clientId) => {
 			if (!activeClients.has(clientId)) {
+				node.remove(); // Remove from layer first
 				node.destroy();
 				cursorNodes.delete(clientId);
 			}
@@ -635,6 +895,9 @@
 	 * Handle stage click to create rectangles or deselect
 	 */
 	function handleStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
+		// Stop following mode on any click
+		stopFollowing();
+
 		// If clicked on empty canvas (not a shape)
 		if (e.target === stage) {
 			// Deselect if not in create mode
@@ -667,7 +930,8 @@
 			fill: userColor,
 			stroke: darkenColor(userColor),
 			createdBy: data.user?.id || '',
-			createdAt: Date.now()
+			createdAt: Date.now(),
+			zIndex: maxZIndex + 1 // Create on top
 		} as Rectangle;
 
 		addRectangle(newRect);
@@ -754,12 +1018,14 @@
 			if (!frame) return;
 
 			// Subtle pulse: 1.0 to 1.12 and back (2 second cycle)
-			const scale = 1 + Math.sin((frame.time * 2 * Math.PI) / 2000) * 0.12;
+			const pulseScale = 1 + Math.sin((frame.time * 2 * Math.PI) / 2000) * 0.12;
 
-			// Apply to all indicator nodes
+			// Apply to all indicator nodes, accounting for stage zoom
 			cursorsLayer.children.forEach((node) => {
 				if (node.getAttr('shouldPulse')) {
-					node.scale({ x: scale, y: scale });
+					// Combine pulse with counter-scale for zoom
+					const finalScale = pulseScale / stageScale;
+					node.scale({ x: finalScale, y: finalScale });
 				}
 			});
 		}, cursorsLayer);
@@ -771,11 +1037,12 @@
 		// Phase 5: Listen to awareness changes and render cursors
 		const unsubscribeProvider = provider.subscribe((providerValue) => {
 			if (providerValue && providerValue.awareness) {
-				const awareness = providerValue.awareness;
-				const localClientId = awareness.clientID;
+				// Cache the awareness instance
+				cachedAwareness = providerValue.awareness;
+				const localClientId = cachedAwareness.clientID;
 
 				// Listen to awareness changes
-				const handleAwarenessChange = (changes: any) => {
+				const handleAwarenessChange = (changes: AwarenessChanges) => {
 					// Check if any changes involve remote users (not just local user)
 					let hasRemoteChanges = false;
 
@@ -792,11 +1059,30 @@
 					// Only re-render if remote users changed
 					if (hasRemoteChanges) {
 						renderCursors();
+
+						// If we're following someone, check if their cursor moved
+						if (followingUserId && cachedAwareness) {
+							// Check if the followed user's cursor was updated
+							let followedUserMoved = false;
+							cachedAwareness.getStates().forEach((state: AwarenessState, clientId: number) => {
+								if (state.user?.id === followingUserId && state.cursor) {
+									// Check if this user was in the changes
+									if (changes && changes.updated && changes.updated.includes(clientId)) {
+										followedUserMoved = true;
+									}
+								}
+							});
+
+							// Re-center on the followed user if they moved
+							if (followedUserMoved) {
+								centerOnUser(followingUserId, true);
+							}
+						}
 					}
 				};
 
-				awareness.on('change', handleAwarenessChange);
-				awareness.on('update', handleAwarenessChange);
+				cachedAwareness.on('change', handleAwarenessChange);
+				cachedAwareness.on('update', handleAwarenessChange);
 
 				// Initial render
 				renderCursors();
@@ -924,7 +1210,10 @@
 	<Toolbar bind:isCreateMode />
 
 	<!-- Connection Status -->
-	<ConnectionStatus />
+	<ConnectionStatus
+		currentUserId={data.user.id}
+		onUserClick={(userId) => centerOnUser(userId, true)}
+	/>
 
 	<!-- Zoom indicator -->
 	<div class="zoom-indicator">
