@@ -206,11 +206,11 @@
 
 ### Task 5.1: Cursor Broadcasting
 **Priority:** CRITICAL - MVP Req: "Multiplayer cursors"
-- [ ] Add mousemove listener to Stage
-- [ ] Throttle to 50ms intervals
-- [ ] Use provider.awareness.setLocalStateField('cursor', {x, y})
-- [ ] Include user name and color from session
-- [ ] Verify: cursor messages in Network tab
+- [x] Add mousemove listener to Stage
+- [x] Throttle to 50ms intervals
+- [x] Use provider.awareness.setLocalStateField('cursor', {x, y})
+- [x] Include user name and color from session
+- [x] Verify: cursor messages in Network tab
 
 **Validates:** Cursor position broadcasting
 
@@ -218,12 +218,12 @@
 
 ### Task 5.2: Render Remote Cursors
 **Priority:** CRITICAL - MVP Req: "Multiplayer cursors with name labels"
-- [ ] Create Cursor component
-- [ ] Listen to awareness.on('change')
-- [ ] Render cursor at remote position
-- [ ] Add name label above cursor
-- [ ] Use separate Konva Layer for cursors
-- [ ] Test: 2 windows show each other's cursors <50ms
+- [x] Create Cursor rendering logic (Konva shapes)
+- [x] Listen to awareness.on('change')
+- [x] Render cursor at remote position
+- [x] Add name label above cursor
+- [x] Use separate Konva Layer for cursors
+- [x] Test: 2 windows show each other's cursors <50ms
 
 **Validates:** ✓ Multiplayer cursors with name labels (CORE FEATURE COMPLETE)
 

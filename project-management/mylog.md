@@ -12,3 +12,8 @@ Created additional environment (staging) in Railway
 
 Created Supabase DB + Auth. Realized Google Auth in Supabase is self-owned, unlike with Auth0. Didn't want to create extra dependency, so skipped it.
 
+Struggling a lot with PartyKit's global edge service. Can't deploy. Dev server works perfectly. Risky decision not to change arch. But it's just so buttery.
+
+Phase 2: skipped Google Auth, made Claude adapt project plan.
+
+Phase 4: Tested, fixed online counter. Decided to makde Cursor add shape resizing and drag mode hint ad hoc.
