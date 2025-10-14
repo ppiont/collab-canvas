@@ -5,6 +5,7 @@
 	let { data, children } = $props();
 	let session = $derived(data.session);
 	let user = $derived(data.user);
+	let userProfile = $derived(data.userProfile);
 </script>
 
 {#if session && user && !$page.url.pathname.startsWith('/canvas')}
@@ -12,7 +13,7 @@
 		<div class="nav-content">
 			<a href="/" class="nav-brand">CollabCanvas</a>
 			<div class="nav-user">
-				<span class="user-email">{user.email}</span>
+				<span class="user-name">{userProfile?.displayName || user.email}</span>
 				<form method="POST" action="/auth/signout">
 					<button type="submit" class="btn-signout">Sign Out</button>
 				</form>
@@ -58,9 +59,10 @@
 		gap: 1rem;
 	}
 
-	.user-email {
+	.user-name {
 		font-size: 0.875rem;
 		color: #64748b;
+		font-weight: 500;
 	}
 
 	.btn-signout {

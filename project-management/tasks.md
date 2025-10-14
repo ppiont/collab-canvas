@@ -123,14 +123,14 @@
 
 ### Task 2.1: User Profile & Canvas Route Setup
 **Priority:** CRITICAL - MVP Req: "users have names for multiplayer"
-- [ ] Create routes/canvas/+page.server.ts to load session
-- [ ] Create lib/user-utils.ts with helper functions:
-  - [ ] `getUserDisplayName(user)` - extract name from email or metadata
-  - [ ] `assignUserColor(userId)` - deterministic color from user ID
-  - [ ] `getUserProfile(user)` - return { id, name, email, color }
-- [ ] Update canvas page to receive user profile via page data
-- [ ] Update navbar to show display name instead of just email
-- [ ] Test: user has name and color available for collaboration
+- [x] Create routes/canvas/+page.server.ts to load session
+- [x] Create lib/user-utils.ts with helper functions:
+  - [x] `getUserDisplayName(user)` - extract name from email or metadata
+  - [x] `assignUserColor(userId)` - deterministic color from user ID
+  - [x] `getUserProfile(user)` - return { id, name, email, color }
+- [x] Update canvas page to receive user profile via page data
+- [x] Update navbar to show display name instead of just email
+- [x] Test: user has name and color available for collaboration
 
 **Validates:** ✓ User has collaborative identity (name + color)
 
@@ -278,7 +278,7 @@
 - [x] Phase 0: Deployed ✓
 - [x] Phase 1: Canvas with pan/zoom ✓
 - [x] Phase 1: Shape type (rectangle) ✓
-- [ ] Phase 2: Authentication + User Profile (partial: auth ✓, profile pending)
+- [x] Phase 2: Authentication + User Profile ✓
 - [ ] Phase 3: Create objects
 - [ ] Phase 3: Move objects
 - [ ] Phase 4: Real-time sync 2+ users

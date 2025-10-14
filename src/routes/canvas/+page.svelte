@@ -2,6 +2,8 @@
 	import { onMount } from 'svelte';
 	import Konva from 'konva';
 
+	let { data } = $props();
+
 	let containerDiv: HTMLDivElement;
 	let stage: Konva.Stage;
 	let gridLayer: Konva.Layer;
@@ -63,6 +65,7 @@
 
 	onMount(() => {
 		console.log('Canvas page mounted');
+		console.log('User profile:', data.userProfile);
 		updateSize();
 		console.log('Canvas dimensions:', { width, height });
 
