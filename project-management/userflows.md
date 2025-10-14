@@ -2,19 +2,20 @@
 sequenceDiagram
     participant User as User Browser
     participant Railway as SvelteKit (Railway)
-    participant Supabase
+    participant Auth0
     participant PartyKit as PartyKit (Edge)
     participant User2 as Other Users
 
     %% Authentication
     rect rgb(230, 242, 255)
-    Note over User,Supabase: 1. AUTHENTICATION FLOW
+    Note over User,Auth0: 1. AUTHENTICATION FLOW
     User->>Railway: Click "Sign in with Email"
-    Railway->>Supabase: Email authentication
-    Supabase->>User: Email login page
-    User->>Supabase: Authenticate
-    Supabase->>Railway: Callback with token
-    Railway->>Railway: Create session cookie
+    Railway->>Auth0: Redirect to Universal Login
+    Auth0->>User: Email login page
+    User->>Auth0: Authenticate (Password or Magic Link)
+    Auth0->>Railway: Callback with authorization code
+    Railway->>Auth0: Exchange code for JWT
+    Railway->>Railway: Create JWT session cookie
     Railway->>User: Redirect to /canvas
     end
 

@@ -3,8 +3,8 @@
 ## Key Decisions
 - **Single global room:** Everyone uses `/canvas` (no room IDs, no document management)
 - **Shape type:** Rectangle only
-- **Authentication:** Email Authentication via Supabase
-- **Persistence:** Saves to Supabase Storage on 60s interval
+- **Authentication:** Email Authentication via Auth0
+- **Persistence:** Automatic via PartyKit Durable Objects (`persist: true`)
 - **Deployment:** Railway + PartyKit on Cloudflare
 
 ## MVP Core Requirements (8 Items)
@@ -46,17 +46,17 @@
 
 ---
 
-### Task 0.3: Supabase Project Setup
+### Task 0.3: Auth0 Application Setup
 **Priority:** CRITICAL - Required for authentication
-- [x] Create Supabase project
-- [x] Enable Email Auth (Email + Password & Magic Link)
-- [x] Add redirect URLs (localhost + Railway)
-- [x] Create document-snapshots storage bucket with policies
+- [x] Create Auth0 application
+- [x] Enable Email Authentication (Password + Passwordless Email)
+- [x] Add allowed callback URLs (localhost + Railway)
+- [x] Add allowed logout URLs
 - [x] Add env vars to Railway
-- [x] Create lib/supabase.ts client
-- [x] Create auth hooks (server + client)
-- [x] Create sign-in/sign-up/signout pages
-- [x] Note: No documents table needed - single global room
+- [x] Create lib/auth0.ts helper functions
+- [x] Create auth hooks (server with JWT verification)
+- [x] Create sign-in/signout pages
+- [x] Note: No database needed - PartyKit Durable Objects handles state
 
 **Validates:** Authentication infrastructure ready
 
@@ -180,7 +180,7 @@
 ### Task 4.2: Connect to PartyKit
 **Priority:** CRITICAL - MVP Req: "Real-time sync"
 - [x] Create YPartyKitProvider with hardcoded room ID ("main")
-- [x] Pass Supabase token as query param
+- [x] Pass Auth0 JWT token as query param
 - [x] Add connection status indicator (green/red)
 - [x] Handle connection/disconnection events
 - [x] Test: WebSocket connects (check Network tab)
@@ -256,11 +256,11 @@
 - Survives server restarts, disconnects, and room hibernation
 - No external backup layer needed for MVP
 
-### Task 7.1: ~~Save Snapshots to Supabase~~ (UNNECESSARY)
+### Task 7.1: ~~Save Snapshots to Storage~~ (UNNECESSARY)
 **Status:** NOT NEEDED - Durable Objects handles persistence automatically
-- ~~Create routes/api/snapshots/+server.ts POST~~
+- ~~Create snapshot save endpoints~~
 - ~~PartyKit calls endpoint every 60s~~
-- ~~Save binary snapshot to Supabase Storage~~
+- ~~Save binary snapshot to storage~~
 
 **Validated:** Persistence works via Cloudflare Durable Objects ✅
 
@@ -269,7 +269,7 @@
 ### Task 7.2: ~~Load Snapshots on Room Start~~ (UNNECESSARY)
 **Status:** NOT NEEDED - Durable Objects loads state automatically
 - ~~PartyKit onConnect: check if state empty~~
-- ~~Fetch "main/latest.yjs" from Supabase Storage~~
+- ~~Fetch snapshot from storage~~
 - ~~Load into Yjs document~~
 
 **Validated:** ✓ Persistence layer (CORE FEATURE COMPLETE) ✅
@@ -328,7 +328,7 @@
 
 ## What Was Cut?
 
-**Phase 7 Supabase backup layer (2 tasks):** Not needed - PartyKit Durable Objects provides automatic persistence with `persist: true`.
+**Phase 7 External backup layer (2 tasks):** Not needed - PartyKit Durable Objects provides automatic persistence with `persist: true`.
 
 **15 Completed Tasks:**
 - Phase 0: 0.1, 0.2, 0.3, 0.4 (4 tasks) ✅

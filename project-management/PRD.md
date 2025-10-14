@@ -27,7 +27,7 @@
 - [ ] Clear connection status indicators# CollabCanvas MVP - Product Requirements Document
 
 **Version:** 1.0  
-**Stack:** Svelte + Bun + Yjs + PartyKit + Supabase
+**Stack:** SveltKit + Bun + Yjs + PartyKit + Auth0
 
 ## Key Decisions
 - **Single global room:** All users collaborate in one shared canvas (room ID: "main")
@@ -35,7 +35,7 @@
 - **Shape types:** Rectangle only (no circles, text, or other shapes)
 - **No selection/manipulation:** Create and move only (no resize, rotate, delete UI)
 - **No viewport culling:** Simple rendering (optimization if needed later)
-- **Authentication:** Email Authentication (Password + Magic Link) via Supabase
+- **Authentication:** Google + Facebook + Email Authentication (Password) via Auth0
 - **Persistence:** Automatic via PartyKit Durable Objects (`persist: true`)
 - **Deployment:** Railway + PartyKit on Cloudflare Workers
 
@@ -45,7 +45,7 @@
 
 This PRD defines requirements for a collaborative canvas application MVP that enables real-time multi-user design collaboration in a single global room. The system supports rectangle creation and manipulation with sub-100ms synchronization, multiplayer cursor tracking, and persistent state storage.
 
-**Core capabilities:** Users authenticate via email (password or magic link), join a shared global canvas, create/move rectangles, see collaborators' cursors in real-time, and return to find their work preserved. The architecture uses Yjs CRDTs for conflict-free synchronization, PartyKit for edge-deployed WebSocket infrastructure, Konva.js for 60 FPS canvas rendering, and Supabase for authentication and persistence.
+**Core capabilities:** Users authenticate via Google, Facebook or email (password), join a shared global canvas, create/move rectangles, see collaborators' cursors in real-time, and return to find their work preserved. The architecture uses Yjs CRDTs for conflict-free synchronization, PartyKit for edge-deployed WebSocket infrastructure, Konva.js for 60 FPS canvas rendering, and Auth0 for authentication.
 
 **Success criteria:** 2+ concurrent users editing simultaneously with <100ms object sync latency, <50ms cursor latency, 60 FPS rendering, and full state persistence surviving server restarts via Cloudflare Durable Objects.
 
@@ -66,9 +66,8 @@ This PRD defines requirements for a collaborative canvas application MVP that en
 - **Cursor Broadcasting:** PartyKit Awareness API (separate from document sync)
 
 ### Backend Services
-- **Authentication:** Supabase Auth (Email providers: Password + Magic Link)
-- **Database:** Supabase PostgreSQL with Row-Level Security
-- **Persistence:** Supabase Storage for Yjs state snapshots
+- **Authentication:** Auth0 (Google, Facebook, Email:Password)
+- **Persistence:** Cloudflare Durable Objects (automatic with `persist: true`)
 - **Deployment:** Railway (native Bun support, WebSocket-friendly)
 
 ### Key Dependencies
@@ -78,8 +77,7 @@ This PRD defines requirements for a collaborative canvas application MVP that en
   "konva": "^10.0.0",
   "yjs": "^13.6.0",
   "y-partykit": "^0.0.20",
-  "@supabase/supabase-js": "^2.39.0",
-  "@supabase/ssr": "^0.0.10"
+  "jose": "^5.0.0"
 }
 ```
 
@@ -112,11 +110,10 @@ This PRD defines requirements for a collaborative canvas application MVP that en
                      │ Periodic snapshots (60s interval)
                      ↓
 ┌─────────────────────────────────────────────────────────┐
-│  Persistence Layer (Supabase)                           │
-│  ┌──────────────────┐      ┌──────────────────┐        │
-│  │   PostgreSQL     │      │   Storage API    │        │
-│  │   (metadata)     │      │   (snapshots)    │        │
-│  └──────────────────┘      └──────────────────┘        │
+│  Authentication Layer (Auth0)                           │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │   Auth0 Universal Login (Email + Magic Link)    │   │
+│  └──────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -134,11 +131,12 @@ This PRD defines requirements for a collaborative canvas application MVP that en
 - Broadcast Yjs updates to all connected clients (sub-50ms)
 - Handle client connections, disconnections, and reconnections
 - Validate authentication tokens on WebSocket upgrade
-- Trigger periodic snapshots to Supabase every 60 seconds
+- Automatic state persistence via Durable Objects
 
-**Supabase (Auth):**
-- Authenticate users via email and maintain sessions
-- No storage needed - PartyKit Durable Objects handles persistence automatically
+**Auth0 (Authentication):**
+- Authenticate users via email (password + magic link) with Universal Login
+- Issue JWT tokens for session management
+- No database needed - PartyKit Durable Objects handles state persistence automatically
 
 ### State Management Strategy
 
@@ -154,7 +152,7 @@ This PRD defines requirements for a collaborative canvas application MVP that en
 - `metadata` Y.Map: `{ documentName, createdBy, createdAt }`
 
 **Persisted State:**
-- User accounts and sessions (Supabase Auth)
+- User accounts and sessions (Auth0)
 - Yjs CRDT state (PartyKit Durable Objects - automatic with `persist: true`)
 
 ---
@@ -299,11 +297,11 @@ interface CanvasAPI {
 
 ### REST API Endpoints
 
-**Authentication** (handled by Supabase):
+**Authentication** (handled by Auth0):
 ```
-POST /auth/v1/token?grant_type=password
-POST /auth/v1/signup
-POST /auth/v1/token?grant_type=refresh_token
+GET  /auth/login      - Redirect to Auth0 Universal Login
+GET  /auth/callback   - Handle Auth0 callback and set JWT session
+POST /auth/signout    - Clear session and redirect to Auth0 logout
 ```
 
 **~~Snapshot Management:~~** (Not needed - Durable Objects handle persistence automatically)
@@ -335,26 +333,26 @@ export default class CanvasRoom implements Party.Server {
 
 ---
 
-## Supabase Configuration
+## Auth0 Configuration
 
 ### Authentication Setup
 
-Supabase Auth manages user authentication. No custom database tables needed for MVP.
+Auth0 Universal Login manages user authentication with email (password + magic link).
 
 **Email Authentication Configuration:**
-- Enabled Providers: Email/Password and Magic Link (OTP)
-- Redirect URLs: 
+- Enabled Connections: Email/Password (Database) and Passwordless Email (Magic Link)
+- Allowed Callback URLs: 
   - Development: `http://localhost:5173/auth/callback`
   - Production: `https://your-app.railway.app/auth/callback`
-- Email templates: Use Supabase default templates for confirmation and magic link emails
+- Allowed Logout URLs:
+  - Development: `http://localhost:5173`
+  - Production: `https://your-app.railway.app`
+- JWT Configuration: RS256 signing, standard claims (sub, email, name, picture)
 
-### ~~Supabase Storage~~ (Not Needed)
-
-**Persistence handled by PartyKit Durable Objects:**
-- No storage bucket configuration needed
-- No snapshot save/load endpoints needed
-- No manual persistence code required
-- `persist: true` in Y-PartyKit handles everything automatically
+**No Database Required:**
+- PartyKit Durable Objects handles all state persistence
+- Auth0 manages user accounts and sessions
+- JWT tokens stored in secure HTTP-only cookies
 
 ---
 
@@ -365,16 +363,16 @@ Supabase Auth manages user authentication. No custom database tables needed for 
 
 **Tasks:**
 - Initialize SvelteKit with Bun: `bunx sv create collab-canvas`
-- Install dependencies: `bun add svelte-konva konva yjs y-partykit @supabase/supabase-js @supabase/ssr`
+- Install dependencies: `bun add svelte-konva konva yjs y-partykit jose`
 - Configure Railway project and link GitHub repo
-- Create Supabase project (enable Auth, create Storage bucket)
+- Create Auth0 application (enable Email + Passwordless Email connections)
 - Deploy PartyKit room: `bunx partykit deploy --domain collab-canvas.piontek0.workers.dev`
 - Set up environment variables
 
 **Deliverables:**
 - `bun run dev` starts local server
 - Railway deployment pipeline active
-- Supabase project provisioned
+- Auth0 application configured
 
 ---
 
@@ -402,18 +400,18 @@ Supabase Auth manages user authentication. No custom database tables needed for 
 **Goal:** Users can sign in with Email
 
 **Tasks:**
-- Configure Supabase Email Authentication (Password + Magic Link providers)
-- Implement `hooks.server.ts` with Supabase SSR
-- Create sign-in page with email/password and magic link options
+- Configure Auth0 Email Authentication (Password + Passwordless Email)
+- Implement `hooks.server.ts` with JWT verification using jose
+- Create sign-in page that redirects to Auth0 Universal Login
 - Add protected route middleware
 - Implement user profile indicator in navbar
 - Add sign-out functionality
 
 **Acceptance Criteria:**
-- ✅ Users can sign up with email/password
+- ✅ Users can sign up with email/password via Auth0
 - ✅ Users can sign in with email/password
-- ✅ Users can sign in with magic link (OTP)
-- ✅ After auth, session persists across refreshes
+- ✅ Users can sign in with magic link (Passwordless Email)
+- ✅ After auth, JWT session persists across refreshes
 - ✅ Canvas route requires authentication
 - ✅ Can sign out successfully
 
@@ -551,17 +549,17 @@ Supabase Auth manages user authentication. No custom database tables needed for 
 
 ```bash
 # .env.local (development)
-PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+PUBLIC_AUTH0_DOMAIN=dev-xxxxx.us.auth0.com
+PUBLIC_AUTH0_CLIENT_ID=xxxxxxxxxxxxxxxxxxxx
+AUTH0_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxx
 
 PUBLIC_PARTYKIT_HOST=canvas.username.partykit.dev
 PUBLIC_APP_URL=http://localhost:5173
 
 # Railway (production)
-PUBLIC_SUPABASE_URL=<same>
-PUBLIC_SUPABASE_ANON_KEY=<same>
-SUPABASE_SERVICE_ROLE_KEY=<same>
+PUBLIC_AUTH0_DOMAIN=<same>
+PUBLIC_AUTH0_CLIENT_ID=<same>
+AUTH0_CLIENT_SECRET=<same>
 PUBLIC_PARTYKIT_HOST=canvas.username.partykit.dev
 PUBLIC_APP_URL=https://your-app.railway.app
 ```

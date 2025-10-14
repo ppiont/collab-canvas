@@ -42,7 +42,8 @@
 	</main>
 
 	<footer>
-		<p>Built with SvelteKit + Yjs + PartyKit + Auth0</p>
+		<p>Built with SvelteKit + Yjs + PartyKit</p>
+		<p class="deployment">Deployed on Railway & Cloudflare</p>
 	</footer>
 </div>
 
@@ -58,6 +59,8 @@
 			system-ui,
 			-apple-system,
 			sans-serif;
+		max-width: 1200px;
+		margin: 0 auto;
 	}
 
 	header {
@@ -161,5 +164,14 @@
 		text-align: center;
 		color: #94a3b8;
 		font-size: 0.875rem;
+	}
+
+	footer p {
+		margin: 0.25rem 0;
+	}
+
+	footer .deployment {
+		font-weight: 500;
+		color: #64748b;
 	}
 </style>

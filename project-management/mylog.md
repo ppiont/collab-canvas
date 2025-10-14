@@ -30,7 +30,7 @@ Decided with Claude to skip user stories as requirements are very clear already
 Initialized project. Created Railway app and deployed first commit.
 Created additional environment (staging) in Railway
 
-Created Supabase DB + Auth. Realized Google Auth in Supabase is self-owned, unlike with Auth0. Didn't want to create extra dependency, so skipped it.
+Created Auth0 application. Configured Email Authentication with Password and Passwordless Email (magic link). Decided against Google OAuth to avoid extra dependencies and complexity.
 
 Struggling a lot with PartyKit's global edge service. Can't deploy. Dev server works perfectly. Risky decision not to change arch. But it's just so buttery.
 
@@ -44,7 +44,7 @@ Phase 5 and 6. Lots of UI/UX was polished during this. Learning to manage contex
 bunx partykit deploy --domain collab-canvas.piontek0.workers.dev
 ```
 
-Phase 7: Discovered that PartyKit's `persist: true` option automatically handles all persistence via Cloudflare Durable Objects. No Supabase Storage integration needed! State survives indefinitely across disconnects and server restarts. This is a huge win - removed 2 tasks and simplified the architecture significantly. The PRD initially specified a 60-second snapshot interval to Supabase Storage, but Durable Objects handle this automatically and more reliably.
+Phase 7: Discovered that PartyKit's `persist: true` option automatically handles all persistence via Cloudflare Durable Objects. No external storage integration needed! State survives indefinitely across disconnects and server restarts. This is a huge win - removed 2 tasks and simplified the architecture significantly. The PRD initially specified a 60-second snapshot interval to external storage, but Durable Objects handle this automatically and more reliably.
 
 **Key learning:** Always verify if infrastructure provides features before implementing them yourself. PartyKit's Durable Objects persistence is production-grade and requires zero configuration beyond `persist: true`.
 

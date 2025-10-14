@@ -5,6 +5,7 @@
 	 */
 
 	import { connectionStatus, provider } from '$lib/collaboration';
+	import LogoutIcon from '$lib/assets/logout.svg';
 
 	interface OnlineUser {
 		clientId: number;
@@ -97,24 +98,34 @@
 </script>
 
 <div class="connection-status-container">
-	<button
-		class="connection-status"
-		class:connected={status === 'connected'}
-		class:connecting={status === 'connecting'}
-		class:disconnected={status === 'disconnected'}
-		onclick={toggleDropdown}
-	>
-		<span class="dot"></span>
-		<span class="text">
-			{statusLabels[status]}
+	<div class="status-wrapper">
+		<button
+			class="connection-status"
+			class:connected={status === 'connected'}
+			class:connecting={status === 'connecting'}
+			class:disconnected={status === 'disconnected'}
+			onclick={toggleDropdown}
+		>
+			<span class="dot"></span>
+			<span class="text">
+				{statusLabels[status]}
+				{#if status === 'connected'}
+					<span class="count">• {users.length}</span>
+				{/if}
+			</span>
 			{#if status === 'connected'}
-				<span class="count">• {users.length}</span>
+				<span class="arrow" class:open={showDropdown}>▼</span>
 			{/if}
-		</span>
-		{#if status === 'connected'}
-			<span class="arrow" class:open={showDropdown}>▼</span>
-		{/if}
-	</button>
+		</button>
+
+		<!-- Sign Out Button -->
+		<form method="POST" action="/auth/signout" class="signout-form">
+			<button type="submit" class="signout-button" title="Sign Out">
+				<img src={LogoutIcon} alt="Sign out" class="signout-icon" />
+				<span class="signout-text">Sign Out</span>
+			</button>
+		</form>
+	</div>
 
 	{#if showDropdown && status === 'connected'}
 		<div class="dropdown">
@@ -153,13 +164,20 @@
 		z-index: 100;
 	}
 
+	.status-wrapper {
+		display: flex;
+		align-items: stretch;
+		flex-direction: row;
+		gap: 0;
+	}
+
 	.connection-status {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
 		background: rgba(255, 255, 255, 0.95);
 		padding: 0.625rem 1rem;
-		border-radius: 8px;
+		border-radius: 8px 0 0 8px;
 		box-shadow:
 			0 2px 8px rgba(0, 0, 0, 0.1),
 			0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -378,5 +396,87 @@
 
 	.user-list::-webkit-scrollbar-thumb:hover {
 		background-color: rgba(0, 0, 0, 0.3);
+	}
+
+	/* Sign Out Button - Tab/Blade Style */
+	.signout-form {
+		margin: 0;
+		display: flex;
+	}
+
+	.signout-button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		padding: 0.625rem 0.625rem;
+		background: rgba(239, 68, 68, 0.95);
+		border: 1px solid rgba(239, 68, 68, 0.5);
+		border-radius: 0 8px 8px 0;
+		border-left: none;
+		font-family:
+			system-ui,
+			-apple-system,
+			sans-serif;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: white;
+		cursor: pointer;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		box-shadow:
+			0 2px 8px rgba(239, 68, 68, 0.2),
+			0 0 0 1px rgba(239, 68, 68, 0.1);
+		backdrop-filter: blur(8px);
+		white-space: nowrap;
+		width: 44px;
+		overflow: hidden;
+		flex-shrink: 0;
+	}
+
+	.signout-button:hover {
+		width: 110px;
+		padding: 0.625rem 0.75rem 0.625rem 0.625rem;
+		background: rgba(239, 68, 68, 1);
+		box-shadow:
+			0 4px 12px rgba(239, 68, 68, 0.3),
+			0 0 0 1px rgba(239, 68, 68, 0.2);
+	}
+
+	.signout-button:active {
+		transform: scale(0.98);
+	}
+
+	.signout-button:focus {
+		outline: 2px solid #ef4444;
+		outline-offset: 2px;
+	}
+
+	.signout-icon {
+		width: 18px;
+		height: 18px;
+		transition: transform 0.2s ease;
+		flex-shrink: 0;
+		filter: brightness(0) invert(1);
+	}
+
+	.signout-button:hover .signout-icon {
+		transform: scale(1.15);
+	}
+
+	.signout-text {
+		white-space: nowrap;
+		opacity: 0;
+		max-width: 0;
+		transition:
+			opacity 0.2s ease,
+			max-width 0.3s ease;
+		flex-shrink: 0;
+		overflow: hidden;
+	}
+
+	.signout-button:hover .signout-text {
+		opacity: 1;
+		max-width: 100px;
+		transition-delay: 0.05s;
 	}
 </style>
