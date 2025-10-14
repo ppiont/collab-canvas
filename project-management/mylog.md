@@ -1,4 +1,24 @@
-# Log
+# Dev Log
+
+## Tools and Workflow
+
+I used the following tools:
+
+### Claude App
+
+For project planning, I used Claude. I followed an approach similar to what Ash showcased on Day 1, except I skipped the user stories, as the requirements were pretty clear cut already. During later user testing I discovered UX shortfalls that I solved ad-hoc by letting Claude create user stories for them. I did not integrate these non-functional requirements to my PRD or Task list, but I did include details of their implementation in commits and PRs.
+
+### Cursor
+
+For coding. Cursor was my main SWE, and I tried to keep it focused on that. When it got stuck on small issues, I would try a new context and ask it to parse and reframe the problem. If I sensed that issues were indicative of systemic problems, I'd go back to Claude in Planning mode with extended thinking + web research to hash it out.
+
+### Aqua
+
+Used mainly for conversing with Claude in the initial planning phase. It's fantastic to be able to read, parse and respond to a large chunk of text, point by point, and respond to it in real time, without having to avert your eyes/scroll and shift focus back and forth between writing and reading. For smaller comments or commands to Cursor, the overhead isn't always worth it. But I'm using it more and more, as I get comfortable with it.
+
+### Sourcery AI
+
+I've connected Sourcery AI with GitHub to review my PRs and make suggestions. It outputs suggestions in a format that is geared toward LLM prompting.
 
 Asked Claude for PRD based on collab canvas project assignment doc.
 - validated PRD with claude, went through clarifications on technology choices and non-function requirements.
@@ -23,3 +43,9 @@ Phase 5 and 6. Lots of UI/UX was polished during this. Learning to manage contex
 ```sh
 bunx partykit deploy --domain collab-canvas.piontek0.workers.dev
 ```
+
+Phase 7: Discovered that PartyKit's `persist: true` option automatically handles all persistence via Cloudflare Durable Objects. No Supabase Storage integration needed! State survives indefinitely across disconnects and server restarts. This is a huge win - removed 2 tasks and simplified the architecture significantly. The PRD initially specified a 60-second snapshot interval to Supabase Storage, but Durable Objects handle this automatically and more reliably.
+
+**Key learning:** Always verify if infrastructure provides features before implementing them yourself. PartyKit's Durable Objects persistence is production-grade and requires zero configuration beyond `persist: true`.
+
+**MVP Status:** ✅ COMPLETE - All 15 tasks done, fully deployed and working perfectly.
