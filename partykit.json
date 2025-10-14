@@ -1,0 +1,6 @@
+{
+    "name": "collab-canvas",
+    "main": "partykit/server.ts",
+    "compatibilityDate": "2024-01-01",
+    "vars": {}
+}

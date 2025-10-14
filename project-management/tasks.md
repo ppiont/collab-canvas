@@ -64,14 +64,15 @@
 
 ### Task 0.4: PartyKit Room Deployment
 **Priority:** CRITICAL - Required for real-time sync
-- [ ] Create partykit/ directory
-- [ ] Implement server.ts with Y-PartyKit
-- [ ] Add auth validation in onBeforeConnect
-- [ ] Deploy: `bunx partykit deploy`
-- [ ] Add PUBLIC_PARTYKIT_HOST to env
-- [ ] Test WebSocket connection
+- [x] Create partykit/ directory
+- [x] Implement server.ts with Y-PartyKit (validated against official docs)
+- [x] Add auth validation in onBeforeConnect (static method)
+- [x] Local dev server working: `bunx partykit dev`
+- [x] Add PUBLIC_PARTYKIT_HOST to env: `localhost:1999`
+- [x] Test WebSocket connection (works locally)
+- [ ] Cloud deploy: `bunx partykit deploy` (deferred: PartyKit service issue)
 
-**Validates:** Real-time infrastructure ready
+**Validates:** Real-time infrastructure ready locally ✅ (cloud deploy when PartyKit service recovers)
 
 ---
 
@@ -80,12 +81,12 @@
 
 ### Task 1.1: Static Canvas with Konva
 **Priority:** CRITICAL - MVP Req: "Basic canvas"
-- [ ] Create routes/canvas/+page.svelte
-- [ ] Import Stage and Layer from svelte-konva
-- [ ] Canvas fills viewport (100vw, 100vh)
-- [ ] Add grid background
-- [ ] Responsive to window resize
-- [ ] Note: Single global room - hardcode room ID as "main" or "global"
+- [x] Create routes/canvas/+page.svelte
+- [x] Import Stage and Layer from svelte-konva
+- [x] Canvas fills viewport (100vw, 100vh)
+- [x] Add grid background (50px grid)
+- [x] Responsive to window resize
+- [x] Note: Single global room - hardcode room ID as "main" or "global"
 
 **Validates:** ✓ Basic canvas
 
@@ -93,10 +94,10 @@
 
 ### Task 1.2: Static Rectangles
 **Priority:** CRITICAL - MVP Req: "At least one shape type"
-- [ ] Add Rect component from svelte-konva
-- [ ] Create array of 3 sample rectangles
-- [ ] Render on Layer with colors
-- [ ] Verify clean rendering (no blur)
+- [x] Add Rect component from svelte-konva
+- [x] Create array of 3 sample rectangles
+- [x] Render on Layer with colors (blue, pink, green)
+- [x] Verify clean rendering (no blur)
 
 **Validates:** ✓ Shape type (rectangle)
 
@@ -104,51 +105,55 @@
 
 ### Task 1.3: Pan and Zoom
 **Priority:** CRITICAL - MVP Req: "pan/zoom"
-- [ ] Make Stage draggable (pan)
-- [ ] Add wheel event handler (zoom)
-- [ ] Implement pointer-relative zoom
-- [ ] Store viewport state in Svelte store
-- [ ] Add zoom level indicator UI
+- [x] Make Stage draggable (pan)
+- [x] Add wheel event handler (zoom)
+- [x] Implement pointer-relative zoom (zooms toward cursor)
+- [x] Store viewport state ($state runes: stageX, stageY, stageScale)
+- [x] Add zoom level indicator UI (bottom-right corner)
+- [x] Clamp zoom: 0.1x to 5x
 
 **Validates:** ✓ Pan/zoom functionality
 
 ---
 
-## Phase 2: Authentication
-**Goal:** Users can sign in with Google
+## Phase 2: Authentication & User Profile
+**Goal:** Users can sign in and have collaborative identity (name + color)
 
-### Task 2.1: Auth Hooks & Session Management
+### Task 2.1: Auth Hooks & Session Management ✅ COMPLETED in Task 0.3
 **Priority:** CRITICAL - MVP Req: "User authentication"
-- [ ] Create src/hooks.server.ts with Supabase
-- [ ] Set up cookie-based sessions
-- [ ] Create src/hooks.client.ts
-- [ ] Add locals type definitions (app.d.ts)
+- [x] Create src/hooks.server.ts with Supabase
+- [x] Set up cookie-based sessions
+- [x] Create src/hooks.client.ts
+- [x] Add locals type definitions (app.d.ts)
 
-**Validates:** Auth plumbing
+**Validates:** Auth plumbing ✅
 
 ---
 
-### Task 2.2: Sign-In Page
+### Task 2.2: Sign-In Page ✅ COMPLETED in Task 0.3
 **Priority:** CRITICAL - MVP Req: "User authentication"
-- [ ] Create routes/auth/signin/+page.svelte
-- [ ] Add "Sign in with Google" button
-- [ ] Implement signInWithOAuth() handler
-- [ ] Create routes/auth/callback/+server.ts
-- [ ] Redirect to /canvas after auth
+- [x] Create routes/auth/signin/+page.svelte
+- [x] ~~Add "Sign in with Google" button~~ (Using Email/Password + Magic Link instead)
+- [x] ~~Implement signInWithOAuth() handler~~ (Using Email auth)
+- [x] Create routes/auth/callback/+server.ts
+- [x] Redirect to /canvas after auth
 
-**Validates:** OAuth flow works
+**Validates:** Email auth flow works ✅
 
 ---
 
-### Task 2.3: Protected Routes & User UI
-**Priority:** CRITICAL - MVP Req: "users have accounts/names"
-- [ ] Create routes/canvas/+page.server.ts with auth check
-- [ ] Redirect to signin if not authenticated
-- [ ] Add user profile in navbar (name, avatar)
-- [ ] Add sign-out button
-- [ ] Test: unauthenticated → redirects, authenticated → shows canvas
+### Task 2.3: User Profile & Canvas Route Setup
+**Priority:** CRITICAL - MVP Req: "users have names for multiplayer"
+- [ ] Create routes/canvas/+page.server.ts to load session
+- [ ] Create lib/user-utils.ts with helper functions:
+  - [ ] `getUserDisplayName(user)` - extract name from email or metadata
+  - [ ] `assignUserColor(userId)` - deterministic color from user ID
+  - [ ] `getUserProfile(user)` - return { id, name, email, color }
+- [ ] Update canvas page to receive user profile via page data
+- [ ] Update navbar to show display name instead of just email
+- [ ] Test: user has name and color available for collaboration
 
-**Validates:** ✓ User authentication complete
+**Validates:** ✓ User has collaborative identity (name + color)
 
 ---
 
@@ -291,16 +296,16 @@
 ## MVP Completion Checklist
 
 ### All Core Requirements Met After Phase 7:
+- [x] Phase 0: Deployed ✓
 - [x] Phase 1: Canvas with pan/zoom ✓
 - [x] Phase 1: Shape type (rectangle) ✓
-- [x] Phase 3: Create objects ✓
-- [x] Phase 3: Move objects ✓
-- [x] Phase 4: Real-time sync 2+ users ✓
-- [x] Phase 5: Multiplayer cursors with labels ✓
-- [x] Phase 6: Presence awareness ✓
-- [x] Phase 2: Authentication ✓
-- [x] Phase 0: Deployed ✓
-- [x] Phase 7: Persistence layer ✓
+- [ ] Phase 2: Authentication + User Profile (partial: auth ✓, profile pending)
+- [ ] Phase 3: Create objects
+- [ ] Phase 3: Move objects
+- [ ] Phase 4: Real-time sync 2+ users
+- [ ] Phase 5: Multiplayer cursors with labels
+- [ ] Phase 6: Presence awareness
+- [ ] Phase 7: Persistence layer
 
 ### Final MVP Test (After Task 7.2)
 - [ ] Open 2 browser windows
