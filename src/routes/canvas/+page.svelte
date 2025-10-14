@@ -953,12 +953,10 @@
 		initializeYjsSync();
 
 		// Initialize PartyKit provider
-		const token = data.session?.access_token || '';
 		initializeProvider(
 			data.user.id,
 			data.userProfile?.displayName || 'Anonymous',
-			data.userProfile?.color || '#3b82f6',
-			token
+			data.userProfile?.color || '#3b82f6'
 		);
 		console.log('PartyKit provider initialized');
 

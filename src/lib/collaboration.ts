@@ -42,8 +42,7 @@ export const connectionStatus: Writable<'connected' | 'connecting' | 'disconnect
 export function initializeProvider(
 	userId: string,
 	userName: string,
-	userColor: string,
-	token: string
+	userColor: string
 ): YPartyKitProvider {
 	// Get PartyKit host from environment
 	const host = PUBLIC_PARTYKIT_HOST || 'localhost:1999';
@@ -58,9 +57,7 @@ export function initializeProvider(
 		ydoc,
 		{
 			connect: true,
-			party: 'yjs', // Party name from partykit.json
-			// Pass auth token as query param (for future validation)
-			params: { token }
+			party: 'yjs' // Party name from partykit.json
 		}
 	);
 

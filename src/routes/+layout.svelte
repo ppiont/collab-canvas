@@ -3,12 +3,11 @@
 	import '../app.css';
 
 	let { data, children } = $props();
-	let session = $derived(data.session);
 	let user = $derived(data.user);
 	let userProfile = $derived(data.userProfile);
 </script>
 
-{#if session && user && !$page.url.pathname.startsWith('/canvas')}
+{#if user && !$page.url.pathname.startsWith('/canvas')}
 	<nav class="navbar">
 		<div class="nav-content">
 			<a href="/" class="nav-brand">CollabCanvas</a>

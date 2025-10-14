@@ -49,8 +49,7 @@
 		"wrangler": "^4.42.2"
 	},
 	"dependencies": {
-		"@supabase/ssr": "^0.7.0",
-		"@supabase/supabase-js": "^2.75.0",
+		"jose": "^6.1.0",
 		"konva": "^10.0.2",
 		"svelte-konva": "^1.0.0",
 		"y-partykit": "^0.0.33",

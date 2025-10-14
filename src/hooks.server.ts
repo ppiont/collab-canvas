@@ -1,80 +1,65 @@
-import { createServerClient } from '@supabase/ssr';
 import { type Handle, redirect } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import { jwtVerify, createRemoteJWKSet } from 'jose';
+import { PUBLIC_AUTH0_DOMAIN, PUBLIC_AUTH0_CLIENT_ID } from '$env/static/public';
 
-const supabase: Handle = async ({ event, resolve }) => {
-    /**
-     * Creates a Supabase client specific to this server request.
-     *
-     * The Supabase client gets the Auth token from the request cookies.
-     */
-    event.locals.supabase = createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
-        cookies: {
-            getAll: () => event.cookies.getAll(),
-            setAll: (cookiesToSet) => {
-                cookiesToSet.forEach(({ name, value, options }) => {
-                    event.cookies.set(name, value, { ...options, path: '/' });
-                });
-            }
+// Create JWKS endpoint for JWT verification
+const JWKS = createRemoteJWKSet(new URL(`https://${PUBLIC_AUTH0_DOMAIN}/.well-known/jwks.json`));
+
+/**
+ * Auth0 Session Management
+ * Verifies JWT token from cookie and attaches user to locals
+ */
+const auth: Handle = async ({ event, resolve }) => {
+    const sessionToken = event.cookies.get('auth_session');
+
+    if (sessionToken) {
+        try {
+            // Verify JWT signature and claims
+            const { payload } = await jwtVerify(sessionToken, JWKS, {
+                issuer: `https://${PUBLIC_AUTH0_DOMAIN}/`,
+                audience: PUBLIC_AUTH0_CLIENT_ID
+            });
+
+            // Extract user info from verified token
+            event.locals.user = {
+                id: payload.sub!,
+                email: payload.email as string,
+                name: (payload.name as string) || (payload.email as string)?.split('@')[0] || 'User',
+                picture: payload.picture as string | undefined,
+                email_verified: payload.email_verified as boolean | undefined
+            };
+        } catch (error) {
+            // Token invalid or expired - clear it
+            console.error('JWT verification failed:', error);
+            event.cookies.delete('auth_session', { path: '/' });
+            event.locals.user = null;
         }
-    });
+    } else {
+        event.locals.user = null;
+    }
 
-    /**
-     * Unlike `supabase.auth.getSession()`, which returns the session _without_
-     * validating the JWT, this function also calls `getUser()` to validate the
-     * JWT before returning the session.
-     */
-    event.locals.safeGetSession = async () => {
-        const {
-            data: { session }
-        } = await event.locals.supabase.auth.getSession();
-        if (!session) {
-            return { session: null, user: null };
-        }
-
-        const {
-            data: { user },
-            error
-        } = await event.locals.supabase.auth.getUser();
-        if (error) {
-            // JWT validation has failed
-            return { session: null, user: null };
-        }
-
-        return { session, user };
-    };
-
-    return resolve(event, {
-        filterSerializedResponseHeaders(name) {
-            /**
-             * Supabase libraries use the `content-range` and `x-supabase-api-version`
-             * headers, so we need to tell SvelteKit to pass it through.
-             */
-            return name === 'content-range' || name === 'x-supabase-api-version';
-        }
-    });
+    return resolve(event);
 };
 
+/**
+ * Auth Guard
+ * Protects routes requiring authentication
+ */
 const authGuard: Handle = async ({ event, resolve }) => {
-    const { session, user } = await event.locals.safeGetSession();
-    event.locals.session = session;
-    event.locals.user = user;
-
     // Protect /canvas route - require authentication
     if (event.url.pathname.startsWith('/canvas')) {
-        if (!session) {
+        if (!event.locals.user) {
             redirect(303, '/auth/signin');
         }
     }
 
     // Redirect authenticated users away from signin page
-    if (event.url.pathname.startsWith('/auth/signin') && session) {
+    if (event.url.pathname.startsWith('/auth/signin') && event.locals.user) {
         redirect(303, '/canvas');
     }
 
     return resolve(event);
 };
 
-export const handle: Handle = sequence(supabase, authGuard);
-
+export const handle: Handle = sequence(auth, authGuard);
