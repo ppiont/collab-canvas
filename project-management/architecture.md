@@ -28,8 +28,8 @@ graph TB
             Hooks[Auth Hooks hooks.server.ts]
         end
         
-        subgraph Supabase["Supabase"]
-            Auth[Supabase Auth Email]
+        subgraph Auth0Service["Auth0"]
+            Auth[Auth0 Universal Login Email]
         end
     end
 
@@ -55,10 +55,10 @@ graph TB
     classDef clientStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
     classDef edgeStyle fill:#fff3e0,stroke:#f57c00,stroke-width:2px
     classDef backendStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef supabaseStyle fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    classDef auth0Style fill:#eb5424,stroke:#d14420,stroke-width:2px,color:#fff
     
     class UI,Canvas,YDoc,Provider clientStyle
     class Room,YCRDT,Awareness,Persist edgeStyle
     class App,Hooks backendStyle
-    class Auth supabaseStyle
+    class Auth auth0Style
 ```
