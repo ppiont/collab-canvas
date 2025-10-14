@@ -248,33 +248,39 @@
 ## Phase 7: Persistence
 **Goal:** State survives server restarts
 
-### Task 7.1: Save Snapshots to Supabase
-**Priority:** CRITICAL - MVP Req: "Persistence layer that saves state on disconnects"
-- [ ] Create routes/api/snapshots/+server.ts POST
-- [ ] PartyKit calls endpoint every 60s
-- [ ] Save binary snapshot to Supabase Storage (single global room)
-- [ ] Store as "main/latest.yjs" (overwrite each time)
-- [ ] Verify: snapshot appears in Storage dashboard
+### ✅ PHASE 7 COMPLETE - No Additional Work Needed
 
-**Validates:** Snapshot saving works
+**PartyKit Durable Objects provides automatic persistence:**
+- `persist: true` in Y-PartyKit configuration
+- State automatically saved to Cloudflare Durable Objects storage
+- Survives server restarts, disconnects, and room hibernation
+- No external backup layer needed for MVP
+
+### Task 7.1: ~~Save Snapshots to Supabase~~ (UNNECESSARY)
+**Status:** NOT NEEDED - Durable Objects handles persistence automatically
+- ~~Create routes/api/snapshots/+server.ts POST~~
+- ~~PartyKit calls endpoint every 60s~~
+- ~~Save binary snapshot to Supabase Storage~~
+
+**Validated:** Persistence works via Cloudflare Durable Objects ✅
 
 ---
 
-### Task 7.2: Load Snapshots on Room Start
-**Priority:** CRITICAL - MVP Req: "Persistence layer that saves state on disconnects"
-- [ ] PartyKit onConnect: check if state empty
-- [ ] Fetch "main/latest.yjs" from Supabase Storage
-- [ ] Load into Yjs document
-- [ ] Handle: no snapshot exists (new global room)
-- [ ] Test: restart server → state recovered
+### Task 7.2: ~~Load Snapshots on Room Start~~ (UNNECESSARY)
+**Status:** NOT NEEDED - Durable Objects loads state automatically
+- ~~PartyKit onConnect: check if state empty~~
+- ~~Fetch "main/latest.yjs" from Supabase Storage~~
+- ~~Load into Yjs document~~
 
-**Validates:** ✓ Persistence layer (CORE FEATURE COMPLETE)
+**Validated:** ✓ Persistence layer (CORE FEATURE COMPLETE) ✅
+
+**Deployment:** `bunx partykit deploy --domain collab-canvas.piontek0.workers.dev`
 
 
 
 ## MVP Completion Checklist
 
-### All Core Requirements Met After Phase 7:
+### All Core Requirements Met:
 - [x] Phase 0: Deployed ✓
 - [x] Phase 1: Canvas with pan/zoom ✓
 - [x] Phase 1: Shape type (rectangle) ✓
@@ -282,53 +288,54 @@
 - [x] Phase 3: Create objects ✓
 - [x] Phase 3: Move objects ✓
 - [x] Phase 4: Real-time sync 2+ users ✓
-- [ ] Phase 5: Multiplayer cursors with labels
-- [ ] Phase 6: Presence awareness
-- [ ] Phase 7: Persistence layer
+- [x] Phase 5: Multiplayer cursors with labels ✓
+- [x] Phase 6: Presence awareness ✓
+- [x] Phase 7: Persistence layer ✓ (PartyKit Durable Objects)
 
-### Final MVP Test (After Task 7.2)
-- [ ] Open 2 browser windows
-- [ ] Sign in as different users in each
-- [ ] Create rectangles → verify sync <100ms
-- [ ] Move rectangles → verify sync
-- [ ] See each other's cursors with names
-- [ ] Online users list shows both users
-- [ ] Pan/zoom works smoothly
-- [ ] Refresh page → can sign back in
-- [ ] Close all windows, reopen → canvas state preserved
-- [ ] Deploy to Railway → public URL works
+### Final MVP Test
+- [x] Open 2 browser windows
+- [x] Sign in as different users in each
+- [x] Create rectangles → verify sync <100ms
+- [x] Move rectangles → verify sync
+- [x] See each other's cursors with names
+- [x] Online users list shows both users
+- [x] Pan/zoom works smoothly
+- [x] Refresh page → can sign back in
+- [x] Close all windows, reopen → canvas state preserved (Durable Objects)
+- [x] Deploy to Railway → public URL works
+- [x] PartyKit deployed → `collab-canvas.piontek0.workers.dev`
 
-**If all above pass: MVP COMPLETE ✅**
+**MVP COMPLETE ✅**
 
 ---
 
 ## Bare Minimum Path
 
-**Complete all 17 tasks in Phase 0-7:**
+**Completed 15 tasks across Phase 0-6:**
 
-1. Phase 0: Infrastructure (4 tasks)
-2. Phase 1: Canvas + shapes + pan/zoom (3 tasks)
-3. Phase 2: User Profile (1 task - auth completed in Phase 0)
-4. Phase 3: Create + move (2 tasks)
-5. Phase 4: Real-time sync (3 tasks)
-6. Phase 5: Cursors (2 tasks)
-7. Phase 6: Presence (1 task)
-8. Phase 7: Persistence (2 tasks)
+1. Phase 0: Infrastructure (4 tasks) ✅
+2. Phase 1: Canvas + shapes + pan/zoom (3 tasks) ✅
+3. Phase 2: User Profile (1 task - auth completed in Phase 0) ✅
+4. Phase 3: Create + move (2 tasks) ✅
+5. Phase 4: Real-time sync (3 tasks) ✅
+6. Phase 5: Cursors (2 tasks) ✅
+7. Phase 6: Presence (1 task) ✅
+8. Phase 7: Persistence (0 tasks - handled by PartyKit Durable Objects) ✅
 
-**Complete all 17 → MVP Done**
+**All 15 tasks completed → MVP DONE ✅**
 
 ---
 
-## What Can Be Cut?
+## What Was Cut?
 
-Nothing. All 17 tasks are required for MVP.
+**Phase 7 Supabase backup layer (2 tasks):** Not needed - PartyKit Durable Objects provides automatic persistence with `persist: true`.
 
-**17 Required Tasks:**
-- Phase 0: 0.1, 0.2, 0.3, 0.4 (4 tasks)
-- Phase 1: 1.1, 1.2, 1.3 (3 tasks)
-- Phase 2: 2.1 (1 task)
-- Phase 3: 3.1, 3.2 (2 tasks)
-- Phase 4: 4.1, 4.2, 4.3 (3 tasks)
-- Phase 5: 5.1, 5.2 (2 tasks)
-- Phase 6: 6.1 (1 task)
-- Phase 7: 7.1, 7.2 (2 tasks)
+**15 Completed Tasks:**
+- Phase 0: 0.1, 0.2, 0.3, 0.4 (4 tasks) ✅
+- Phase 1: 1.1, 1.2, 1.3 (3 tasks) ✅
+- Phase 2: 2.1 (1 task) ✅
+- Phase 3: 3.1, 3.2 (2 tasks) ✅
+- Phase 4: 4.1, 4.2, 4.3 (3 tasks) ✅
+- Phase 5: 5.1, 5.2 (2 tasks) ✅
+- Phase 6: 6.1 (1 task) ✅
+- Phase 7: Built-in persistence (0 tasks) ✅

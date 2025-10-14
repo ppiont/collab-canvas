@@ -2,6 +2,7 @@ import * as Y from 'yjs';
 import YPartyKitProvider from 'y-partykit/provider';
 import { writable, type Writable } from 'svelte/store';
 import type { Rectangle } from './types';
+import { PUBLIC_PARTYKIT_HOST } from '$env/static/public';
 
 /**
  * Yjs Document - Global CRDT state
@@ -39,30 +40,25 @@ export const connectionStatus: Writable<'connected' | 'connecting' | 'disconnect
  * Initialize PartyKit provider and connect to room
  */
 export function initializeProvider(
-    userId: string,
-    userName: string,
-    userColor: string,
-    token: string
+	userId: string,
+	userName: string,
+	userColor: string
 ): YPartyKitProvider {
-    // Get PartyKit host from environment
-    const host =
-        import.meta.env.PUBLIC_PARTYKIT_HOST ||
-        (typeof window !== 'undefined' && window.location.hostname === 'localhost'
-            ? 'localhost:1999'
-            : 'collab-canvas.username.partykit.dev');
+	// Get PartyKit host from environment
+	const host = PUBLIC_PARTYKIT_HOST || 'localhost:1999';
 
 	console.log('Connecting to PartyKit:', { host, room: 'main', userId });
 
 	// Create provider
+	// When using cloud-prem deployment, need to specify party name
 	_provider = new YPartyKitProvider(
-        host,
-        'main', // Hardcoded global room ID
-        ydoc,
-        {
-            connect: true,
-            // Pass auth token as query param (for future validation)
-            params: { token }
-        }
+		host,
+		'main', // Room ID
+		ydoc,
+		{
+			connect: true,
+			party: 'yjs' // Party name from partykit.json
+		}
 	);
 
 	// Update the store
@@ -70,10 +66,10 @@ export function initializeProvider(
 
 	// Set user awareness metadata (for cursors in Phase 5)
 	_provider.awareness.setLocalStateField('user', {
-        id: userId,
-        name: userName,
-        color: userColor
-    });
+		id: userId,
+		name: userName,
+		color: userColor
+	});
 
 	// Connection status events
 	_provider.on('status', (event: { status: 'connected' | 'connecting' | 'disconnected' }) => {
@@ -114,11 +110,11 @@ export function disconnectProvider() {
  * Get all rectangles from Yjs map as array
  */
 export function getAllRectangles(): Rectangle[] {
-    const rects: Rectangle[] = [];
-    rectanglesMap.forEach((rect, id) => {
-        rects.push({ ...rect, id });
-    });
-    return rects;
+	const rects: Rectangle[] = [];
+	rectanglesMap.forEach((rect, id) => {
+		rects.push({ ...rect, id });
+	});
+	return rects;
 }
 
 /**

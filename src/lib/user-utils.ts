@@ -1,4 +1,4 @@
-import type { User } from '@supabase/supabase-js';
+import type { Auth0User } from '$lib/auth0';
 
 /**
  * User Profile for Collaboration
@@ -27,16 +27,19 @@ const USER_COLORS = [
 ];
 
 /**
- * Extract display name from email address
- * Example: "john.doe@example.com" -> "john.doe"
+ * Extract display name from Auth0 user
+ * Prioritizes name from profile, falls back to email prefix
  */
-export function getUserDisplayName(user: User): string {
-    if (!user.email) {
-        return 'Anonymous';
+export function getUserDisplayName(user: Auth0User): string {
+    if (user.name && user.name !== user.email) {
+        return user.name;
     }
 
-    const localPart = user.email.split('@')[0];
-    return localPart;
+    if (user.email) {
+        return user.email.split('@')[0];
+    }
+
+    return 'Anonymous';
 }
 
 /**
@@ -57,7 +60,7 @@ export function assignUserColor(userId: string): string {
 /**
  * Generate complete user profile for collaboration
  */
-export function getUserProfile(user: User): UserProfile {
+export function getUserProfile(user: Auth0User): UserProfile {
     return {
         id: user.id,
         email: user.email || '',
@@ -65,4 +68,3 @@ export function getUserProfile(user: User): UserProfile {
         color: assignUserColor(user.id)
     };
 }
-

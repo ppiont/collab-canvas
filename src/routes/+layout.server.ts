@@ -1,16 +1,12 @@
 import type { LayoutServerLoad } from './$types';
 import { getUserProfile } from '$lib/user-utils';
 
-export const load: LayoutServerLoad = async ({ locals: { safeGetSession } }) => {
-    const { session, user } = await safeGetSession();
-
+export const load: LayoutServerLoad = async ({ locals }) => {
     // Generate user profile if authenticated
-    const userProfile = user ? getUserProfile(user) : null;
+    const userProfile = locals.user ? getUserProfile(locals.user) : null;
 
     return {
-        session,
-        user,
+        user: locals.user,
         userProfile
     };
 };
-

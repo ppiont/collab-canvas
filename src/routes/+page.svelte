@@ -33,7 +33,7 @@
 		</div>
 
 		<div class="cta">
-			{#if data.session}
+			{#if data.user}
 				<a href="/canvas" class="button">Open Canvas</a>
 			{:else}
 				<a href="/auth/signin" class="button">Sign In to Start</a>
@@ -42,7 +42,7 @@
 	</main>
 
 	<footer>
-		<p>Built with SvelteKit + Yjs + PartyKit + Supabase</p>
+		<p>Built with SvelteKit + Yjs + PartyKit + Auth0</p>
 	</footer>
 </div>
 

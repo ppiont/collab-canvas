@@ -9,9 +9,9 @@ sequenceDiagram
     %% Authentication
     rect rgb(230, 242, 255)
     Note over User,Supabase: 1. AUTHENTICATION FLOW
-    User->>Railway: Click "Sign in with Google"
-    Railway->>Supabase: OAuth redirect
-    Supabase->>User: Google login page
+    User->>Railway: Click "Sign in with Email"
+    Railway->>Supabase: Email authentication
+    Supabase->>User: Email login page
     User->>Supabase: Authenticate
     Supabase->>Railway: Callback with token
     Railway->>Railway: Create session cookie
@@ -63,26 +63,18 @@ sequenceDiagram
     Note over User,User2: Smooth sync <100ms
     end
 
-    %% Persistence
+    %% Persistence (Automatic via Durable Objects)
     rect rgb(255, 235, 238)
-    Note over PartyKit,Supabase: 6. PERSISTENCE (Every 60 seconds)
-    PartyKit->>PartyKit: Timer triggers
-    PartyKit->>PartyKit: Serialize Yjs to binary
-    PartyKit->>Railway: POST /api/snapshots
-    Railway->>Supabase: Upload to main/latest.yjs (upsert)
-    Supabase->>Railway: Success
-    Railway->>PartyKit: 200 OK
+    Note over PartyKit: 6. PERSISTENCE (Automatic - Durable Objects)
+    PartyKit->>PartyKit: persist: true - automatic storage
+    Note over PartyKit: State persisted to Cloudflare Durable Objects<br/>No manual snapshots needed!
     end
 
     %% Cold Start Recovery
     rect rgb(224, 247, 250)
-    Note over PartyKit,Supabase: 7. RECOVERY (Cold Start)
-    PartyKit->>PartyKit: Room starts with empty state
-    PartyKit->>Railway: GET /api/snapshots/latest
-    Railway->>Supabase: Download main/latest.yjs
-    Supabase->>Railway: Return binary snapshot
-    Railway->>PartyKit: Snapshot data
-    PartyKit->>PartyKit: Load snapshot into Yjs
-    Note over PartyKit: State recovered!
+    Note over PartyKit: 7. RECOVERY (Cold Start - Automatic)
+    PartyKit->>PartyKit: Room becomes active
+    PartyKit->>PartyKit: Load state from Durable Objects
+    Note over PartyKit: State recovered automatically!
     end
 ```

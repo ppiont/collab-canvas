@@ -11,30 +11,30 @@ graph TB
         YDoc <--> Provider
     end
 
-    subgraph Edge["PartyKit (Cloudflare Edge)"]
+    subgraph Edge["PartyKit (Cloudflare Workers + Durable Objects)"]
         Room[Room: main Durable Object]
         YCRDT[Yjs CRDT State Canonical]
         Awareness[Awareness API Cursors]
+        Persist[Durable Storage persist: true]
         
         Room --> YCRDT
         Room --> Awareness
+        Room --> Persist
     end
 
     subgraph Backend["Backend Services"]
         subgraph Railway["Railway (SvelteKit)"]
             App[SvelteKit App routes/canvas]
-            API[API /api/snapshots]
             Hooks[Auth Hooks hooks.server.ts]
         end
         
         subgraph Supabase["Supabase"]
-            Auth[Supabase Auth Google OAuth]
-            Storage[Storage main/latest.yjs]
+            Auth[Supabase Auth Email]
         end
     end
 
     %% Authentication Flow
-    Browser -->|Sign in with Google| Auth
+    Browser -->|Sign in with Email| Auth
     Auth -->|Session token| Hooks
     Hooks -->|Authenticated session| App
     App -->|Render canvas| Browser
@@ -47,14 +47,9 @@ graph TB
     Provider -.->|Awareness API 50ms throttle| Awareness
     Awareness -.->|Broadcast cursors| Provider
 
-    %% Persistence Flow
-    Room -->|Every 60s snapshot| API
-    API -->|Save binary Yjs state| Storage
-    
-    %% Cold Start Flow
-    Room -.->|On cold start load| API
-    API -.->|Fetch latest| Storage
-    Storage -.->|Return snapshot| Room
+    %% Persistence Flow (Automatic via Durable Objects)
+    Room -->|Automatic persist| Persist
+    Persist -.->|Load on cold start| Room
 
     %% Styling
     classDef clientStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
@@ -63,7 +58,7 @@ graph TB
     classDef supabaseStyle fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
     
     class UI,Canvas,YDoc,Provider clientStyle
-    class Room,YCRDT,Awareness edgeStyle
-    class App,API,Hooks backendStyle
-    class Auth,Storage supabaseStyle
+    class Room,YCRDT,Awareness,Persist edgeStyle
+    class App,Hooks backendStyle
+    class Auth supabaseStyle
 ```
