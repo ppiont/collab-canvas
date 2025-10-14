@@ -141,11 +141,11 @@
 
 ### Task 3.1: Create Rectangle Tool
 **Priority:** CRITICAL - MVP Req: "Ability to create objects"
-- [ ] Create Toolbar component
-- [ ] Add "Create Rectangle" button
-- [ ] Click canvas → create rectangle at pointer
-- [ ] Store rectangles in Svelte store (local)
-- [ ] Generate UUID for each rectangle
+- [x] Create Toolbar component
+- [x] Add "Create Rectangle" button
+- [x] Click canvas → create rectangle at pointer
+- [x] Store rectangles in Svelte store (local)
+- [x] Generate UUID for each rectangle
 
 **Validates:** ✓ Create objects
 
@@ -153,10 +153,10 @@
 
 ### Task 3.2: Drag Rectangles
 **Priority:** CRITICAL - MVP Req: "Ability to move objects"
-- [ ] Add draggable={true} to Rect
-- [ ] Handle dragend event
-- [ ] Update rectangle position in store
-- [ ] Test: can drag multiple rectangles
+- [x] Add draggable={true} to Rect
+- [x] Handle dragend event
+- [x] Update rectangle position in store
+- [x] Test: can drag multiple rectangles
 
 **Validates:** ✓ Move objects
 
@@ -279,8 +279,8 @@
 - [x] Phase 1: Canvas with pan/zoom ✓
 - [x] Phase 1: Shape type (rectangle) ✓
 - [x] Phase 2: Authentication + User Profile ✓
-- [ ] Phase 3: Create objects
-- [ ] Phase 3: Move objects
+- [x] Phase 3: Create objects ✓
+- [x] Phase 3: Move objects ✓
 - [ ] Phase 4: Real-time sync 2+ users
 - [ ] Phase 5: Multiplayer cursors with labels
 - [ ] Phase 6: Presence awareness
