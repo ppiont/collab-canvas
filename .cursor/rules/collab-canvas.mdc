@@ -1,0 +1,245 @@
+---
+description: CollabCanvas project-specific patterns and conventions
+globs: ["src/**/*.{ts,svelte}", "partykit/**/*.ts"]
+---
+
+# CollabCanvas Project Rules
+
+## Core Architecture Patterns
+
+### Single Global Room
+- **Room ID**: Always use `"main"` as the hardcoded room identifier
+- **No multi-room logic**: Defer room management to post-MVP
+- **Import**: All collaboration code assumes single global room
+
+### Yjs + PartyKit Integration
+```typescript
+// Standard pattern for Yjs setup
+import * as Y from 'yjs';
+import { YPartyKitProvider } from 'y-partykit';
+
+const ydoc = new Y.Doc();
+const objectsMap = ydoc.getMap('objects');
+
+const provider = new YPartyKitProvider(
+  PUBLIC_PARTYKIT_HOST,
+  'main', // Hardcoded room ID
+  ydoc,
+  { connect: true, awareness: true }
+);
+```
+
+### State Management
+- **Local state**: Use Svelte 5 `$state` runes for viewport, UI, tools
+- **Shared state**: Use Yjs Y.Map for rectangles, cursors, metadata
+- **Never**: Mix Yjs state with Svelte stores (causes sync issues)
+
+### User Profile Pattern
+```typescript
+// Always use user-utils for profile data
+import { getUserProfile } from '$lib/user-utils';
+
+const profile = getUserProfile(user);
+// Returns: { id, name, email, color }
+```
+
+### Canvas Rendering
+- **Konva Layers**: Separate layers for objects and cursors
+- **Performance**: Target 60 FPS sustained
+- **Event handling**: Use Konva event handlers, not DOM events
+- **Coordinate system**: Canvas coordinates, not screen coordinates
+
+## Auth Patterns
+
+### Auth0 JWT Verification
+```typescript
+// Server-side only - use jose for JWT verification
+import { jwtVerify } from 'jose';
+
+const secret = new TextEncoder().encode(AUTH0_CLIENT_SECRET);
+const { payload } = await jwtVerify(token, secret);
+```
+
+### Protected Routes
+- All canvas routes require authentication via `hooks.server.ts`
+- Session data passed via `+page.server.ts` load functions
+- HTTP-only cookies for session storage
+
+## Real-Time Sync Patterns
+
+### Object Updates
+```typescript
+// Always update via Yjs, never mutate directly
+objectsMap.set(rectId, {
+  ...existingRect,
+  x: newX,
+  y: newY,
+  modifiedAt: Date.now()
+});
+```
+
+### Cursor Broadcasting
+```typescript
+// Throttle to 50ms intervals
+let lastCursorUpdate = 0;
+const CURSOR_THROTTLE = 50;
+
+function handleMouseMove(e) {
+  const now = Date.now();
+  if (now - lastCursorUpdate < CURSOR_THROTTLE) return;
+  
+  provider.awareness.setLocalStateField('cursor', {
+    x: e.evt.clientX,
+    y: e.evt.clientY,
+    name: user.name,
+    color: user.color
+  });
+  
+  lastCursorUpdate = now;
+}
+```
+
+### Connection Status
+- Always show connection status indicator
+- Use provider events: `status`, `sync`, `connection-close`
+- Display states: connected (green), connecting (yellow), disconnected (red)
+
+## PartyKit Server Patterns
+
+### Standard Server Structure
+```typescript
+import type * as Party from "partykit/server";
+import { onConnect } from "y-partykit";
+
+export default class CanvasRoom implements Party.Server {
+  constructor(readonly room: Party.Room) {}
+  
+  onConnect(conn: Party.Connection) {
+    return onConnect(conn, this.room, {
+      persist: true // Critical: enables Durable Objects persistence
+    });
+  }
+}
+```
+
+### No Manual Persistence
+- **Never** implement manual snapshot endpoints
+- **Never** write custom Yjs state serialization
+- **Trust** Durable Objects `persist: true` configuration
+
+## Code Style
+
+### TypeScript
+- Use strict mode
+- Prefer interfaces over types for objects
+- Use `unknown` over `any` when type is uncertain
+- Always type function parameters and return values
+
+### Svelte 5 Patterns
+- Use `$state` for reactive local state
+- Use `$derived` for computed values
+- Use `$effect` for side effects (sparingly)
+- Avoid nested `$effect` calls
+
+### Konva Patterns
+```svelte
+<script>
+import { Stage, Layer, Rect } from 'svelte-konva';
+
+let rectangles = $state([]);
+</script>
+
+<Stage config={{ width: window.innerWidth, height: window.innerHeight }}>
+  <Layer>
+    {#each rectangles as rect (rect.id)}
+      <Rect config={{
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height,
+        fill: rect.fill,
+        draggable: true
+      }} />
+    {/each}
+  </Layer>
+</Stage>
+```
+
+## Common Pitfalls
+
+### ❌ Don't: Mutate Yjs map values directly
+```typescript
+const rect = objectsMap.get(id);
+rect.x = newX; // WRONG: doesn't trigger sync
+```
+
+### ✅ Do: Set new object in Yjs map
+```typescript
+const rect = objectsMap.get(id);
+objectsMap.set(id, { ...rect, x: newX }); // Correct
+```
+
+### ❌ Don't: Mix Svelte stores with Yjs
+```typescript
+let rectangles = writable([]);
+objectsMap.observe(() => {
+  rectangles.set(Array.from(objectsMap.values())); // Anti-pattern
+});
+```
+
+### ✅ Do: Use Yjs as single source of truth
+```typescript
+let rectangles = $state([]);
+objectsMap.observe(() => {
+  rectangles = Array.from(objectsMap.values());
+});
+```
+
+### ❌ Don't: Forget cursor throttling
+```typescript
+stage.on('mousemove', (e) => {
+  awareness.setLocalState({ cursor: { x, y } }); // Too many updates!
+});
+```
+
+### ✅ Do: Throttle cursor updates to 50ms
+```typescript
+let lastUpdate = 0;
+stage.on('mousemove', (e) => {
+  const now = Date.now();
+  if (now - lastUpdate < 50) return;
+  awareness.setLocalState({ cursor: { x, y } });
+  lastUpdate = now;
+});
+```
+
+## Environment Variables
+- Use `PUBLIC_` prefix for client-side vars
+- Never expose `AUTH0_CLIENT_SECRET` to client
+- Always validate required env vars at startup
+
+## Testing Approach
+- **Multi-window testing**: Open 2+ browser windows for collaboration features
+- **Network throttling**: Use Chrome DevTools to simulate slow connections
+- **Performance profiling**: Target 60 FPS, check with Chrome DevTools
+- **Cross-browser**: Test on Chrome, Firefox, Safari
+
+## Deployment Checklist
+- [ ] Railway env vars configured
+- [ ] Auth0 callback URLs include production domain
+- [ ] PartyKit deployed to Cloudflare
+- [ ] HTTPS/WSS enabled for production
+- [ ] Test full auth flow on production URL
+
+## Key Learnings
+1. **Durable Objects handle everything**: No external DB needed with `persist: true`
+2. **Yjs binary protocol is opaque**: Trust it, don't try to debug updates
+3. **Cursor throttling is critical**: 50ms prevents network overload
+4. **Separate layers for cursors**: Prevents performance issues
+5. **Auth0 over Supabase**: Avoids Firebase dependency for Google OAuth
+
+## References
+- Memory Bank: `/memory-bank/` directory
+- PRD: `/project-management/PRD.md`
+- Architecture: `/project-management/architecture.md`
+- Tasks: `/project-management/tasks.md`

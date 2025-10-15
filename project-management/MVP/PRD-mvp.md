@@ -112,7 +112,7 @@ This PRD defines requirements for a collaborative canvas application MVP that en
 ┌─────────────────────────────────────────────────────────┐
 │  Authentication Layer (Auth0)                           │
 │  ┌──────────────────────────────────────────────────┐   │
-│  │   Auth0 Universal Login (Email + Magic Link)    │   │
+│  │   Auth0 Universal Login (Google, FB, email)      │   │
 │  └──────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -134,7 +134,7 @@ This PRD defines requirements for a collaborative canvas application MVP that en
 - Automatic state persistence via Durable Objects
 
 **Auth0 (Authentication):**
-- Authenticate users via email (password + magic link) with Universal Login
+- Authenticate users via Google, Facebook or email (password) with Universal Login
 - Issue JWT tokens for session management
 - No database needed - PartyKit Durable Objects handles state persistence automatically
 
@@ -340,7 +340,7 @@ export default class CanvasRoom implements Party.Server {
 Auth0 Universal Login manages user authentication with email (password + magic link).
 
 **Email Authentication Configuration:**
-- Enabled Connections: Email/Password (Database) and Passwordless Email (Magic Link)
+- Enabled Connections: Email/Password (Database)
 - Allowed Callback URLs: 
   - Development: `http://localhost:5173/auth/callback`
   - Production: `https://your-app.railway.app/auth/callback`
