@@ -6,6 +6,9 @@
 import { writable, derived } from 'svelte/store';
 import type { ToolType } from '$lib/types/canvas';
 
+// Re-export ToolType for convenience
+export type { ToolType } from '$lib/types/canvas';
+
 /**
  * Currently active tool
  */
@@ -20,7 +23,6 @@ export const toolOperations = {
      */
     set: (tool: ToolType) => {
         activeTool.set(tool);
-        console.log('Active tool changed to:', tool);
     },
 
     /**

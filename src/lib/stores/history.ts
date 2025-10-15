@@ -39,8 +39,6 @@ export function initializeUndoManager(shapesMap: Y.Map<any>) {
     undoManager.on('stack-item-added', updateStacks);
     undoManager.on('stack-item-popped', updateStacks);
     undoManager.on('stack-cleared', updateStacks);
-
-    console.log('Undo manager initialized');
 }
 
 /**
@@ -53,7 +51,6 @@ export const history = {
     undo: () => {
         if (undoManager && undoManager.undoStack.length > 0) {
             undoManager.undo();
-            console.log('Undo performed');
         }
     },
 
@@ -63,7 +60,6 @@ export const history = {
     redo: () => {
         if (undoManager && undoManager.redoStack.length > 0) {
             undoManager.redo();
-            console.log('Redo performed');
         }
     },
 
@@ -87,7 +83,6 @@ export const history = {
     clear: () => {
         if (undoManager) {
             undoManager.clear();
-            console.log('History cleared');
         }
     },
 

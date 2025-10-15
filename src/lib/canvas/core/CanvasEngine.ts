@@ -1,30 +1,168 @@
 /**
- * Canvas Engine - Core Konva Stage Management
- * TODO: Extract stage setup and event handling from canvas/+page.svelte
- * Week 2 Implementation
+ * Canvas Engine - Core Konva Stage and Layer Management
+ * Extracted from canvas/+page.svelte
+ * 
+ * Handles:
+ * - Konva Stage initialization
+ * - Layer management (grid, shapes, cursors)
+ * - Grid rendering
+ * - Canvas resizing
  */
 
 import Konva from 'konva';
 import type { CanvasConfig } from '$lib/types/canvas';
+import { CANVAS } from '$lib/constants';
 
+/** Canvas layers returned by initialize */
+export interface CanvasLayers {
+    grid: Konva.Layer;
+    shapes: Konva.Layer;
+    cursors: Konva.Layer;
+}
+
+/**
+ * CanvasEngine manages the Konva stage and core layers
+ */
 export class CanvasEngine {
-    private stage: Konva.Stage | null = null;
+    private container: HTMLDivElement;
     private config: CanvasConfig;
+    private stage: Konva.Stage | null = null;
+    private layers: CanvasLayers | null = null;
 
     constructor(container: HTMLDivElement, config: CanvasConfig) {
+        this.container = container;
         this.config = config;
-        // TODO: Initialize Konva stage
     }
 
-    getStage(): Konva.Stage | null {
+    /**
+     * Initialize Konva stage and layers
+     */
+    initialize(): { stage: Konva.Stage; layers: CanvasLayers } {
+        // Create stage
+        this.stage = new Konva.Stage({
+            container: this.container,
+            width: this.config.width,
+            height: this.config.height,
+            draggable: false  // Will be enabled conditionally on mousedown
+        });
+
+        // Create layers
+        const gridLayer = new Konva.Layer();
+        this.stage.add(gridLayer);
+
+        const shapesLayer = new Konva.Layer();
+        this.stage.add(shapesLayer);
+
+        const cursorsLayer = new Konva.Layer();
+        this.stage.add(cursorsLayer);
+
+        this.layers = {
+            grid: gridLayer,
+            shapes: shapesLayer,
+            cursors: cursorsLayer
+        };
+
+        // Draw initial grid
+        this.drawGrid();
+
+        return {
+            stage: this.stage,
+            layers: this.layers
+        };
+    }
+
+    /**
+     * Update canvas size (call on window resize)
+     */
+    updateSize(width: number, height: number): void {
+        if (!this.stage || !this.layers) return;
+
+        this.config.width = width;
+        this.config.height = height;
+
+        this.stage.width(width);
+        this.stage.height(height);
+
+        this.drawGrid();
+        this.layers.grid.batchDraw();
+    }
+
+    /**
+     * Draw grid lines on grid layer
+     */
+    drawGrid(): void {
+        if (!this.layers) return;
+
+        const gridLayer = this.layers.grid;
+        gridLayer.destroyChildren();
+
+        const gridSize = this.config.gridSize;
+        const gridColor = this.config.gridColor;
+
+        // Make grid much larger than viewport for infinite feel
+        const gridExtent = Math.max(this.config.width, this.config.height) * 5;
+        const gridStart = -gridExtent;
+        const gridEnd = gridExtent;
+
+        // Vertical lines
+        for (let i = gridStart; i <= gridEnd; i += gridSize) {
+            const line = new Konva.Line({
+                points: [i, gridStart, i, gridEnd],
+                stroke: gridColor,
+                strokeWidth: 1
+            });
+            gridLayer.add(line);
+        }
+
+        // Horizontal lines
+        for (let i = gridStart; i <= gridEnd; i += gridSize) {
+            const line = new Konva.Line({
+                points: [gridStart, i, gridEnd, i],
+                stroke: gridColor,
+                strokeWidth: 1
+            });
+            gridLayer.add(line);
+        }
+    }
+
+    /**
+     * Get the Konva stage instance
+     */
+    getStage(): Konva.Stage {
+        if (!this.stage) {
+            throw new Error('CanvasEngine not initialized');
+        }
         return this.stage;
     }
 
-    destroy() {
+    /**
+     * Get a specific layer
+     */
+    getLayer(name: keyof CanvasLayers): Konva.Layer {
+        if (!this.layers) {
+            throw new Error('CanvasEngine not initialized');
+        }
+        return this.layers[name];
+    }
+
+    /**
+     * Get all layers
+     */
+    getLayers(): CanvasLayers {
+        if (!this.layers) {
+            throw new Error('CanvasEngine not initialized');
+        }
+        return this.layers;
+    }
+
+    /**
+     * Clean up resources
+     */
+    destroy(): void {
         if (this.stage) {
             this.stage.destroy();
             this.stage = null;
         }
+        this.layers = null;
     }
 }
-

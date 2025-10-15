@@ -5,7 +5,7 @@
 
 import { writable } from 'svelte/store';
 import type { Shape } from '$lib/types/shapes';
-import { ydoc } from '$lib/collaboration';
+import { ydoc, getAllShapes } from '$lib/collaboration';
 import type * as Y from 'yjs';
 
 /**
@@ -30,25 +30,10 @@ export function initializeShapesSync(shapeMapInstance: Y.Map<Shape>) {
     shapesMap.observe(() => {
         const allShapes = getAllShapes();
         shapes.set(allShapes);
-        console.log('Shapes synced from Yjs:', allShapes.length);
     });
 
     // Initial load
     shapes.set(getAllShapes());
-    console.log('Initial shapes loaded:', getAllShapes().length);
-}
-
-/**
- * Get all shapes from Yjs map as array
- */
-export function getAllShapes(): Shape[] {
-    if (!shapesMap) return [];
-
-    const shapesList: Shape[] = [];
-    shapesMap.forEach((shape, id) => {
-        shapesList.push({ ...shape, id });
-    });
-    return shapesList;
 }
 
 /**
@@ -67,7 +52,6 @@ export const shapeOperations = {
         ydoc.transact(() => {
             shapesMap.set(shape.id, shape);
         });
-        console.log('Shape added to Yjs:', shape.id, shape.type);
     },
 
     /**
@@ -81,7 +65,7 @@ export const shapeOperations = {
         const existing = shapesMap.get(id);
         if (existing) {
             ydoc.transact(() => {
-                // Type assertion needed because TypeScript can't guarantee union type compatibility
+                // Safe type assertion: existing is Shape, changes is Partial<Shape>, spread is valid
                 const updated = { ...existing, ...changes, modifiedAt: Date.now() } as Shape;
                 shapesMap.set(id, updated);
             });
@@ -101,7 +85,6 @@ export const shapeOperations = {
         ydoc.transact(() => {
             shapesMap.delete(id);
         });
-        console.log('Shape deleted from Yjs:', id);
     },
 
     /**
@@ -115,7 +98,6 @@ export const shapeOperations = {
         ydoc.transact(() => {
             ids.forEach(id => shapesMap.delete(id));
         });
-        console.log('Multiple shapes deleted:', ids.length);
     },
 
     /**
@@ -129,7 +111,6 @@ export const shapeOperations = {
         ydoc.transact(() => {
             shapesMap.clear();
         });
-        console.log('All shapes cleared');
     },
 
     /**
@@ -140,10 +121,3 @@ export const shapeOperations = {
         return shapesMap.get(id);
     }
 };
-
-// Backward compatibility exports for MVP code
-export const addRectangle = shapeOperations.add;
-export const updateRectangle = shapeOperations.update;
-export const deleteRectangle = shapeOperations.delete;
-export const rectangles = shapes; // Alias for gradual migration
-

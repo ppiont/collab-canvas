@@ -16,12 +16,6 @@ export const ydoc = new Y.Doc();
 export const shapesMap = ydoc.getMap<Shape>('shapes');
 
 /**
- * Backward compatibility - alias rectanglesMap to shapesMap
- * @deprecated Use shapesMap instead
- */
-export const rectanglesMap = shapesMap;
-
-/**
  * Metadata map (for future use)
  */
 export const metadataMap = ydoc.getMap('metadata');
@@ -53,8 +47,6 @@ export function initializeProvider(
 	// Get PartyKit host from environment
 	const host = PUBLIC_PARTYKIT_HOST || 'localhost:1999';
 
-	console.log('Connecting to PartyKit:', { host, room: 'main', userId });
-
 	// Create provider
 	// When using cloud-prem deployment, need to specify party name
 	_provider = new YPartyKitProvider(
@@ -79,15 +71,11 @@ export function initializeProvider(
 
 	// Connection status events
 	_provider.on('status', (event: { status: 'connected' | 'connecting' | 'disconnected' }) => {
-		console.log('PartyKit status:', event.status);
 		connectionStatus.set(event.status);
 	});
 
 	_provider.on('sync', (isSynced: boolean) => {
-		console.log('Yjs synced:', isSynced);
-		if (isSynced) {
-			console.log('Initial state loaded. Rectangles:', rectanglesMap.size);
-		}
+		// Sync complete - shapes loaded
 	});
 
 	// Connection error handling
@@ -121,14 +109,6 @@ export function getAllShapes(): Shape[] {
 		shapesList.push({ ...shape, id });
 	});
 	return shapesList;
-}
-
-/**
- * Backward compatibility function
- * @deprecated Use getAllShapes instead
- */
-export function getAllRectangles() {
-	return getAllShapes();
 }
 
 /**

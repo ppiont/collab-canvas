@@ -7,13 +7,7 @@
 export {
     shapes,
     shapeOperations,
-    initializeShapesSync,
-    getAllShapes,
-    // Backward compatibility
-    rectangles,
-    addRectangle,
-    updateRectangle,
-    deleteRectangle
+    initializeShapesSync
 } from './shapes';
 
 // Selection store
