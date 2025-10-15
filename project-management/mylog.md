@@ -29,6 +29,32 @@ I've connected Sourcery AI with GitHub to review my PRs and make suggestions. It
 I've relied heavily on GitKraken, GitHub MCPs for structuring and writing commits and PRs. 
 To debug app behavior and frontend errors, I began using Google-DevTools MCP on the recommendation of another Gauntleteer. It's mindblowingly efficient!
 
+## Example prompts:
+```
+We just finished Phase 6 and made a PR. Sourcery AI suggested the following improvements:
+
+Hey there - I've reviewed your changes - here's some feedback:
+
+Cache the provider’s awareness instance instead of subscribe/unsubscribe on every broadcastCursorImmediate/centerOnUser call to reduce boilerplate and improve performance.
+Extract the repeated counter-scale (scaleX/scaleY) and cursor/indicator event-handler setup into a helper or subcomponent to DRY up renderCursors logic.
+Maintain a running maxZIndex in state rather than scanning rectanglesList on each drag start to simplify z-order updates and avoid O(n) operations per drag.
+
+Prompt for AI Agents
+Please address the comments from this code review:
+
+## Overall Comments
+- Cache the provider’s awareness instance instead of subscribe/unsubscribe on every broadcastCursorImmediate/centerOnUser call to reduce boilerplate and improve performance.
+- Extract the repeated counter-scale (scaleX/scaleY) and cursor/indicator event-handler setup into a helper or subcomponent to DRY up renderCursors logic.
+- Maintain a running maxZIndex in state rather than scanning rectanglesList on each drag start to simplify z-order updates and avoid O(n) operations per drag.
+```
+
+```
+We have just gotten started with Phase 7. I'm wondering if it the remaining steps are even necessary. PartyKit running on Cloudflare Workers with Durable Objects seems to already be managing persistence.
+```
+
+```
+We've finished our MVP. Now we need to start work on the final product (@PRD-final.md @tasks-final.md ). Our current code is monolithic and was written in haste. It works. But it is not ready for an AI agent implementation. It is not easy to understand and it's not modular. Please walk through the code step-by-step and outline in a markdown document what needs to be fixed, refactored, optimized etc., before we move on to the implementation of our Final Product phase. Also suggest improvements like Tailwind CSS or shadcn components for simplicity, beauty and consistency. You can do ANYTHING! Be world class!!
+```
 
 ## Semi-chronological timeline of things I remembered to jot down.
 1. Asked Claude for PRD based on collab canvas project assignment doc.

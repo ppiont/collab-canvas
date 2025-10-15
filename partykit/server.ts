@@ -16,18 +16,9 @@ export default class YjsServer implements Party.Server {
      */
     onConnect(conn: Party.Connection) {
         return onConnect(conn, this.party, {
-            // ✅ Correct: Just use boolean true
-            persist: true
-
-            // Future Phase 7: Add callback for external storage (Supabase)
-            // callback: {
-            //     handler: async (yDoc) => {
-            //         // Save to Supabase Storage
-            //         await this.saveToSupabase(yDoc);
-            //     },
-            //     debounceWait: 60000, // Save every 60 seconds
-            //     debounceMaxWait: 120000
-            // }
+            persist: {
+                mode: 'snapshot'
+            }
         });
     }
 
@@ -38,7 +29,6 @@ export default class YjsServer implements Party.Server {
      */
     static async onBeforeConnect(req: Party.Request) {
         // For MVP: Allow all connections
-        // TODO Phase 2: Validate Supabase token from query params
 
         const url = new URL(req.url);
         const token = url.searchParams.get('token');
