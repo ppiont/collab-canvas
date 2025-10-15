@@ -1,0 +1,199 @@
+<script lang="ts">
+	/**
+	 * Properties Panel
+	 * Right sidebar showing editable properties for selected shapes
+	 */
+
+	import { selectedShapes } from '$lib/stores/selection';
+	import { shapeOperations } from '$lib/stores/shapes';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { Slider } from '$lib/components/ui/slider';
+	import { Separator } from '$lib/components/ui/separator';
+	import { isRectangle, isCircle, isText } from '$lib/types/shapes';
+	import type { Shape } from '$lib/types/shapes';
+
+	let selected = $derived($selectedShapes);
+	let shape = $derived<Shape | null>(selected.length === 1 ? selected[0] : null);
+
+	function updateShape(updates: Partial<Shape>) {
+		if (shape) {
+			shapeOperations.update(shape.id, updates);
+		}
+	}
+</script>
+
+{#if shape}
+	<div class="fixed right-0 top-0 z-10 h-screen w-80 overflow-y-auto border-l bg-white shadow-lg">
+		<div class="space-y-6 p-4">
+			<!-- Header -->
+			<div>
+				<h2 class="text-lg font-semibold">Properties</h2>
+				<p class="text-sm text-muted-foreground">{shape.type}</p>
+			</div>
+
+			<Separator />
+
+			<!-- Transform section -->
+			<section class="space-y-3">
+				<h3 class="text-sm font-semibold">Transform</h3>
+				<div class="grid grid-cols-2 gap-3">
+					<div class="space-y-2">
+						<Label for="x">X</Label>
+						<Input
+							id="x"
+							type="number"
+							value={Math.round(shape.x)}
+							onchange={(e: Event) =>
+								updateShape({ x: Number((e.target as HTMLInputElement).value) })}
+						/>
+					</div>
+					<div class="space-y-2">
+						<Label for="y">Y</Label>
+						<Input
+							id="y"
+							type="number"
+							value={Math.round(shape.y)}
+							onchange={(e: Event) =>
+								updateShape({ y: Number((e.target as HTMLInputElement).value) })}
+						/>
+					</div>
+				</div>
+
+				<!-- Shape-specific dimensions -->
+				{#if isRectangle(shape)}
+					<div class="grid grid-cols-2 gap-3">
+						<div class="space-y-2">
+							<Label for="width">Width</Label>
+							<Input
+								id="width"
+								type="number"
+								value={Math.round(shape.width)}
+								onchange={(e: Event) =>
+									updateShape({ width: Number((e.target as HTMLInputElement).value) })}
+							/>
+						</div>
+						<div class="space-y-2">
+							<Label for="height">Height</Label>
+							<Input
+								id="height"
+								type="number"
+								value={Math.round(shape.height)}
+								onchange={(e: Event) =>
+									updateShape({ height: Number((e.target as HTMLInputElement).value) })}
+							/>
+						</div>
+					</div>
+				{/if}
+
+				{#if isCircle(shape)}
+					<div class="space-y-2">
+						<Label for="radius">Radius</Label>
+						<Input
+							id="radius"
+							type="number"
+							value={Math.round(shape.radius)}
+							onchange={(e: Event) =>
+								updateShape({ radius: Number((e.target as HTMLInputElement).value) })}
+						/>
+					</div>
+				{/if}
+
+				<!-- Rotation -->
+				<div class="space-y-2">
+					<Label for="rotation">Rotation ({Math.round(shape.rotation || 0)}°)</Label>
+					<Slider
+						type="single"
+						min={0}
+						max={360}
+						step={1}
+						value={[shape.rotation || 0]}
+						onValueChange={(values: number[]) => updateShape({ rotation: values[0] })}
+					/>
+				</div>
+			</section>
+
+			<Separator />
+
+			<!-- Appearance section -->
+			<section class="space-y-3">
+				<h3 class="text-sm font-semibold">Appearance</h3>
+
+				<!-- Fill Color -->
+				<div class="space-y-2">
+					<Label for="fill">Fill Color</Label>
+					<Input
+						id="fill"
+						type="color"
+						value={shape.fill || '#3b82f6'}
+						onchange={(e: Event) => updateShape({ fill: (e.target as HTMLInputElement).value })}
+					/>
+				</div>
+
+				<!-- Stroke -->
+				<div class="space-y-2">
+					<Label for="stroke">Stroke Color</Label>
+					<Input
+						id="stroke"
+						type="color"
+						value={shape.stroke || '#1e40af'}
+						onchange={(e: Event) => updateShape({ stroke: (e.target as HTMLInputElement).value })}
+					/>
+				</div>
+
+				<div class="space-y-2">
+					<Label for="strokeWidth">Stroke Width ({shape.strokeWidth || 2}px)</Label>
+					<Slider
+						type="single"
+						min={0}
+						max={20}
+						step={1}
+						value={[shape.strokeWidth || 2]}
+						onValueChange={(values: number[]) => updateShape({ strokeWidth: values[0] })}
+					/>
+				</div>
+
+				<!-- Opacity -->
+				<div class="space-y-2">
+					<Label for="opacity">Opacity ({Math.round((shape.opacity || 1) * 100)}%)</Label>
+					<Slider
+						type="single"
+						min={0}
+						max={100}
+						step={1}
+						value={[(shape.opacity || 1) * 100]}
+						onValueChange={(values: number[]) => updateShape({ opacity: values[0] / 100 })}
+					/>
+				</div>
+			</section>
+
+			<!-- Text-specific properties -->
+			{#if isText(shape)}
+				<Separator />
+				<section class="space-y-3">
+					<h3 class="text-sm font-semibold">Text</h3>
+					<div class="space-y-2">
+						<Label for="text">Content</Label>
+						<Input
+							id="text"
+							type="text"
+							value={shape.text}
+							onchange={(e: Event) => updateShape({ text: (e.target as HTMLInputElement).value })}
+						/>
+					</div>
+					<div class="space-y-2">
+						<Label for="fontSize">Font Size ({shape.fontSize}px)</Label>
+						<Slider
+							type="single"
+							min={8}
+							max={144}
+							step={1}
+							value={[shape.fontSize]}
+							onValueChange={(values: number[]) => updateShape({ fontSize: values[0] })}
+						/>
+					</div>
+				</section>
+			{/if}
+		</div>
+	</div>
+{/if}
