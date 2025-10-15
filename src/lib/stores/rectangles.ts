@@ -16,13 +16,13 @@ export const rectangles = writable<Rectangle[]>([]);
 export function initializeYjsSync() {
     // Listen to Yjs changes and update Svelte store
     rectanglesMap.observe(() => {
-        const allRects = getAllRectangles();
+        const allRects = getAllRectangles() as unknown as Rectangle[];
         rectangles.set(allRects);
         console.log('Rectangles synced from Yjs:', allRects.length);
     });
 
     // Initial load
-    rectangles.set(getAllRectangles());
+    rectangles.set(getAllRectangles() as unknown as Rectangle[]);
     console.log('Initial rectangles loaded:', getAllRectangles().length);
 }
 
@@ -32,7 +32,7 @@ export function initializeYjsSync() {
  */
 export function addRectangle(rect: Rectangle) {
     ydoc.transact(() => {
-        rectanglesMap.set(rect.id, rect);
+        rectanglesMap.set(rect.id, rect as any);
     });
     console.log('Rectangle added to Yjs:', rect.id);
 }
@@ -45,7 +45,7 @@ export function updateRectangle(id: string, changes: Partial<Rectangle>) {
     const existing = rectanglesMap.get(id);
     if (existing) {
         ydoc.transact(() => {
-            rectanglesMap.set(id, { ...existing, ...changes });
+            rectanglesMap.set(id, { ...existing, ...changes } as any);
         });
     }
 }

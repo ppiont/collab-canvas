@@ -1,4 +1,55 @@
-// Placeholder for Svelte stores
-// Will be populated in later phases
-export { };
+/**
+ * Centralized Store Exports
+ * Import all stores from here for consistency
+ */
 
+// Shapes store
+export {
+    shapes,
+    shapeOperations,
+    initializeShapesSync,
+    getAllShapes,
+    // Backward compatibility
+    rectangles,
+    addRectangle,
+    updateRectangle,
+    deleteRectangle
+} from './shapes';
+
+// Selection store
+export {
+    selectedShapeIds,
+    selectedShapes,
+    hasSelection,
+    selectedCount,
+    selection
+} from './selection';
+
+// Canvas viewport store
+export {
+    viewport,
+    viewportOperations,
+    zoomPercentage,
+    isViewportDefault
+} from './canvas';
+
+// Tool store
+export {
+    activeTool,
+    toolOperations,
+    isSelectToolActive,
+    isCreateToolActive,
+    isPanToolActive,
+    TOOL_NAMES
+} from './tool';
+
+// History store
+export {
+    undoStackSize,
+    redoStackSize,
+    canUndo,
+    canRedo,
+    historyInfo,
+    history,
+    initializeUndoManager
+} from './history';

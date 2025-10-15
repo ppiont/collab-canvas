@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import YPartyKitProvider from 'y-partykit/provider';
 import { writable, type Writable } from 'svelte/store';
-import type { Rectangle } from './types';
+import type { Shape } from './types/shapes';
 import { PUBLIC_PARTYKIT_HOST } from '$env/static/public';
 
 /**
@@ -10,10 +10,16 @@ import { PUBLIC_PARTYKIT_HOST } from '$env/static/public';
 export const ydoc = new Y.Doc();
 
 /**
- * Shared Y.Map for rectangles
- * Key: rectangle.id, Value: Rectangle
+ * Shared Y.Map for shapes (all types)
+ * Key: shape.id, Value: Shape
  */
-export const rectanglesMap = ydoc.getMap<Rectangle>('rectangles');
+export const shapesMap = ydoc.getMap<Shape>('shapes');
+
+/**
+ * Backward compatibility - alias rectanglesMap to shapesMap
+ * @deprecated Use shapesMap instead
+ */
+export const rectanglesMap = shapesMap;
 
 /**
  * Metadata map (for future use)
@@ -107,14 +113,22 @@ export function disconnectProvider() {
 }
 
 /**
- * Get all rectangles from Yjs map as array
+ * Get all shapes from Yjs map as array
  */
-export function getAllRectangles(): Rectangle[] {
-	const rects: Rectangle[] = [];
-	rectanglesMap.forEach((rect, id) => {
-		rects.push({ ...rect, id });
+export function getAllShapes(): Shape[] {
+	const shapesList: Shape[] = [];
+	shapesMap.forEach((shape, id) => {
+		shapesList.push({ ...shape, id });
 	});
-	return rects;
+	return shapesList;
+}
+
+/**
+ * Backward compatibility function
+ * @deprecated Use getAllShapes instead
+ */
+export function getAllRectangles() {
+	return getAllShapes();
 }
 
 /**
