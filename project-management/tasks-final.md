@@ -2,6 +2,12 @@
 
 **Approach:** Linear, chronological tasks. Each task = 1 commit minimum, atomic PR maximum.
 
+**Updated Prioritization (Oct 15, 2025):**
+- ✅ **Phase 1-3:** Complete (Foundation, Modularization, Components)
+- 🔄 **Phase 4 (AI Agent):** In Progress - Highest rubric value (25 points)
+- ⏸️ **Images (Phase 3):** DEFERRED - Lower priority
+- ⏸️ **Multi-Canvas (Phase 5):** DEFERRED - After AI working
+
 ---
 
 ## Phase 1: Core Design Tools Foundation (Days 1-3)
@@ -314,7 +320,7 @@
 
 ---
 
-## Phase 3: Image Support (Days 7-8)
+## Phase 3: Image Support (Days 7-8) - ⏸️ DEFERRED TO PHASE 6+
 
 ### Task 3.1: Setup Cloudflare R2 Bucket
 **Goal:** Configure image storage
@@ -527,7 +533,7 @@
 
 ---
 
-## Phase 5: Multi-Canvas & Project Management (Days 12-14)
+## Phase 5: Multi-Canvas & Project Management (Days 12-14) - ⏸️ DEFERRED TO PHASE 5+
 
 ### Task 5.1: Design Database Schema for Projects
 **Goal:** Plan data model for multi-canvas
