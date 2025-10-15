@@ -1,6 +1,6 @@
 <script lang="ts">
 	/**
-	 * AI Command Palette (Placeholder)
+	 * AI Command Palette
 	 * Modal interface for AI canvas commands
 	 */
 
@@ -10,8 +10,11 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
 	import { Loader2, Sparkles, CheckCircle2, XCircle } from 'lucide-svelte';
+	import { PUBLIC_PARTYKIT_HOST } from '$env/static/public';
+	import { ShapeFactory } from '$lib/canvas/shapes/ShapeFactory';
+	import { shapeOperations } from '$lib/stores/shapes';
 
-	let { open = $bindable(false) } = $props<{ open?: boolean }>();
+	let { open = $bindable(false), userId } = $props<{ open?: boolean; userId: string }>();
 
 	let command = $state('');
 	let commandState = $state<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -34,20 +37,66 @@
 		return () => window.removeEventListener('keydown', handleKeydown);
 	});
 
-	function handleSubmit() {
+	async function handleSubmit() {
 		if (!command.trim()) return;
 
-		// Placeholder: show loading then success
 		commandState = 'loading';
 
-		setTimeout(() => {
+		try {
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+			const url = `http://${PUBLIC_PARTYKIT_HOST}/parties/yjs/main/api/ai/command`;
+
+			const response = await fetch(url, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					command: command.trim(),
+					userId: userId
+				}),
+				signal: controller.signal
+			});
+
+			clearTimeout(timeoutId);
+
+			if (!response.ok) {
+				const data = await response.json();
+				throw new Error(data.error || `Error ${response.status}`);
+			}
+
+			const data = await response.json();
+
+			if (!data.success) {
+				throw new Error(data.error || 'Command failed');
+			}
+
+			// Execute AI tools client-side using our Yjs connection
+			if (data.toolsToExecute && data.toolsToExecute.length > 0) {
+				for (const tool of data.toolsToExecute) {
+					await executeAITool(tool.name, tool.params);
+				}
+			}
+
 			commandState = 'success';
 			setTimeout(() => {
 				open = false;
 				commandState = 'idle';
 				command = '';
 			}, 1000);
-		}, 1500);
+		} catch (error) {
+			commandState = 'error';
+
+			if (error instanceof Error) {
+				if (error.name === 'AbortError') {
+					errorMessage = 'Request timed out. Try a simpler command.';
+				} else {
+					errorMessage = error.message;
+				}
+			} else {
+				errorMessage = 'Failed to execute command';
+			}
+		}
 	}
 
 	// Reset commandState when dialog opens
@@ -57,6 +106,75 @@
 			errorMessage = '';
 		}
 	});
+
+	/**
+	 * Execute an AI tool client-side
+	 */
+	async function executeAITool(toolName: string, params: any): Promise<void> {
+		// Creation tools - use ShapeFactory
+		const creationTools = [
+			'createRectangle',
+			'createCircle',
+			'createEllipse',
+			'createLine',
+			'createText',
+			'createPolygon',
+			'createStar',
+			'createImage'
+		];
+
+		if (creationTools.includes(toolName)) {
+			const typeMap: Record<string, any> = {
+				createRectangle: 'rectangle',
+				createCircle: 'circle',
+				createEllipse: 'ellipse',
+				createLine: 'line',
+				createText: 'text',
+				createPolygon: 'polygon',
+				createStar: 'star',
+				createImage: 'image'
+			};
+
+			const shapeType = typeMap[toolName];
+			const shape = ShapeFactory.create(shapeType, params, userId);
+			shapeOperations.add(shape);
+			return;
+		}
+
+		// Manipulation tools
+		if (toolName === 'moveShape') {
+			shapeOperations.update(params.shapeId, { x: params.x, y: params.y });
+		} else if (toolName === 'resizeShape') {
+			const updates: any = {};
+			if (params.width) updates.width = params.width;
+			if (params.height) updates.height = params.height;
+			if (params.radius) updates.radius = params.radius;
+			shapeOperations.update(params.shapeId, updates);
+		} else if (toolName === 'rotateShape') {
+			shapeOperations.update(params.shapeId, { rotation: params.degrees % 360 });
+		} else if (toolName === 'updateShapeColor') {
+			const updates: any = {};
+			if (params.fill) updates.fill = params.fill;
+			if (params.stroke) updates.stroke = params.stroke;
+			shapeOperations.update(params.shapeId, updates);
+		} else if (toolName === 'deleteShape') {
+			shapeOperations.delete(params.shapeId);
+		} else if (toolName === 'duplicateShape') {
+			const original = shapeOperations.get(params.shapeId);
+			if (original) {
+				const duplicate = {
+					...original,
+					id: crypto.randomUUID(),
+					x: original.x + (params.offsetX || 20),
+					y: original.y + (params.offsetY || 20),
+					createdBy: userId,
+					createdAt: Date.now()
+				};
+				shapeOperations.add(duplicate);
+			}
+		}
+		// TODO: Implement layout tools if needed
+	}
 </script>
 
 <Dialog.Root bind:open>

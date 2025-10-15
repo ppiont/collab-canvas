@@ -69,11 +69,14 @@
 
 	// Render shapes when they change
 	$effect(() => {
-		if (shapeRenderer && $shapes) {
-			shapeRenderer.renderShapes($shapes);
+		// Access $shapes at top level to ensure Svelte tracks the dependency
+		const currentShapes = $shapes;
+
+		if (shapeRenderer && currentShapes) {
+			shapeRenderer.renderShapes(currentShapes);
 			// Update maxZIndex
-			if ($shapes.length > 0) {
-				maxZIndex = Math.max(...$shapes.map((s) => s.zIndex || 0), maxZIndex);
+			if (currentShapes.length > 0) {
+				maxZIndex = Math.max(...currentShapes.map((s) => s.zIndex || 0), maxZIndex);
 			}
 
 			// Update transformer after shapes are rendered
@@ -236,7 +239,7 @@
 	<PropertiesPanel />
 
 	<!-- Command Palette -->
-	<CommandPalette bind:open={commandPaletteOpen} />
+	<CommandPalette bind:open={commandPaletteOpen} userId={data.user.id} />
 
 	<!-- Zoom indicator -->
 	<div class="zoom-indicator">
