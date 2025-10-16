@@ -55,10 +55,12 @@ export default class YjsServer implements Party.Server {
         // Handle CORS preflight
         if (req.method === 'OPTIONS') {
             return new Response(null, {
+                status: 204,
                 headers: {
                     'Access-Control-Allow-Origin': '*',
                     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type'
+                    'Access-Control-Allow-Headers': '*',
+                    'Access-Control-Max-Age': '86400'
                 }
             });
         }
@@ -76,10 +78,17 @@ export default class YjsServer implements Party.Server {
 
         // AI command endpoint
         if (req.method === 'POST' && url.pathname.includes('/api/ai/command')) {
+            console.log('[PartyKit] Handling AI command request');
             return this.handleAICommand(req);
         }
 
-        return new Response('Not found', { status: 404 });
+        console.log('[PartyKit] Unknown endpoint:', url.pathname);
+        return new Response('Not found', {
+            status: 404,
+            headers: {
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
     }
 
     /**
@@ -87,15 +96,34 @@ export default class YjsServer implements Party.Server {
      */
     private async handleAICommand(req: Party.Request): Promise<Response> {
         try {
-            const body = await req.json() as { command?: string; userId?: string };
-            const { command, userId } = body;
+            console.log('[PartyKit] AI command endpoint hit');
+            const body = await req.json() as {
+                command?: string;
+                userId?: string;
+                viewport?: {
+                    centerX: number;
+                    centerY: number;
+                    zoom: number;
+                    stageWidth: number;
+                    stageHeight: number;
+                }
+            };
+            const { command, userId, viewport } = body;
+
+            console.log('[PartyKit] Received command:', command, 'from user:', userId);
+            console.log('[PartyKit] Viewport:', viewport);
 
             if (!command || !userId) {
                 return new Response(JSON.stringify({
                     error: 'Missing command or userId'
                 }), {
                     status: 400,
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                        'Access-Control-Allow-Headers': '*'
+                    }
                 });
             }
 
@@ -107,41 +135,70 @@ export default class YjsServer implements Party.Server {
                     retryAfter: rateLimit.retryAfter
                 }), {
                     status: 429,
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                        'Access-Control-Allow-Headers': '*'
+                    }
                 });
             }
 
             // Get OpenAI API key from environment
             const apiKey = this.party.env.OPENAI_API_KEY as string;
             if (!apiKey) {
+                console.error('[PartyKit] OPENAI_API_KEY not configured');
                 return new Response(JSON.stringify({
                     error: 'OpenAI API key not configured'
                 }), {
                     status: 500,
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                        'Access-Control-Allow-Headers': '*'
+                    }
                 });
             }
 
-            // Access Yjs document from Durable Object
-            const ydoc = await this.getYDoc();
-            const canvasState = getCanvasState(ydoc);
+            console.log('[PartyKit] OpenAI API key found, calling GPT-4...');
+
+            // Access LIVE Yjs document (not from storage - use the live one!)
+            const canvasState: any[] = this.yjsDoc
+                ? getCanvasState(this.yjsDoc)
+                : getCanvasState(await this.getYDoc());
+
+            console.log('[PartyKit] Canvas state:', canvasState.length, 'shapes');
 
             // Call OpenAI GPT-4 with function calling
             const openai = new OpenAI({ apiKey });
 
+            // Build context message with viewport info
+            const viewportInfo = viewport
+                ? `\n\nVIEWPORT INFO (user's visible area):
+- Visible center: (${viewport.centerX}, ${viewport.centerY})
+- Zoom level: ${Math.round(viewport.zoom * 100)}%
+- Screen size: ${viewport.stageWidth} x ${viewport.stageHeight}
+
+IMPORTANT: Create new shapes near the visible center (${viewport.centerX}, ${viewport.centerY}) so the user can see them immediately!`
+                : `\n\nNo viewport info available. Use default center around (400, 300).`;
+
+            const userMessage = canvasState.length > 0
+                ? `Current canvas has ${canvasState.length} shapes with these IDs: ${canvasState.map((s: any) => s.id).join(', ')}\n\nFull canvas state:\n${JSON.stringify(canvasState, null, 2)}${viewportInfo}\n\nUser command: ${command}\n\nIMPORTANT: Use the shape IDs listed above when calling layout or manipulation tools!`
+                : `Current canvas is empty (no shapes).${viewportInfo}\n\nUser command: ${command}`;
+
             const completion = await openai.chat.completions.create({
-                model: 'gpt-4-turbo',
+                model: 'gpt-4.1-nano',
                 messages: [
                     { role: 'system', content: AI_SYSTEM_PROMPT },
-                    {
-                        role: 'user',
-                        content: `Current canvas has ${canvasState.length} shapes:\n${JSON.stringify(canvasState)}\n\nUser command: ${command}`
-                    }
+                    { role: 'user', content: userMessage }
                 ],
                 tools: AI_TOOLS,
                 tool_choice: 'auto',
-                max_tokens: 1000
+                max_tokens: 2000
             });
+
+            console.log('[PartyKit] GPT-4 returned', completion.choices[0].message.tool_calls?.length || 0, 'tool calls');
 
             const message = completion.choices[0].message;
             const toolCalls = message.tool_calls || [];
@@ -168,11 +225,13 @@ export default class YjsServer implements Party.Server {
                 success: true,
                 toolsToExecute: toolsToExecute
             }), {
+                status: 200,
                 headers: {
                     'Content-Type': 'application/json',
                     'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type'
+                    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                    'Access-Control-Allow-Headers': '*',
+                    'Access-Control-Max-Age': '86400'
                 }
             });
 
@@ -182,7 +241,12 @@ export default class YjsServer implements Party.Server {
                 error: error instanceof Error ? error.message : 'Failed to process command'
             }), {
                 status: 500,
-                headers: { 'Content-Type': 'application/json' }
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                    'Access-Control-Allow-Headers': '*'
+                }
             });
         }
     }

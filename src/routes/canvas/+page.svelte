@@ -19,6 +19,7 @@
 	// Import stores and collaboration
 	import { shapes, shapeOperations, initializeShapesSync } from '$lib/stores/shapes';
 	import { initializeProvider, disconnectProvider, provider, shapesMap } from '$lib/collaboration';
+	import { viewport } from '$lib/stores/canvas';
 	import { CANVAS } from '$lib/constants';
 	import type { Shape } from '$lib/types/shapes';
 	import { activeTool, isCreateToolActive } from '$lib/stores/tool';
@@ -38,7 +39,6 @@
 	// Component state
 	let containerDiv: HTMLDivElement;
 	let isCreateMode = $derived($isCreateToolActive);
-	let stageScale = $state(1);
 	let maxZIndex = $state(0);
 	let selectedShapeId = $state<string | null>(null);
 	let commandPaletteOpen = $state(false);
@@ -48,12 +48,9 @@
 	let toastMessage = $state('');
 	let toastTimeout: ReturnType<typeof setTimeout> | null = null;
 
-	// Track viewport for culling
-	let currentViewport = $state<import('$lib/types/canvas').CanvasViewport>({
-		x: 0,
-		y: 0,
-		scale: 1
-	});
+	// Derive reactive values from stores (modern Svelte 5 pattern)
+	let stageScale = $derived($viewport.scale);
+	let currentViewport = $derived($viewport);
 
 	// Helper function to create shapes based on active tool
 	function createShapeAtPosition(x: number, y: number): Shape | null {
@@ -160,15 +157,26 @@
 		}
 	}
 
+	// Broadcast cursor when viewport changes (modern Svelte 5 reactivity)
+	$effect(() => {
+		// Track viewport changes
+		const _ = $viewport;
+
+		// Broadcast cursor position when viewport changes
+		if (cursorManager) {
+			cursorManager.broadcastCurrentPosition();
+		}
+	});
+
 	// Render shapes when they change or viewport changes
 	$effect(() => {
 		// Access $shapes at top level to ensure Svelte tracks the dependency
 		const currentShapes = $shapes;
-		const viewport = currentViewport; // Track viewport changes too
+		const viewportState = $viewport; // Track viewport changes too
 
 		if (shapeRenderer && selectionManager && currentShapes) {
-			// Pass viewport for culling optimization
-			shapeRenderer.renderShapes(currentShapes, viewport);
+			// Pass viewport for culling optimization (use reactive value, not store)
+			shapeRenderer.renderShapes(currentShapes, viewportState);
 
 			// Update maxZIndex
 			if (currentShapes.length > 0) {
@@ -210,16 +218,8 @@
 
 		const { stage, layers } = canvasEngine.initialize();
 
-		// Initialize viewport manager
+		// Initialize viewport manager (writes to store automatically)
 		viewportManager = new ViewportManager(stage);
-		viewportManager.setOnViewportChange((viewport) => {
-			stageScale = viewport.scale;
-			currentViewport = viewport; // Track for culling
-			// Update cursor positions when viewport changes
-			if (cursorManager) {
-				cursorManager.broadcastCurrentPosition();
-			}
-		});
 
 		// Initialize selection manager
 		selectionManager = new SelectionManager(stage, layers.shapes);
@@ -434,7 +434,7 @@
 	<PropertiesPanel />
 
 	<!-- Command Palette -->
-	<CommandPalette bind:open={commandPaletteOpen} userId={data.user.id} />
+	<CommandPalette bind:open={commandPaletteOpen} userId={data.user.id} viewport={$viewport} />
 
 	<!-- Debug Overlay (press ~ to toggle) -->
 	<DebugOverlay {shapeRenderer} shapesCount={$shapes.length} />

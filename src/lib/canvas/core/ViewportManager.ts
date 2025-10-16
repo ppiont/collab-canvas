@@ -1,37 +1,33 @@
 /**
  * Viewport Manager - Pan and Zoom Control
- * Extracted from canvas/+page.svelte
+ * Refactored to use Svelte 5 store pattern
  * 
  * Handles:
  * - Zoom in/out with mouse wheel
  * - Pan with stage dragging
- * - Viewport state management
+ * - Viewport state management (writes to store)
  * - Zoom constraints (min/max)
  */
 
 import Konva from 'konva';
 import type { CanvasViewport } from '$lib/types/canvas';
 import { CANVAS } from '$lib/constants';
-
-/** Callback for viewport changes */
-export type ViewportChangeCallback = (viewport: CanvasViewport) => void;
+import { viewportOperations } from '$lib/stores/canvas';
 
 /**
  * ViewportManager handles canvas pan and zoom
+ * Writes all changes to the viewport store (single source of truth)
  */
 export class ViewportManager {
     private stage: Konva.Stage;
-    private onViewportChange: ViewportChangeCallback | null = null;
 
     constructor(stage: Konva.Stage) {
         this.stage = stage;
-    }
 
-    /**
-     * Set callback for viewport changes
-     */
-    setOnViewportChange(callback: ViewportChangeCallback): void {
-        this.onViewportChange = callback;
+        // Initialize store with current stage state
+        const pos = stage.position();
+        const scale = stage.scaleX();
+        viewportOperations.set(pos.x, pos.y, scale);
     }
 
     /**
@@ -74,8 +70,8 @@ export class ViewportManager {
         this.stage.position(newPos);
         this.stage.batchDraw();
 
-        // Notify listeners
-        this.notifyViewportChange();
+        // Update store
+        viewportOperations.set(newPos.x, newPos.y, clampedScale);
     }
 
     /**
@@ -83,13 +79,16 @@ export class ViewportManager {
      */
     pan(dx: number, dy: number): void {
         const currentPos = this.stage.position();
-        this.stage.position({
+        const newPos = {
             x: currentPos.x + dx,
             y: currentPos.y + dy
-        });
+        };
+        this.stage.position(newPos);
         this.stage.batchDraw();
 
-        this.notifyViewportChange();
+        // Update store
+        const scale = this.stage.scaleX();
+        viewportOperations.set(newPos.x, newPos.y, scale);
     }
 
     /**
@@ -105,7 +104,8 @@ export class ViewportManager {
         this.stage.position({ x, y });
         this.stage.batchDraw();
 
-        this.notifyViewportChange();
+        // Update store
+        viewportOperations.set(x, y, clampedScale);
     }
 
     /**
@@ -165,18 +165,19 @@ export class ViewportManager {
     }
 
     /**
-     * Notify listeners of viewport change
+     * Sync store with current stage state
+     * Call this after any direct stage manipulation (like Konva's built-in drag)
      */
-    private notifyViewportChange(): void {
-        if (this.onViewportChange) {
-            this.onViewportChange(this.getViewport());
-        }
+    syncStore(): void {
+        const pos = this.stage.position();
+        const scale = this.stage.scaleX();
+        viewportOperations.set(pos.x, pos.y, scale);
     }
 
     /**
      * Clean up resources
      */
     destroy(): void {
-        this.onViewportChange = null;
+        // No cleanup needed - store persists
     }
 }
