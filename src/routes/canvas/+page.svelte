@@ -4,6 +4,7 @@
 	import ConnectionStatus from '$lib/components/ConnectionStatus.svelte';
 	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
+	import DebugOverlay from '$lib/components/DebugOverlay.svelte';
 
 	// Import managers
 	import { CanvasEngine } from '$lib/canvas/core/CanvasEngine';
@@ -20,6 +21,7 @@
 	import { CANVAS } from '$lib/constants';
 	import type { Shape } from '$lib/types/shapes';
 	import { activeTool, isCreateToolActive } from '$lib/stores/tool';
+	import { clipboardOperations } from '$lib/stores/clipboard';
 
 	let { data } = $props();
 
@@ -28,7 +30,7 @@
 	let viewportManager: ViewportManager;
 	let selectionManager: SelectionManager;
 	let cursorManager: CursorManager;
-	let shapeRenderer: ShapeRenderer;
+	let shapeRenderer = $state<ShapeRenderer | null>(null);
 	let eventHandlers: CanvasEventHandlers;
 
 	// Component state
@@ -38,6 +40,13 @@
 	let maxZIndex = $state(0);
 	let selectedShapeId = $state<string | null>(null);
 	let commandPaletteOpen = $state(false);
+
+	// Track viewport for culling
+	let currentViewport = $state<import('$lib/types/canvas').CanvasViewport>({
+		x: 0,
+		y: 0,
+		scale: 1
+	});
 
 	// Helper function to create shapes based on active tool
 	function createShapeAtPosition(x: number, y: number): Shape | null {
@@ -67,13 +76,76 @@
 		}
 	}
 
-	// Render shapes when they change
+	// Track last paste position for cumulative offsets
+	let lastPasteOffset = { x: 0, y: 0 };
+
+	// Copy selected shapes to clipboard
+	function copySelectedShapes() {
+		if (!selectionManager) return;
+
+		const selectedIds = selectionManager.getSelectedIds();
+		if (selectedIds.length === 0) return;
+
+		// Get the actual shape objects
+		const selectedShapes = selectedIds
+			.map((id) => $shapes.find((s) => s.id === id))
+			.filter((s): s is Shape => s !== undefined);
+
+		clipboardOperations.copy(selectedShapes);
+
+		// Reset paste offset for new copy
+		lastPasteOffset = { x: 0, y: 0 };
+	}
+
+	// Paste shapes from clipboard
+	function pasteShapes() {
+		const clipboardContent = clipboardOperations.getContents();
+		if (clipboardContent.length === 0) return;
+
+		const PASTE_OFFSET = 20; // Offset for pasted shapes
+		const pastedIds: string[] = [];
+
+		// Calculate cumulative offset
+		lastPasteOffset.x += PASTE_OFFSET;
+		lastPasteOffset.y += PASTE_OFFSET;
+
+		clipboardContent.forEach((shape) => {
+			// Create new shape with cumulative offset position
+			const newShape: Shape = {
+				...shape,
+				id: crypto.randomUUID(), // New ID
+				x: shape.x + lastPasteOffset.x,
+				y: shape.y + lastPasteOffset.y,
+				zIndex: maxZIndex + 1,
+				createdBy: data.user.id,
+				createdAt: Date.now(),
+				modifiedAt: Date.now(),
+				draggedBy: undefined // Clear drag state
+			};
+
+			shapeOperations.add(newShape);
+			pastedIds.push(newShape.id);
+			maxZIndex++;
+		});
+
+		// Select the newly pasted shapes
+		if (selectionManager && pastedIds.length > 0) {
+			setTimeout(() => {
+				selectionManager.selectMultiple(pastedIds);
+			}, 50);
+		}
+	}
+
+	// Render shapes when they change or viewport changes
 	$effect(() => {
 		// Access $shapes at top level to ensure Svelte tracks the dependency
 		const currentShapes = $shapes;
+		const viewport = currentViewport; // Track viewport changes too
 
 		if (shapeRenderer && currentShapes) {
-			shapeRenderer.renderShapes(currentShapes);
+			// Pass viewport for culling optimization
+			shapeRenderer.renderShapes(currentShapes, viewport);
+
 			// Update maxZIndex
 			if (currentShapes.length > 0) {
 				maxZIndex = Math.max(...currentShapes.map((s) => s.zIndex || 0), maxZIndex);
@@ -106,6 +178,7 @@
 		viewportManager = new ViewportManager(stage);
 		viewportManager.setOnViewportChange((viewport) => {
 			stageScale = viewport.scale;
+			currentViewport = viewport; // Track for culling
 			// Update cursor positions when viewport changes
 			if (cursorManager) {
 				cursorManager.broadcastCurrentPosition();
@@ -191,6 +264,28 @@
 		};
 		window.addEventListener('resize', handleResize);
 
+		// Copy/Paste keyboard shortcuts
+		const handleCopyPaste = (e: KeyboardEvent) => {
+			// Check if user is typing in an input field
+			const target = e.target as HTMLElement;
+			if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+				return;
+			}
+
+			// Cmd/Ctrl+C - Copy
+			if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
+				e.preventDefault();
+				copySelectedShapes();
+			}
+
+			// Cmd/Ctrl+V - Paste
+			if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
+				e.preventDefault();
+				pasteShapes();
+			}
+		};
+		window.addEventListener('keydown', handleCopyPaste);
+
 		// Cleanup
 		return () => {
 			canvasEngine?.destroy();
@@ -202,6 +297,7 @@
 			disconnectProvider();
 			unsubscribeProvider();
 			window.removeEventListener('resize', handleResize);
+			window.removeEventListener('keydown', handleCopyPaste);
 		};
 	});
 
@@ -240,6 +336,9 @@
 
 	<!-- Command Palette -->
 	<CommandPalette bind:open={commandPaletteOpen} userId={data.user.id} />
+
+	<!-- Debug Overlay (press ~ to toggle) -->
+	<DebugOverlay {shapeRenderer} shapesCount={$shapes.length} />
 
 	<!-- Zoom indicator -->
 	<div class="zoom-indicator">

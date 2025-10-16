@@ -12,7 +12,11 @@ export const CANVAS = {
     MAX_ZOOM: 5,
     ZOOM_STEP: 1.05,
     DEFAULT_WIDTH: 1920,
-    DEFAULT_HEIGHT: 1080
+    DEFAULT_HEIGHT: 1080,
+    // Viewport culling settings
+    ENABLE_CULLING: true,  // Enable viewport culling for performance
+    CULLING_PADDING: 100,  // Extra pixels to render off-screen
+    CULLING_THRESHOLD: 50  // Min shapes before culling activates
 } as const;
 
 /** Cursor and presence constants */

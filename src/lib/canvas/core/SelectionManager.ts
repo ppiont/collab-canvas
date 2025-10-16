@@ -95,6 +95,16 @@ export class SelectionManager {
     }
 
     /**
+     * Select multiple shapes at once
+     */
+    selectMultiple(shapeIds: string[]): void {
+        this.selectedIds.clear();
+        shapeIds.forEach(id => this.selectedIds.add(id));
+        this.updateTransformer();
+        this.notifySelectionChange();
+    }
+
+    /**
      * Add to selection (for multi-select)
      */
     addToSelection(shapeId: string): void {

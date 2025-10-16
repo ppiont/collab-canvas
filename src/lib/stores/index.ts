@@ -47,3 +47,9 @@ export {
     history,
     initializeUndoManager
 } from './history';
+
+// Clipboard store
+export {
+    clipboard,
+    clipboardOperations
+} from './clipboard';

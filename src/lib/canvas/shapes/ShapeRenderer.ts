@@ -12,7 +12,9 @@
 
 import Konva from 'konva';
 import type { Shape } from '$lib/types/shapes';
+import type { CanvasViewport } from '$lib/types/canvas';
 import { SHAPES } from '$lib/constants';
+import { filterVisibleShapes, getCullingStats } from '$lib/utils/viewport-culling';
 
 /** Event callbacks for shape interactions */
 export interface ShapeEventCallbacks {
@@ -36,6 +38,13 @@ export class ShapeRenderer {
     private locallyEditingId: string | null = null;
     private localUserId: string | null = null;
     private isCreateMode = false;
+
+    // Viewport culling settings
+    private enableCulling = true; // Enable by default
+    private cullingPadding = 100; // Pixels of padding around viewport
+
+    // Performance stats (for debugging)
+    private lastCullingStats: ReturnType<typeof getCullingStats> | null = null;
 
     constructor(shapesLayer: Konva.Layer, stage: Konva.Stage) {
         this.shapesLayer = shapesLayer;
@@ -64,6 +73,27 @@ export class ShapeRenderer {
     }
 
     /**
+     * Enable or disable viewport culling
+     */
+    setViewportCulling(enabled: boolean): void {
+        this.enableCulling = enabled;
+    }
+
+    /**
+     * Set culling padding (extra pixels rendered off-screen)
+     */
+    setCullingPadding(padding: number): void {
+        this.cullingPadding = padding;
+    }
+
+    /**
+     * Get last culling statistics (for debugging)
+     */
+    getCullingStats(): ReturnType<typeof getCullingStats> | null {
+        return this.lastCullingStats;
+    }
+
+    /**
      * Set currently dragging shape ID
      */
     setDraggingShape(shapeId: string | null): void {
@@ -72,10 +102,39 @@ export class ShapeRenderer {
 
     /**
      * Render all shapes to the Konva layer
+     * 
+     * @param shapes - All shapes to potentially render
+     * @param viewport - Current viewport (for culling). If not provided, culling is disabled.
      */
-    renderShapes(shapes: Shape[]): void {
-        if (!this.shapesLayer) {
+    renderShapes(shapes: Shape[], viewport?: CanvasViewport): void {
+        if (!this.shapesLayer || !this.stage) {
             return;
+        }
+
+        // Apply viewport culling if enabled and viewport provided
+        let shapesToRender = shapes;
+        if (this.enableCulling && viewport) {
+            const stageWidth = this.stage.width();
+            const stageHeight = this.stage.height();
+
+            shapesToRender = filterVisibleShapes(
+                shapes,
+                viewport,
+                stageWidth,
+                stageHeight,
+                this.cullingPadding
+            );
+
+            // Update statistics
+            this.lastCullingStats = getCullingStats(shapes.length, shapesToRender.length);
+
+            // Log stats if culling is significant (optional, can be removed)
+            if (shapes.length > 100 && this.lastCullingStats.cullingRatio > 0.3) {
+                console.log(
+                    `[Viewport Culling] Rendering ${shapesToRender.length}/${shapes.length} shapes ` +
+                    `(${Math.round(this.lastCullingStats.cullingRatio * 100)}% culled)`
+                );
+            }
         }
 
         // Remove existing shapes (but not transformer)
@@ -88,7 +147,7 @@ export class ShapeRenderer {
         });
 
         // Sort by zIndex before rendering (lower zIndex = bottom)
-        const sortedShapes = [...shapes].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+        const sortedShapes = [...shapesToRender].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
 
         sortedShapes.forEach((shape) => {
             // Skip recreating shapes we're currently interacting with
