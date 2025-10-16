@@ -17,6 +17,7 @@ import type { CursorManager } from '../collaboration/CursorManager';
 import { SelectionNet } from './SelectionNet';
 import type { Shape } from '$lib/types/shapes';
 import { activeTool } from '$lib/stores/tool';
+import { shapeOperations } from '$lib/stores/shapes';
 
 /** Callback for shape creation */
 export type ShapeCreateCallback = (x: number, y: number) => void;
@@ -362,6 +363,51 @@ export class CanvasEventHandlers {
                 }
             }
 
+            // Tool selection shortcuts (only when not typing)
+            if (!isTyping && !e.metaKey && !e.ctrlKey && !e.altKey) {
+                if (e.key === 'v') {
+                    e.preventDefault();
+                    activeTool.set('select');
+                    return;
+                }
+                if (e.key === 'r') {
+                    e.preventDefault();
+                    activeTool.set('rectangle');
+                    return;
+                }
+                if (e.key === 'c') {
+                    e.preventDefault();
+                    activeTool.set('circle');
+                    return;
+                }
+                if (e.key === 'e') {
+                    e.preventDefault();
+                    activeTool.set('ellipse');
+                    return;
+                }
+                if (e.key === 'l') {
+                    e.preventDefault();
+                    activeTool.set('line');
+                    return;
+                }
+                if (e.key === 't') {
+                    e.preventDefault();
+                    activeTool.set('text');
+                    return;
+                }
+                if (e.key === 'p') {
+                    e.preventDefault();
+                    activeTool.set('polygon');
+                    return;
+                }
+                if (e.key === 's') {
+                    e.preventDefault();
+                    activeTool.set('star');
+                    return;
+                }
+            }
+
+            // Escape key - deselect and cancel
             if (e.key === 'Escape') {
                 // Cancel drag-net if active
                 if (this.isDrawingNet) {
@@ -386,8 +432,135 @@ export class CanvasEventHandlers {
                     activeTool.set('select');
                 }
             }
+
+            // Delete/Backspace - delete selected shapes
             if (e.key === 'Delete' || e.key === 'Backspace') {
-                this.selectionManager.delete();
+                if (!isTyping) {
+                    e.preventDefault();
+                    this.selectionManager.delete();
+                }
+            }
+
+            // Duplicate (Cmd+D)
+            if ((e.metaKey || e.ctrlKey) && e.key === 'd' && !isTyping) {
+                e.preventDefault();
+                const selectedIds = this.selectionManager.getSelectedIds();
+                if (selectedIds.length > 0) {
+                    const allShapes = this.getShapes();
+                    const maxZ = Math.max(...allShapes.map(s => s.zIndex || 0), 0);
+
+                    selectedIds.forEach(id => {
+                        const shape = allShapes.find(s => s.id === id);
+                        if (shape) {
+                            const duplicate = {
+                                ...shape,
+                                id: crypto.randomUUID(),
+                                x: shape.x + 20,
+                                y: shape.y + 20,
+                                zIndex: maxZ + 1
+                            };
+                            shapeOperations.add(duplicate);
+                        }
+                    });
+                }
+            }
+
+            // Layer management shortcuts
+            const isModifierKey = e.metaKey || e.ctrlKey;
+
+            // Cmd+] - Bring forward / Bring to front
+            if (isModifierKey && e.key === ']' && !isTyping) {
+                e.preventDefault();
+                const selectedIds = this.selectionManager.getSelectedIds();
+                if (selectedIds.length > 0) {
+                    const allShapes = this.getShapes();
+
+                    if (e.shiftKey) {
+                        // Cmd+Shift+] - Bring to front
+                        const maxZ = Math.max(...allShapes.map(s => s.zIndex || 0), 0);
+                        selectedIds.forEach(id => {
+                            shapeOperations.update(id, { zIndex: maxZ + 1 });
+                        });
+                    } else {
+                        // Cmd+] - Bring forward
+                        selectedIds.forEach(id => {
+                            const shape = allShapes.find(s => s.id === id);
+                            if (shape) {
+                                shapeOperations.update(id, { zIndex: (shape.zIndex || 0) + 1 });
+                            }
+                        });
+                    }
+                }
+            }
+
+            // Cmd+[ - Send backward / Send to back
+            if (isModifierKey && e.key === '[' && !isTyping) {
+                e.preventDefault();
+                const selectedIds = this.selectionManager.getSelectedIds();
+                if (selectedIds.length > 0) {
+                    const allShapes = this.getShapes();
+
+                    if (e.shiftKey) {
+                        // Cmd+Shift+[ - Send to back
+                        const minZ = Math.min(...allShapes.map(s => s.zIndex || 0), 0);
+                        selectedIds.forEach(id => {
+                            shapeOperations.update(id, { zIndex: minZ - 1 });
+                        });
+                    } else {
+                        // Cmd+[ - Send backward
+                        selectedIds.forEach(id => {
+                            const shape = allShapes.find(s => s.id === id);
+                            if (shape) {
+                                shapeOperations.update(id, { zIndex: (shape.zIndex || 0) - 1 });
+                            }
+                        });
+                    }
+                }
+            }
+
+            // Arrow keys - nudge selected shapes (only when not typing)
+            if (!isTyping && !isModifierKey) {
+                const nudgeAmount = 1; // pixels to move
+                const selectedIds = this.selectionManager.getSelectedIds();
+
+                if (selectedIds.length > 0) {
+                    if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        selectedIds.forEach(id => {
+                            const shape = shapeOperations.get(id);
+                            if (shape) {
+                                shapeOperations.update(id, { y: shape.y - nudgeAmount });
+                            }
+                        });
+                    }
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        selectedIds.forEach(id => {
+                            const shape = shapeOperations.get(id);
+                            if (shape) {
+                                shapeOperations.update(id, { y: shape.y + nudgeAmount });
+                            }
+                        });
+                    }
+                    if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        selectedIds.forEach(id => {
+                            const shape = shapeOperations.get(id);
+                            if (shape) {
+                                shapeOperations.update(id, { x: shape.x - nudgeAmount });
+                            }
+                        });
+                    }
+                    if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        selectedIds.forEach(id => {
+                            const shape = shapeOperations.get(id);
+                            if (shape) {
+                                shapeOperations.update(id, { x: shape.x + nudgeAmount });
+                            }
+                        });
+                    }
+                }
             }
         };
 
