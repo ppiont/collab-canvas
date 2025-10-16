@@ -164,16 +164,9 @@ export default class YjsServer implements Party.Server {
             console.log('[PartyKit] OpenAI API key found, calling GPT-4...');
 
             // Access LIVE Yjs document (not from storage - use the live one!)
-            let canvasState = [];
-            if (this.yjsDoc) {
-                canvasState = getCanvasState(this.yjsDoc);
-                console.log('[PartyKit] Using LIVE Yjs doc with', canvasState.length, 'shapes');
-            } else {
-                // Fallback to loading from storage (less accurate)
-                const ydoc = await this.getYDoc();
-                canvasState = getCanvasState(ydoc);
-                console.log('[PartyKit] Using STORAGE Yjs doc with', canvasState.length, 'shapes (may be stale)');
-            }
+            const canvasState: any[] = this.yjsDoc
+                ? getCanvasState(this.yjsDoc)
+                : getCanvasState(await this.getYDoc());
 
             console.log('[PartyKit] Canvas state:', canvasState.length, 'shapes');
 
@@ -191,11 +184,11 @@ IMPORTANT: Create new shapes near the visible center (${viewport.centerX}, ${vie
                 : `\n\nNo viewport info available. Use default center around (400, 300).`;
 
             const userMessage = canvasState.length > 0
-                ? `Current canvas has ${canvasState.length} shapes with these IDs: ${canvasState.map(s => s.id).join(', ')}\n\nFull canvas state:\n${JSON.stringify(canvasState, null, 2)}${viewportInfo}\n\nUser command: ${command}\n\nIMPORTANT: Use the shape IDs listed above when calling layout or manipulation tools!`
+                ? `Current canvas has ${canvasState.length} shapes with these IDs: ${canvasState.map((s: any) => s.id).join(', ')}\n\nFull canvas state:\n${JSON.stringify(canvasState, null, 2)}${viewportInfo}\n\nUser command: ${command}\n\nIMPORTANT: Use the shape IDs listed above when calling layout or manipulation tools!`
                 : `Current canvas is empty (no shapes).${viewportInfo}\n\nUser command: ${command}`;
 
             const completion = await openai.chat.completions.create({
-                model: 'gpt-4o-mini-realtime-preview',
+                model: 'gpt-4.1-nano',
                 messages: [
                     { role: 'system', content: AI_SYSTEM_PROMPT },
                     { role: 'user', content: userMessage }
