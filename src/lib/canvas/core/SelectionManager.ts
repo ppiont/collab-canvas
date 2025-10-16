@@ -122,10 +122,13 @@ export class SelectionManager {
         // Force transformer to recalculate to get accurate box
         this.transformer.forceUpdate();
 
-        // Calculate bounding box of all selected shapes
+        // Get bounding box - this returns dimensions scaled by stage zoom
         const box = this.transformer.getClientRect();
-        const width = Math.round(box.width);
-        const height = Math.round(box.height);
+
+        // Calculate actual canvas dimensions (not scaled by stage zoom)
+        const stageScale = this.stage.scaleX();
+        const width = Math.round(box.width / stageScale);
+        const height = Math.round(box.height / stageScale);
 
         // Update text
         const text = this.sizeLabel.findOne('Text') as Konva.Text;
@@ -133,10 +136,12 @@ export class SelectionManager {
             text.text(`${width} × ${height}`);
         }
 
-        // Position below the transformer, centered
+        // Position below the transformer box (in canvas coordinates)
+        // The box is already in canvas coordinates, so we can use it directly
+        const scale = this.stage.scaleX();
         this.sizeLabel.position({
-            x: box.x + box.width / 2,
-            y: box.y + box.height + 12
+            x: box.x / scale + (box.width / scale) / 2,
+            y: box.y / scale + (box.height / scale) + 12
         });
 
         this.sizeLabel.visible(true);
@@ -205,6 +210,9 @@ export class SelectionManager {
                 const scaleX = node.scaleX();
                 const scaleY = node.scaleY();
 
+                // Flag to determine if we should reset scale to 1
+                let shouldResetScale = true;
+
                 // Add size properties based on shape type and bake scale into them
                 const className = node.getClassName();
                 if (className === 'Rect' || className === 'Image') {
@@ -216,10 +224,11 @@ export class SelectionManager {
                     node.width(newWidth);
                     node.height(newHeight);
                 } else if (className === 'Circle') {
-                    const circle = node as Konva.Circle;
-                    const newRadius = circle.radius() * scaleX;
-                    changes.radius = newRadius;
-                    circle.radius(newRadius);
+                    // For circles, we keep scale instead of baking into radius
+                    // This allows independent X/Y stretching
+                    changes.scaleX = scaleX;
+                    changes.scaleY = scaleY;
+                    shouldResetScale = false; // Don't reset scale for circles
                 } else if (className === 'Ellipse') {
                     const ellipse = node as Konva.Ellipse;
                     const newRadiusX = ellipse.radiusX() * scaleX;
@@ -229,13 +238,23 @@ export class SelectionManager {
                     ellipse.radiusX(newRadiusX);
                     ellipse.radiusY(newRadiusY);
                 } else if (className === 'Star') {
+                    // For stars, allow independent X/Y scaling
                     const star = node as Konva.Star;
-                    const newInnerRadius = star.innerRadius() * scaleX;
-                    const newOuterRadius = star.outerRadius() * scaleX;
-                    changes.innerRadius = newInnerRadius;
-                    changes.outerRadius = newOuterRadius;
-                    star.innerRadius(newInnerRadius);
-                    star.outerRadius(newOuterRadius);
+
+                    // If scales differ, keep the scale; otherwise bake into radius
+                    if (Math.abs(scaleX - scaleY) > 0.01) {
+                        changes.scaleX = scaleX;
+                        changes.scaleY = scaleY;
+                        shouldResetScale = false;
+                    } else {
+                        // Same scale - bake into radius
+                        const newInnerRadius = star.innerRadius() * scaleX;
+                        const newOuterRadius = star.outerRadius() * scaleX;
+                        changes.innerRadius = newInnerRadius;
+                        changes.outerRadius = newOuterRadius;
+                        star.innerRadius(newInnerRadius);
+                        star.outerRadius(newOuterRadius);
+                    }
                 } else if (className === 'Text') {
                     const text = node as Konva.Text;
                     const newFontSize = text.fontSize() * scaleY;
@@ -244,11 +263,29 @@ export class SelectionManager {
                     changes.width = newWidth;
                     text.fontSize(newFontSize);
                     text.width(newWidth);
+                } else if (className === 'Line') {
+                    const line = node as Konva.Line;
+                    // Polygons have closed=true, lines have closed=false
+                    const isClosed = line.closed();
+
+                    if (isClosed) {
+                        // Polygon - keep scale for independent X/Y stretching
+                        changes.scaleX = scaleX;
+                        changes.scaleY = scaleY;
+                        shouldResetScale = false;
+                    } else {
+                        // Line - keep scale as well (lines can be stretched)
+                        changes.scaleX = scaleX;
+                        changes.scaleY = scaleY;
+                        shouldResetScale = false;
+                    }
                 }
 
-                // Reset scale to 1 after baking it into the size
-                node.scaleX(1);
-                node.scaleY(1);
+                // Reset scale to 1 after baking it into the size (unless we're keeping scale)
+                if (shouldResetScale) {
+                    node.scaleX(1);
+                    node.scaleY(1);
+                }
 
                 console.log(`[SelectionManager] Transform end for ${id}:`, changes);
 

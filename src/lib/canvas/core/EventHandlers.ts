@@ -42,6 +42,7 @@ export class CanvasEventHandlers {
     private isDrawingNet = false;
     private netStartPos: { x: number; y: number } | null = null;
     private isSpacePressed = false; // Track spacebar for pan mode
+    private justCompletedDragNet = false; // Prevent click from clearing drag-net selection
 
     constructor(
         stage: Konva.Stage,
@@ -103,6 +104,13 @@ export class CanvasEventHandlers {
      */
     setupClickHandler(): void {
         this.stage.on('click', (e) => {
+            // Skip click handler if we just completed a drag-net selection
+            // (prevents click from clearing the selection)
+            if (this.justCompletedDragNet) {
+                this.justCompletedDragNet = false;
+                return;
+            }
+
             // Stop following mode on any click
             this.cursorManager?.stopFollowing();
 
@@ -310,6 +318,9 @@ export class CanvasEventHandlers {
                         this.selectionManager.selectMultiple(intersectingIds);
                         console.log('[DragNet] Default mode - Selected:', intersectingIds);
                     }
+
+                    // Mark that we just completed drag-net to prevent click handler from clearing selection
+                    this.justCompletedDragNet = true;
                 }
 
                 this.isDrawingNet = false;

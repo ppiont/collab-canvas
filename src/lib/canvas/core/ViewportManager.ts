@@ -31,7 +31,7 @@ export class ViewportManager {
     }
 
     /**
-     * Handle mouse wheel for zoom
+     * Handle mouse wheel for zoom with smooth easing
      */
     handleWheel(e: WheelEvent): void {
         if (!this.stage) return;
@@ -59,19 +59,26 @@ export class ViewportManager {
             Math.min(CANVAS.MAX_ZOOM, newScale)
         );
 
-        this.stage.scale({ x: clampedScale, y: clampedScale });
-
-        // Adjust position to zoom toward pointer
+        // Calculate target position
         const newPos = {
             x: pointer.x - mousePointTo.x * clampedScale,
             y: pointer.y - mousePointTo.y * clampedScale
         };
 
-        this.stage.position(newPos);
-        this.stage.batchDraw();
-
-        // Update store
-        viewportOperations.set(newPos.x, newPos.y, clampedScale);
+        // Smooth zoom with Konva.Tween
+        new Konva.Tween({
+            node: this.stage,
+            duration: 0.12,  // 120ms for responsive feel
+            scaleX: clampedScale,
+            scaleY: clampedScale,
+            x: newPos.x,
+            y: newPos.y,
+            easing: Konva.Easings.EaseOut,
+            onFinish: () => {
+                // Update store after animation completes
+                viewportOperations.set(newPos.x, newPos.y, clampedScale);
+            }
+        }).play();
     }
 
     /**
