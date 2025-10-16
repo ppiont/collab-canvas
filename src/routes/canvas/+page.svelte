@@ -187,6 +187,10 @@
 		selectionManager = new SelectionManager(stage, layers.shapes);
 		selectionManager.setOnSelectionChange((selectedIds) => {
 			selectedShapeId = selectedIds.length > 0 ? selectedIds[0] : null;
+			// Update selection styling immediately
+			if (shapeRenderer) {
+				shapeRenderer.updateSelectionStyling(selectedIds, $shapes);
+			}
 		});
 		selectionManager.setOnDelete((ids) => {
 			ids.forEach((id) => shapeOperations.delete(id));

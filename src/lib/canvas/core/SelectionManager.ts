@@ -27,6 +27,7 @@ export class SelectionManager {
     private stage: Konva.Stage;
     private layer: Konva.Layer;
     private transformer: Konva.Transformer;
+    private sizeLabel: Konva.Label | null = null;
     private selectedIds = new Set<string>();
     private onSelectionChange: SelectionChangeCallback | null = null;
     private onDelete: DeleteCallback | null = null;
@@ -37,6 +38,7 @@ export class SelectionManager {
         this.layer = layer;
         this.transformer = this.createTransformer();
         this.layer.add(this.transformer);
+        this.createSizeLabel();
         this.setupTransformerEvents();
     }
 
@@ -76,11 +78,99 @@ export class SelectionManager {
     }
 
     /**
+     * Create size label for showing dimensions
+     */
+    private createSizeLabel(): void {
+        this.sizeLabel = new Konva.Label({
+            visible: false,
+            listening: false
+        });
+
+        // Background box
+        this.sizeLabel.add(new Konva.Tag({
+            fill: '#667eea',
+            cornerRadius: 4,
+            pointerDirection: 'up',
+            pointerWidth: 8,
+            pointerHeight: 6
+        }));
+
+        // Text
+        this.sizeLabel.add(new Konva.Text({
+            text: '',
+            fontSize: 12,
+            fontFamily: 'Inter, system-ui, sans-serif',
+            fill: 'white',
+            padding: 6
+        }));
+
+        this.layer.add(this.sizeLabel);
+    }
+
+    /**
+     * Update size label position and text
+     */
+    private updateSizeLabel(): void {
+        if (!this.sizeLabel || !this.transformer) return;
+
+        const nodes = this.transformer.nodes();
+        if (nodes.length === 0) {
+            this.sizeLabel.visible(false);
+            return;
+        }
+
+        // Force transformer to recalculate to get accurate box
+        this.transformer.forceUpdate();
+
+        // Calculate bounding box of all selected shapes
+        const box = this.transformer.getClientRect();
+        const width = Math.round(box.width);
+        const height = Math.round(box.height);
+
+        // Update text
+        const text = this.sizeLabel.findOne('Text') as Konva.Text;
+        if (text) {
+            text.text(`${width} × ${height}`);
+        }
+
+        // Position below the transformer, centered
+        this.sizeLabel.position({
+            x: box.x + box.width / 2,
+            y: box.y + box.height + 12
+        });
+
+        this.sizeLabel.visible(true);
+
+        // Move size label to top so it's always visible
+        this.sizeLabel.moveToTop();
+    }
+
+    /**
+     * Unified update method - call this whenever selected shapes change visually
+     * This ensures all visual elements (transformer, size label, etc.) stay in sync
+     */
+    private updateVisuals(): void {
+        if (this.transformer) {
+            this.transformer.forceUpdate();
+        }
+        this.updateSizeLabel();
+        if (this.layer) {
+            this.layer.batchDraw();
+        }
+    }
+
+    /**
      * Setup transformer event handlers
      */
     private setupTransformerEvents(): void {
+        // Listen for transform events to update visuals in real-time
+        this.transformer.on('transform', () => {
+            this.updateVisuals();
+        });
+
         // Listen for transform end to save changes
         this.transformer.on('transformend', () => {
+            this.updateVisuals();
             const updateCallback = this.onShapeUpdate;
             if (!updateCallback) return;
 
@@ -274,6 +364,12 @@ export class SelectionManager {
     private updateTransformer(): void {
         if (!this.transformer || !this.layer) return;
 
+        // Remove old drag listeners from previous nodes
+        const oldNodes = this.transformer.nodes();
+        oldNodes.forEach((node) => {
+            node.off('dragmove.sizeLabel');
+        });
+
         if (this.selectedIds.size > 0) {
             const selectedNodes: Konva.Node[] = [];
 
@@ -293,6 +389,14 @@ export class SelectionManager {
                 this.transformer.nodes(selectedNodes);
                 this.transformer.moveToTop();
                 this.transformer.forceUpdate(); // Force transformer to recalculate
+
+                // Add drag listeners to update all visuals during drag
+                selectedNodes.forEach((node) => {
+                    node.on('dragmove.sizeLabel', () => {
+                        this.updateVisuals();
+                    });
+                });
+
                 console.log('[SelectionManager] Transformer attached to', selectedNodes.length, 'nodes');
                 console.log('[SelectionManager] Transformer visible?', this.transformer.visible());
                 console.log('[SelectionManager] Transformer parent:', this.transformer.getParent()?.name());
@@ -304,8 +408,10 @@ export class SelectionManager {
             this.transformer.nodes([]);
         }
 
-        this.layer.batchDraw();
         console.log('[SelectionManager] Layer redrawn');
+
+        // Update all visuals after transformer is updated
+        this.updateVisuals();
     }
 
     /**
@@ -332,8 +438,17 @@ export class SelectionManager {
      * Clean up resources
      */
     destroy(): void {
+        // Clean up drag listeners
+        const nodes = this.transformer?.nodes() || [];
+        nodes.forEach((node) => {
+            node.off('dragmove.sizeLabel');
+        });
+
         if (this.transformer) {
             this.transformer.destroy();
+        }
+        if (this.sizeLabel) {
+            this.sizeLabel.destroy();
         }
         this.selectedIds.clear();
         this.onSelectionChange = null;

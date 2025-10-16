@@ -179,6 +179,8 @@ export class ShapeRenderer {
 
             if (existingNode && (isInteracting || isSelected)) {
                 // Shape exists and is being used, don't recreate it
+                // But update its selection styling
+                this.applySelectionStyling(existingNode, isSelected, shape);
                 return;
             }
 
@@ -198,6 +200,9 @@ export class ShapeRenderer {
 
             // Attach event handlers
             this.attachEventHandlers(konvaShape, shape, isDraggedByOther);
+
+            // Apply selection styling if this shape is selected (after storing original values)
+            this.applySelectionStyling(konvaShape, isSelected, shape);
 
             this.shapesLayer.add(konvaShape);
         });
@@ -219,6 +224,56 @@ export class ShapeRenderer {
         } else {
             console.warn('[ShapeRenderer] No transformer reference set!');
         }
+
+        this.shapesLayer.batchDraw();
+    }
+
+    /**
+     * Apply selection styling to a shape
+     * Matches the transformer border color for visual consistency
+     */
+    private applySelectionStyling(node: Konva.Node, isSelected: boolean, shapeData: Shape): void {
+        const konvaShape = node as Konva.Shape;
+
+        if (isSelected) {
+            // Apply selection outline matching transformer border
+            konvaShape.stroke('#667eea'); // Same color as transformer
+            konvaShape.strokeWidth(2);
+            konvaShape.dash([]); // Solid line
+            // No shadow - just clean outline
+            konvaShape.shadowColor('');
+            konvaShape.shadowBlur(0);
+            konvaShape.shadowOpacity(0);
+        } else {
+            // Restore original values from shape data
+            konvaShape.stroke(shapeData.stroke);
+            konvaShape.strokeWidth(shapeData.strokeWidth);
+            konvaShape.dash([]);
+            konvaShape.shadowColor('');
+            konvaShape.shadowBlur(0);
+            konvaShape.shadowOpacity(0);
+        }
+    }
+
+    /**
+     * Update selection styling for all shapes based on current selection
+     */
+    updateSelectionStyling(selectedIds: string[], shapes: Shape[]): void {
+        if (!this.shapesLayer) return;
+
+        // Create a map for quick lookup
+        const shapeDataMap = new Map(shapes.map(s => [s.id, s]));
+
+        // Update all shape nodes in the layer
+        const shapeNodes = this.shapesLayer.find('.shape');
+        shapeNodes.forEach((node) => {
+            const shapeId = node.id();
+            const shapeData = shapeDataMap.get(shapeId);
+            if (shapeData) {
+                const isSelected = selectedIds.includes(shapeId);
+                this.applySelectionStyling(node, isSelected, shapeData);
+            }
+        });
 
         this.shapesLayer.batchDraw();
     }
@@ -423,19 +478,16 @@ export class ShapeRenderer {
             });
         });
 
-        // Click to select
-        konvaShape.on('click tap', (e) => {
-            if (this.isCreateMode) return;
-            e.cancelBubble = true;
-            this.callbacks!.onShapeSelect(shape.id);
-        });
-
         // Double-click to edit text
         if (shape.type === 'text') {
             konvaShape.on('dblclick dbltap', () => {
                 this.enableTextEditing(konvaShape as Konva.Text, shape);
             });
         }
+
+        // NOTE: Click handling is done in EventHandlers.ts on the stage level
+        // to support multi-select with Shift/Cmd modifiers. Don't add click
+        // handlers here as they would prevent event bubbling.
 
     }
 
