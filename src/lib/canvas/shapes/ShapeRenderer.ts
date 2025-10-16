@@ -22,6 +22,7 @@ export interface ShapeEventCallbacks {
     onShapeSelect: (id: string) => void;
     onBroadcastCursor: () => void;
     getMaxZIndex: () => number;
+    getSelectedIds: () => string[]; // NEW: Get currently selected shape IDs
 }
 
 /**
@@ -38,6 +39,9 @@ export class ShapeRenderer {
     private locallyEditingId: string | null = null;
     private localUserId: string | null = null;
     private isCreateMode = false;
+
+    // Transformer reference to ensure it stays on top
+    private transformer: Konva.Transformer | null = null;
 
     // Viewport culling settings
     private enableCulling = true; // Enable by default
@@ -56,6 +60,13 @@ export class ShapeRenderer {
      */
     setCallbacks(callbacks: ShapeEventCallbacks): void {
         this.callbacks = callbacks;
+    }
+
+    /**
+     * Set transformer reference to ensure it stays on top during renders
+     */
+    setTransformer(transformer: Konva.Transformer): void {
+        this.transformer = transformer;
     }
 
     /**
@@ -139,9 +150,17 @@ export class ShapeRenderer {
 
         // Remove existing shapes (but not transformer)
         const existingShapes = this.shapesLayer.find('.shape');
+
+        // Get currently selected shape IDs to preserve them
+        const selectedIds = this.callbacks?.getSelectedIds?.() || [];
+
         existingShapes.forEach((shape) => {
-            // Preserve shapes we're currently interacting with
-            if (shape.id() !== this.locallyDraggingId && shape.id() !== this.locallyEditingId) {
+            const shapeId = shape.id();
+            // Preserve shapes we're currently interacting with OR selected
+            const isInteracting = shapeId === this.locallyDraggingId || shapeId === this.locallyEditingId;
+            const isSelected = selectedIds.includes(shapeId);
+
+            if (!isInteracting && !isSelected) {
                 shape.destroy();
             }
         });
@@ -150,9 +169,22 @@ export class ShapeRenderer {
         const sortedShapes = [...shapesToRender].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
 
         sortedShapes.forEach((shape) => {
-            // Skip recreating shapes we're currently interacting with
-            if (shape.id === this.locallyDraggingId || shape.id === this.locallyEditingId) {
+            // Check if this shape already exists in the layer
+            const existingNode = this.shapesLayer.findOne(`#${shape.id}`);
+
+            // Skip recreating shapes we're currently interacting with OR selected,
+            // BUT ONLY if they already exist in the layer!
+            const isInteracting = shape.id === this.locallyDraggingId || shape.id === this.locallyEditingId;
+            const isSelected = selectedIds.includes(shape.id);
+
+            if (existingNode && (isInteracting || isSelected)) {
+                // Shape exists and is being used, don't recreate it
                 return;
+            }
+
+            // If shape exists but isn't protected, destroy it first
+            if (existingNode) {
+                existingNode.destroy();
             }
 
             // Check if someone else is dragging this shape
@@ -176,6 +208,16 @@ export class ShapeRenderer {
             if (draggedNode) {
                 draggedNode.moveToTop();
             }
+        }
+
+        // CRITICAL: Move transformer to top after rendering shapes
+        // This ensures the transformer is always visible above shapes
+        if (this.transformer) {
+            console.log('[ShapeRenderer] Moving transformer to top');
+            this.transformer.moveToTop();
+            console.log('[ShapeRenderer] Transformer moved, nodes count:', this.transformer.nodes().length);
+        } else {
+            console.warn('[ShapeRenderer] No transformer reference set!');
         }
 
         this.shapesLayer.batchDraw();

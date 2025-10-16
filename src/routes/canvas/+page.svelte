@@ -151,10 +151,8 @@
 				maxZIndex = Math.max(...currentShapes.map((s) => s.zIndex || 0), maxZIndex);
 			}
 
-			// Update transformer after shapes are rendered
-			if (selectionManager) {
-				selectionManager.updateTransformerAttachment();
-			}
+			// NOTE: Do NOT update transformer here - it causes an infinite render loop!
+			// The transformer updates when selection changes via SelectionManager methods.
 		}
 	});
 
@@ -193,6 +191,9 @@
 		selectionManager.setOnDelete((ids) => {
 			ids.forEach((id) => shapeOperations.delete(id));
 		});
+		selectionManager.setOnShapeUpdate((id, changes) => {
+			shapeOperations.update(id, changes);
+		});
 
 		// Initialize shape renderer
 		shapeRenderer = new ShapeRenderer(layers.shapes, stage);
@@ -205,11 +206,27 @@
 			onShapeSelect: (id) => {
 				selectionManager.select(id);
 			},
+			getSelectedIds: () => {
+				return selectionManager.getSelectedIds();
+			},
 			onBroadcastCursor: () => {
 				cursorManager?.broadcastCursorImmediate();
 			},
 			getMaxZIndex: () => maxZIndex
 		});
+
+		// Wire transformer to shapeRenderer so it stays on top during renders
+		const transformer = selectionManager.getTransformer();
+		console.log('[Canvas] Wiring transformer to shapeRenderer:', {
+			hasTransformer: !!transformer,
+			hasShapeRenderer: !!shapeRenderer
+		});
+		if (transformer) {
+			shapeRenderer.setTransformer(transformer);
+			console.log('[Canvas] Transformer wired successfully!');
+		} else {
+			console.warn('[Canvas] No transformer found from SelectionManager!');
+		}
 
 		// Initialize cursor manager
 		cursorManager = new CursorManager(stage, layers.cursors);
@@ -230,6 +247,7 @@
 		// Initialize event handlers
 		eventHandlers = new CanvasEventHandlers(
 			stage,
+			layers.shapes,
 			viewportManager,
 			selectionManager,
 			cursorManager,
@@ -246,13 +264,15 @@
 					activeTool.set('select');
 					selectionManager.select(newShape.id);
 				}
-			}
+			},
+			() => $shapes // Get all shapes for drag-net selection
 		);
 
 		eventHandlers.setupWheelHandler();
 		eventHandlers.setupMouseMoveHandler();
 		eventHandlers.setupClickHandler();
 		eventHandlers.setupDragHandlers();
+		eventHandlers.setupDragNetHandlers(); // Drag-net (marquee) selection
 		eventHandlers.setupKeyboardHandlers();
 
 		// Window resize

@@ -17,6 +17,9 @@ export type SelectionChangeCallback = (selectedIds: string[]) => void;
 /** Callback for delete action */
 export type DeleteCallback = (ids: string[]) => void;
 
+/** Callback for shape updates */
+export type ShapeUpdateCallback = (id: string, changes: Record<string, unknown>) => void;
+
 /**
  * SelectionManager handles canvas selection state
  */
@@ -27,12 +30,14 @@ export class SelectionManager {
     private selectedIds = new Set<string>();
     private onSelectionChange: SelectionChangeCallback | null = null;
     private onDelete: DeleteCallback | null = null;
+    private onShapeUpdate: ShapeUpdateCallback | null = null;
 
     constructor(stage: Konva.Stage, layer: Konva.Layer) {
         this.stage = stage;
         this.layer = layer;
         this.transformer = this.createTransformer();
         this.layer.add(this.transformer);
+        this.setupTransformerEvents();
     }
 
     /**
@@ -71,6 +76,88 @@ export class SelectionManager {
     }
 
     /**
+     * Setup transformer event handlers
+     */
+    private setupTransformerEvents(): void {
+        // Listen for transform end to save changes
+        this.transformer.on('transformend', () => {
+            const updateCallback = this.onShapeUpdate;
+            if (!updateCallback) return;
+
+            // Get all transformed nodes and save their new properties
+            const nodes = this.transformer.nodes();
+            nodes.forEach((node) => {
+                const id = node.id();
+                if (!id) return;
+
+                // Get the transformed properties
+                const changes: Record<string, unknown> = {
+                    x: node.x(),
+                    y: node.y(),
+                    rotation: node.rotation(),
+                };
+
+                const scaleX = node.scaleX();
+                const scaleY = node.scaleY();
+
+                // Add size properties based on shape type and bake scale into them
+                const className = node.getClassName();
+                if (className === 'Rect' || className === 'Image') {
+                    const newWidth = node.width() * scaleX;
+                    const newHeight = node.height() * scaleY;
+                    changes.width = newWidth;
+                    changes.height = newHeight;
+                    // Update node dimensions
+                    node.width(newWidth);
+                    node.height(newHeight);
+                } else if (className === 'Circle') {
+                    const circle = node as Konva.Circle;
+                    const newRadius = circle.radius() * scaleX;
+                    changes.radius = newRadius;
+                    circle.radius(newRadius);
+                } else if (className === 'Ellipse') {
+                    const ellipse = node as Konva.Ellipse;
+                    const newRadiusX = ellipse.radiusX() * scaleX;
+                    const newRadiusY = ellipse.radiusY() * scaleY;
+                    changes.radiusX = newRadiusX;
+                    changes.radiusY = newRadiusY;
+                    ellipse.radiusX(newRadiusX);
+                    ellipse.radiusY(newRadiusY);
+                } else if (className === 'Star') {
+                    const star = node as Konva.Star;
+                    const newInnerRadius = star.innerRadius() * scaleX;
+                    const newOuterRadius = star.outerRadius() * scaleX;
+                    changes.innerRadius = newInnerRadius;
+                    changes.outerRadius = newOuterRadius;
+                    star.innerRadius(newInnerRadius);
+                    star.outerRadius(newOuterRadius);
+                } else if (className === 'Text') {
+                    const text = node as Konva.Text;
+                    const newFontSize = text.fontSize() * scaleY;
+                    const newWidth = node.width() * scaleX;
+                    changes.fontSize = newFontSize;
+                    changes.width = newWidth;
+                    text.fontSize(newFontSize);
+                    text.width(newWidth);
+                }
+
+                // Reset scale to 1 after baking it into the size
+                node.scaleX(1);
+                node.scaleY(1);
+
+                console.log(`[SelectionManager] Transform end for ${id}:`, changes);
+
+                // Save to Yjs
+                updateCallback(id, changes);
+            });
+
+            // Force transformer update to show correct handles
+            this.transformer.forceUpdate();
+            this.layer.batchDraw();
+        });
+    }
+
+    /**
      * Set callback for selection changes
      */
     setOnSelectionChange(callback: SelectionChangeCallback): void {
@@ -82,6 +169,13 @@ export class SelectionManager {
      */
     setOnDelete(callback: DeleteCallback): void {
         this.onDelete = callback;
+    }
+
+    /**
+     * Set callback for shape updates (e.g., after transformations)
+     */
+    setOnShapeUpdate(callback: ShapeUpdateCallback): void {
+        this.onShapeUpdate = callback;
     }
 
     /**
@@ -183,24 +277,35 @@ export class SelectionManager {
         if (this.selectedIds.size > 0) {
             const selectedNodes: Konva.Node[] = [];
 
+            console.log('[SelectionManager] Updating transformer for IDs:', Array.from(this.selectedIds));
+
             this.selectedIds.forEach((id) => {
                 const node = this.layer.findOne(`#${id}`);
+                console.log(`[SelectionManager] Finding node #${id}:`, node ? 'FOUND' : 'NOT FOUND');
                 if (node) {
                     selectedNodes.push(node);
                 }
             });
 
+            console.log('[SelectionManager] Selected nodes:', selectedNodes.length);
+
             if (selectedNodes.length > 0) {
                 this.transformer.nodes(selectedNodes);
                 this.transformer.moveToTop();
+                this.transformer.forceUpdate(); // Force transformer to recalculate
+                console.log('[SelectionManager] Transformer attached to', selectedNodes.length, 'nodes');
+                console.log('[SelectionManager] Transformer visible?', this.transformer.visible());
+                console.log('[SelectionManager] Transformer parent:', this.transformer.getParent()?.name());
             } else {
                 this.transformer.nodes([]);
+                console.log('[SelectionManager] WARNING: No nodes found for IDs!');
             }
         } else {
             this.transformer.nodes([]);
         }
 
         this.layer.batchDraw();
+        console.log('[SelectionManager] Layer redrawn');
     }
 
     /**
