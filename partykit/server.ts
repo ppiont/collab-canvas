@@ -195,7 +195,7 @@ IMPORTANT: Create new shapes near the visible center (${viewport.centerX}, ${vie
                 : `Current canvas is empty (no shapes).${viewportInfo}\n\nUser command: ${command}`;
 
             const completion = await openai.chat.completions.create({
-                model: 'gpt-4-turbo',
+                model: 'gpt-4o-mini-realtime-preview',
                 messages: [
                     { role: 'system', content: AI_SYSTEM_PROMPT },
                     { role: 'user', content: userMessage }

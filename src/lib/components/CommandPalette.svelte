@@ -111,9 +111,13 @@
 			// Execute AI tools client-side using our Yjs connection
 			if (data.toolsToExecute && data.toolsToExecute.length > 0) {
 				console.log('[AI] Executing', data.toolsToExecute.length, 'tools:', data.toolsToExecute);
-				for (const tool of data.toolsToExecute) {
-					await executeAITool(tool.name, tool.params);
-				}
+				
+				// Execute tools in parallel for faster performance
+				await Promise.all(
+					data.toolsToExecute.map(tool => executeAITool(tool.name, tool.params))
+				);
+				
+				console.log('[AI] All tools executed');
 			} else {
 				console.warn('[AI] No tools to execute in response');
 			}
