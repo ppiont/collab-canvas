@@ -148,20 +148,22 @@ export class ShapeRenderer {
             }
         }
 
-        // Remove existing shapes (but not transformer)
-        const existingShapes = this.shapesLayer.find('.shape');
-
-        // Get currently selected shape IDs to preserve them
+        // Get currently selected shape IDs for styling
         const selectedIds = this.callbacks?.getSelectedIds?.() || [];
 
-        existingShapes.forEach((shape) => {
-            const shapeId = shape.id();
-            // Preserve shapes we're currently interacting with OR selected
-            const isInteracting = shapeId === this.locallyDraggingId || shapeId === this.locallyEditingId;
-            const isSelected = selectedIds.includes(shapeId);
+        // Create map of shapes to render for quick lookup
+        const shapeMap = new Map(shapesToRender.map(s => [s.id, s]));
 
-            if (!isInteracting && !isSelected) {
-                shape.destroy();
+        // First pass: Remove shapes that no longer exist in shapesToRender
+        // BUT preserve shapes we're currently dragging locally
+        const existingShapes = this.shapesLayer.find('.shape');
+        existingShapes.forEach((node) => {
+            const shapeId = node.id();
+            const isLocallyDragging = shapeId === this.locallyDraggingId;
+
+            // Only preserve shapes being dragged by this user
+            if (!isLocallyDragging && !shapeMap.has(shapeId)) {
+                node.destroy();
             }
         });
 
@@ -169,30 +171,27 @@ export class ShapeRenderer {
         const sortedShapes = [...shapesToRender].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
 
         sortedShapes.forEach((shape) => {
-            // Check if this shape already exists in the layer
             const existingNode = this.shapesLayer.findOne(`#${shape.id}`);
-
-            // Skip recreating shapes we're currently interacting with OR selected,
-            // BUT ONLY if they already exist in the layer!
-            const isInteracting = shape.id === this.locallyDraggingId || shape.id === this.locallyEditingId;
+            const isLocallyDragging = shape.id === this.locallyDraggingId;
             const isSelected = selectedIds.includes(shape.id);
 
-            if (existingNode && (isInteracting || isSelected)) {
-                // Shape exists and is being used, don't recreate it
-                // But update its selection styling
+            // CRITICAL FIX: If node exists AND we're not currently dragging it,
+            // UPDATE its properties from Yjs instead of skipping it
+            if (existingNode && !isLocallyDragging) {
+                // Sync Konva node properties from Yjs shape data
+                this.updateKonvaNodeProperties(existingNode, shape);
                 this.applySelectionStyling(existingNode, isSelected, shape);
                 return;
             }
 
-            // If shape exists but isn't protected, destroy it first
-            if (existingNode) {
-                existingNode.destroy();
+            // If we're dragging this shape locally, don't recreate it
+            if (existingNode && isLocallyDragging) {
+                this.applySelectionStyling(existingNode, isSelected, shape);
+                return;
             }
 
-            // Check if someone else is dragging this shape
+            // Shape doesn't exist, create it
             const isDraggedByOther = !!(shape.draggedBy && shape.draggedBy !== this.localUserId);
-
-            // Create Konva shape based on type
             const konvaShape = this.createKonvaShape(shape, isDraggedByOther);
             if (!konvaShape) {
                 return;
@@ -201,7 +200,7 @@ export class ShapeRenderer {
             // Attach event handlers
             this.attachEventHandlers(konvaShape, shape, isDraggedByOther);
 
-            // Apply selection styling if this shape is selected (after storing original values)
+            // Apply selection styling
             this.applySelectionStyling(konvaShape, isSelected, shape);
 
             this.shapesLayer.add(konvaShape);
@@ -218,14 +217,71 @@ export class ShapeRenderer {
         // CRITICAL: Move transformer to top after rendering shapes
         // This ensures the transformer is always visible above shapes
         if (this.transformer) {
-            console.log('[ShapeRenderer] Moving transformer to top');
             this.transformer.moveToTop();
-            console.log('[ShapeRenderer] Transformer moved, nodes count:', this.transformer.nodes().length);
-        } else {
-            console.warn('[ShapeRenderer] No transformer reference set!');
         }
 
         this.shapesLayer.batchDraw();
+    }
+
+    /**
+     * Update existing Konva node properties from shape data
+     * This is CRITICAL for undo/redo to work on selected shapes
+     */
+    private updateKonvaNodeProperties(node: Konva.Node, shape: Shape): void {
+        // Update common properties
+        node.x(shape.x);
+        node.y(shape.y);
+        node.rotation(shape.rotation || 0);
+
+        const konvaShape = node as Konva.Shape;
+        konvaShape.fill(shape.fill);
+        konvaShape.stroke(shape.stroke);
+        konvaShape.strokeWidth(shape.strokeWidth);
+        konvaShape.opacity(shape.opacity || 1);
+
+        // Update shape-specific properties based on type
+        switch (shape.type) {
+            case 'rectangle':
+                (node as Konva.Rect).width(shape.width);
+                (node as Konva.Rect).height(shape.height);
+                break;
+
+            case 'circle':
+                (node as Konva.Circle).radius(shape.radius);
+                break;
+
+            case 'ellipse':
+                (node as Konva.Ellipse).radiusX(shape.radiusX);
+                (node as Konva.Ellipse).radiusY(shape.radiusY);
+                break;
+
+            case 'line':
+                (node as Konva.Line).points(shape.points);
+                break;
+
+            case 'star': {
+                const star = node as Konva.Star;
+                star.numPoints(shape.numPoints);
+                star.innerRadius(shape.innerRadius);
+                star.outerRadius(shape.outerRadius);
+                break;
+            }
+
+            case 'text': {
+                const text = node as Konva.Text;
+                text.text(shape.text);
+                text.fontSize(shape.fontSize);
+                text.fontFamily(shape.fontFamily || 'system-ui');
+                text.fontStyle(shape.fontStyle);
+                text.align(shape.align || 'left');
+                break;
+            }
+
+            case 'image':
+                (node as Konva.Rect).width(shape.width);
+                (node as Konva.Rect).height(shape.height);
+                break;
+        }
     }
 
     /**
@@ -442,13 +498,11 @@ export class ShapeRenderer {
             });
         });
 
-        konvaShape.on('dragmove', (e) => {
-            // Broadcast cursor and position
+        konvaShape.on('dragmove', () => {
+            // Broadcast cursor position
+            // DO NOT write to Yjs on every dragmove - causes too many undo steps
+            // Only write final position on dragend
             this.callbacks!.onBroadcastCursor();
-            this.callbacks!.onShapeUpdate(shape.id, {
-                x: e.target.x(),
-                y: e.target.y()
-            });
         });
 
         konvaShape.on('dragend', (e) => {

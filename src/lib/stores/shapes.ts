@@ -51,7 +51,7 @@ export const shapeOperations = {
         }
         ydoc.transact(() => {
             shapesMap.set(shape.id, shape);
-        });
+        }, 'user-action');
     },
 
     /**
@@ -68,7 +68,7 @@ export const shapeOperations = {
                 // Safe type assertion: existing is Shape, changes is Partial<Shape>, spread is valid
                 const updated = { ...existing, ...changes, modifiedAt: Date.now() } as Shape;
                 shapesMap.set(id, updated);
-            });
+            }, 'user-action');
         } else {
             console.warn('Shape not found for update:', id);
         }
@@ -84,7 +84,7 @@ export const shapeOperations = {
         }
         ydoc.transact(() => {
             shapesMap.delete(id);
-        });
+        }, 'user-action');
     },
 
     /**
@@ -97,7 +97,7 @@ export const shapeOperations = {
         }
         ydoc.transact(() => {
             ids.forEach(id => shapesMap.delete(id));
-        });
+        }, 'user-action');
     },
 
     /**
@@ -110,7 +110,7 @@ export const shapeOperations = {
         }
         ydoc.transact(() => {
             shapesMap.clear();
-        });
+        }, 'user-action');
     },
 
     /**

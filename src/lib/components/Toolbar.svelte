@@ -7,7 +7,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
 	import { activeTool } from '$lib/stores/tool';
-	import { history } from '$lib/stores/history';
+	import { history, canUndo, canRedo } from '$lib/stores/history';
 
 	// Icons from lucide-svelte
 	import {
@@ -24,7 +24,11 @@
 		Sparkles
 	} from 'lucide-svelte';
 
-	let { onCommandPaletteOpen } = $props<{ onCommandPaletteOpen: () => void }>();
+	let { onCommandPaletteOpen, onUndo, onRedo } = $props<{ 
+		onCommandPaletteOpen: () => void;
+		onUndo?: () => void;
+		onRedo?: () => void;
+	}>();
 
 	import type { ToolType } from '$lib/stores/tool';
 
@@ -38,9 +42,6 @@
 		{ id: 'polygon', icon: Pentagon, label: 'Polygon', shortcut: 'P' },
 		{ id: 'star', icon: Star, label: 'Star', shortcut: 'S' }
 	];
-
-	let canUndo = $derived(history.canUndo());
-	let canRedo = $derived(history.canRedo());
 </script>
 
 <div
@@ -66,8 +67,11 @@
 	<Button
 		variant="ghost"
 		size="icon"
-		disabled={!canUndo}
-		onclick={() => history.undo()}
+		disabled={!$canUndo}
+		onclick={() => {
+			history.undo();
+			onUndo?.();
+		}}
 		title="Undo (⌘Z)"
 		class="cursor-pointer"
 	>
@@ -76,8 +80,11 @@
 	<Button
 		variant="ghost"
 		size="icon"
-		disabled={!canRedo}
-		onclick={() => history.redo()}
+		disabled={!$canRedo}
+		onclick={() => {
+			history.redo();
+			onRedo?.();
+		}}
 		title="Redo (⌘⇧Z)"
 		class="cursor-pointer"
 	>

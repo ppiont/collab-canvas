@@ -5,6 +5,7 @@
 	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import DebugOverlay from '$lib/components/DebugOverlay.svelte';
+	import Toast from '$lib/components/Toast.svelte';
 
 	// Import managers
 	import { CanvasEngine } from '$lib/canvas/core/CanvasEngine';
@@ -22,6 +23,7 @@
 	import type { Shape } from '$lib/types/shapes';
 	import { activeTool, isCreateToolActive } from '$lib/stores/tool';
 	import { clipboardOperations } from '$lib/stores/clipboard';
+	import { initializeUndoManager, history } from '$lib/stores/history';
 
 	let { data } = $props();
 
@@ -40,6 +42,11 @@
 	let maxZIndex = $state(0);
 	let selectedShapeId = $state<string | null>(null);
 	let commandPaletteOpen = $state(false);
+
+	// Toast notification state
+	let toastVisible = $state(false);
+	let toastMessage = $state('');
+	let toastTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	// Track viewport for culling
 	let currentViewport = $state<import('$lib/types/canvas').CanvasViewport>({
@@ -80,6 +87,23 @@
 	let lastPasteOffset = { x: 0, y: 0 };
 
 	// Copy selected shapes to clipboard
+	// Show toast notification
+	function showToast(message: string) {
+		// Clear any existing timeout
+		if (toastTimeout) {
+			clearTimeout(toastTimeout);
+		}
+
+		// Show the toast
+		toastMessage = message;
+		toastVisible = true;
+
+		// Auto-hide after 2 seconds
+		toastTimeout = setTimeout(() => {
+			toastVisible = false;
+		}, 2000);
+	}
+
 	function copySelectedShapes() {
 		if (!selectionManager) return;
 
@@ -142,7 +166,7 @@
 		const currentShapes = $shapes;
 		const viewport = currentViewport; // Track viewport changes too
 
-		if (shapeRenderer && currentShapes) {
+		if (shapeRenderer && selectionManager && currentShapes) {
 			// Pass viewport for culling optimization
 			shapeRenderer.renderShapes(currentShapes, viewport);
 
@@ -151,8 +175,22 @@
 				maxZIndex = Math.max(...currentShapes.map((s) => s.zIndex || 0), maxZIndex);
 			}
 
-			// NOTE: Do NOT update transformer here - it causes an infinite render loop!
-			// The transformer updates when selection changes via SelectionManager methods.
+			// Check if selected shapes still exist after render (e.g., after undo delete)
+			// If any selected shape was deleted, clear that selection
+			const selectedIds = selectionManager.getSelectedIds();
+			const shapeIdSet = new Set(currentShapes.map((s) => s.id));
+			const deletedSelectedIds = selectedIds.filter((id) => !shapeIdSet.has(id));
+
+			if (deletedSelectedIds.length > 0) {
+				// Some selected shapes were deleted, remove them from selection
+				deletedSelectedIds.forEach((id) => {
+					selectionManager.removeFromSelection(id);
+				});
+			}
+
+			// CRITICAL: Sync transformer after rendering to ensure it follows Yjs updates
+			// This makes undo/redo work correctly on selected shapes
+			selectionManager.syncTransformerFromYjs();
 		}
 	});
 
@@ -238,6 +276,9 @@
 		// Initialize Yjs sync
 		initializeShapesSync(shapesMap);
 
+		// Initialize undo/redo (captures ALL shapesMap modifications)
+		initializeUndoManager(shapesMap);
+
 		// Initialize provider
 		initializeProvider(data.user.id, data.userProfile.displayName, data.userProfile.color);
 
@@ -310,6 +351,32 @@
 		};
 		window.addEventListener('keydown', handleCopyPaste);
 
+		// Undo/Redo keyboard shortcuts
+		const handleUndoRedo = (e: KeyboardEvent) => {
+			// Skip if typing in an input or textarea
+			const target = e.target as HTMLElement;
+			if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+				return;
+			}
+
+			const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+			const isCtrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
+
+			// Cmd/Ctrl+Z - Undo
+			if (isCtrlOrCmd && e.key === 'z' && !e.shiftKey) {
+				e.preventDefault();
+				history.undo();
+				showToast('Undid');
+			}
+			// Cmd/Ctrl+Shift+Z or Cmd/Ctrl+Y - Redo
+			else if (isCtrlOrCmd && ((e.key === 'z' && e.shiftKey) || e.key === 'y')) {
+				e.preventDefault();
+				history.redo();
+				showToast('Redid');
+			}
+		};
+		window.addEventListener('keydown', handleUndoRedo);
+
 		// Cleanup
 		return () => {
 			canvasEngine?.destroy();
@@ -322,6 +389,10 @@
 			unsubscribeProvider();
 			window.removeEventListener('resize', handleResize);
 			window.removeEventListener('keydown', handleCopyPaste);
+			window.removeEventListener('keydown', handleUndoRedo);
+			if (toastTimeout) {
+				clearTimeout(toastTimeout);
+			}
 		};
 	});
 
@@ -350,7 +421,11 @@
 
 <div class="canvas-container">
 	<!-- Toolbar -->
-	<Toolbar onCommandPaletteOpen={openCommandPalette} />
+	<Toolbar
+		onCommandPaletteOpen={openCommandPalette}
+		onUndo={() => showToast('Undid')}
+		onRedo={() => showToast('Redid')}
+	/>
 
 	<!-- Connection Status -->
 	<ConnectionStatus currentUserId={data.user.id} onUserClick={handleUserClick} />
@@ -363,6 +438,9 @@
 
 	<!-- Debug Overlay (press ~ to toggle) -->
 	<DebugOverlay {shapeRenderer} shapesCount={$shapes.length} />
+
+	<!-- Toast Notification -->
+	<Toast message={toastMessage} visible={toastVisible} />
 
 	<!-- Zoom indicator -->
 	<div class="zoom-indicator">

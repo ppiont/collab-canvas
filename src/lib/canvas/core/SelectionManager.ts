@@ -163,6 +163,14 @@ export class SelectionManager {
      * Setup transformer event handlers
      */
     private setupTransformerEvents(): void {
+        // Track if transform is actually happening (not just selection)
+        let isTransforming = false;
+
+        // Listen for transform start to track when transformation begins
+        this.transformer.on('transformstart', () => {
+            isTransforming = true;
+        });
+
         // Listen for transform events to update visuals in real-time
         this.transformer.on('transform', () => {
             this.updateVisuals();
@@ -171,6 +179,13 @@ export class SelectionManager {
         // Listen for transform end to save changes
         this.transformer.on('transformend', () => {
             this.updateVisuals();
+
+            // Only save if we were actually transforming (not just selecting)
+            if (!isTransforming) {
+                return;
+            }
+            isTransforming = false;
+
             const updateCallback = this.onShapeUpdate;
             if (!updateCallback) return;
 
@@ -423,6 +438,19 @@ export class SelectionManager {
         if (this.transformer) {
             this.transformer.forceUpdate();
         }
+    }
+
+    /**
+     * Sync transformer when shape properties change from Yjs
+     * This ensures the transformer stays aligned with updated node positions
+     */
+    syncTransformerFromYjs(): void {
+        if (!this.transformer || this.selectedIds.size === 0) return;
+
+        // Force transformer to recalculate based on current node positions
+        this.transformer.forceUpdate();
+        this.updateSizeLabel();
+        this.layer.batchDraw();
     }
 
     /**
