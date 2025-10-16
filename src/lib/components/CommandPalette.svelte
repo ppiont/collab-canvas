@@ -14,7 +14,17 @@
 	import { ShapeFactory } from '$lib/canvas/shapes/ShapeFactory';
 	import { shapeOperations } from '$lib/stores/shapes';
 
-	let { open = $bindable(false), userId } = $props<{ open?: boolean; userId: string }>();
+	import type { CanvasViewport } from '$lib/types/canvas';
+
+	let {
+		open = $bindable(false),
+		userId,
+		viewport
+	} = $props<{
+		open?: boolean;
+		userId: string;
+		viewport: CanvasViewport;
+	}>();
 
 	let command = $state('');
 	let commandState = $state<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -48,15 +58,40 @@
 
 			const url = `http://${PUBLIC_PARTYKIT_HOST}/parties/yjs/main/api/ai/command`;
 
+			console.log('[AI] Sending request to:', url);
+			console.log('[AI] Current viewport:', viewport);
+
+			// Calculate visible center of viewport
+			const stageWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
+			const stageHeight = typeof window !== 'undefined' ? window.innerHeight : 1080;
+			const visibleCenterX = (-viewport.x + stageWidth / 2) / viewport.scale;
+			const visibleCenterY = (-viewport.y + stageHeight / 2) / viewport.scale;
+
+			console.log('[AI] Visible center:', visibleCenterX, visibleCenterY);
+
 			const response = await fetch(url, {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				mode: 'cors',
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json'
+				},
 				body: JSON.stringify({
 					command: command.trim(),
-					userId: userId
+					userId: userId,
+					viewport: {
+						centerX: Math.round(visibleCenterX),
+						centerY: Math.round(visibleCenterY),
+						zoom: viewport.scale,
+						stageWidth,
+						stageHeight
+					}
 				}),
 				signal: controller.signal
 			});
+
+			console.log('[AI] Response status:', response.status, response.statusText);
+			console.log('[AI] Response headers:', Array.from(response.headers.entries()));
 
 			clearTimeout(timeoutId);
 
@@ -67,15 +102,20 @@
 
 			const data = await response.json();
 
+			console.log('[AI Response]', data);
+
 			if (!data.success) {
 				throw new Error(data.error || 'Command failed');
 			}
 
 			// Execute AI tools client-side using our Yjs connection
 			if (data.toolsToExecute && data.toolsToExecute.length > 0) {
+				console.log('[AI] Executing', data.toolsToExecute.length, 'tools:', data.toolsToExecute);
 				for (const tool of data.toolsToExecute) {
 					await executeAITool(tool.name, tool.params);
 				}
+			} else {
+				console.warn('[AI] No tools to execute in response');
 			}
 
 			commandState = 'success';
@@ -111,6 +151,8 @@
 	 * Execute an AI tool client-side
 	 */
 	async function executeAITool(toolName: string, params: any): Promise<void> {
+		console.log('[AI Tool Execution]', toolName, params);
+
 		// Creation tools - use ShapeFactory
 		const creationTools = [
 			'createRectangle',
@@ -173,7 +215,165 @@
 				shapeOperations.add(duplicate);
 			}
 		}
-		// TODO: Implement layout tools if needed
+		// Layout tools
+		else if (toolName === 'arrangeHorizontal') {
+			console.log('[Layout] arrangeHorizontal - IDs:', params.shapeIds);
+			const shapes = params.shapeIds
+				.map((id: string) => shapeOperations.get(id))
+				.filter((s: any) => s !== undefined);
+
+			console.log('[Layout] Found', shapes.length, 'shapes:', shapes);
+
+			if (shapes.length === 0) {
+				console.warn('[Layout] No shapes found!');
+				return;
+			}
+
+			const spacing = params.spacing || 20;
+			let currentX = params.startX || 100;
+			const y = params.startY || shapes[0].y;
+
+			console.log('[Layout] Starting at X:', currentX, 'Y:', y, 'Spacing:', spacing);
+
+			shapes.forEach((shape: any, index: number) => {
+				const width =
+					shape.width ||
+					(shape.radius ? shape.radius * 2 : 0) ||
+					(shape.outerRadius ? shape.outerRadius * 2 : 0) ||
+					100;
+				console.log(
+					'[Layout] Shape',
+					index,
+					'- ID:',
+					shape.id,
+					'Moving to X:',
+					currentX,
+					'Y:',
+					y,
+					'Width:',
+					width
+				);
+				shapeOperations.update(shape.id, { x: currentX, y });
+				currentX += width + spacing;
+			});
+
+			console.log('[Layout] arrangeHorizontal complete');
+		} else if (toolName === 'arrangeVertical') {
+			const shapes = params.shapeIds
+				.map((id: string) => shapeOperations.get(id))
+				.filter((s: any) => s !== undefined);
+
+			if (shapes.length === 0) return;
+
+			const spacing = params.spacing || 20;
+			const x = params.startX || shapes[0].x;
+			let currentY = params.startY || 100;
+
+			shapes.forEach((shape: any) => {
+				const height =
+					shape.height ||
+					(shape.radius ? shape.radius * 2 : 0) ||
+					(shape.outerRadius ? shape.outerRadius * 2 : 0) ||
+					100;
+				shapeOperations.update(shape.id, { x, y: currentY });
+				currentY += height + spacing;
+			});
+		} else if (toolName === 'arrangeGrid') {
+			const shapes = params.shapeIds
+				.map((id: string) => shapeOperations.get(id))
+				.filter((s: any) => s !== undefined);
+
+			if (shapes.length === 0) return;
+
+			const spacing = params.spacing || 20;
+			const startX = params.startX || 100;
+			const startY = params.startY || 100;
+			const cols = params.columns;
+			const cellSize = 150; // Approximate cell size
+
+			shapes.forEach((shape: any, index: number) => {
+				const row = Math.floor(index / cols);
+				const col = index % cols;
+				shapeOperations.update(shape.id, {
+					x: startX + col * (cellSize + spacing),
+					y: startY + row * (cellSize + spacing)
+				});
+			});
+		} else if (toolName === 'distributeEvenly') {
+			const shapes = params.shapeIds
+				.map((id: string) => shapeOperations.get(id))
+				.filter((s: any) => s !== undefined);
+
+			if (shapes.length < 2) return;
+
+			if (params.direction === 'horizontal') {
+				const xs = shapes.map((s: any) => s.x);
+				const minX = Math.min(...xs);
+				const maxX = Math.max(...xs);
+				const spacing = (maxX - minX) / (shapes.length - 1);
+
+				shapes.forEach((shape: any, i: number) => {
+					shapeOperations.update(shape.id, { x: minX + i * spacing });
+				});
+			} else {
+				const ys = shapes.map((s: any) => s.y);
+				const minY = Math.min(...ys);
+				const maxY = Math.max(...ys);
+				const spacing = (maxY - minY) / (shapes.length - 1);
+
+				shapes.forEach((shape: any, i: number) => {
+					shapeOperations.update(shape.id, { y: minY + i * spacing });
+				});
+			}
+		} else if (toolName === 'alignShapes') {
+			const shapes = params.shapeIds
+				.map((id: string) => shapeOperations.get(id))
+				.filter((s: any) => s !== undefined);
+
+			if (shapes.length === 0) return;
+
+			const alignment = params.alignment;
+			const positions = shapes.map((s: any) => ({ x: s.x, y: s.y }));
+
+			switch (alignment) {
+				case 'left': {
+					const minX = Math.min(...positions.map((p: { x: number; y: number }) => p.x));
+					shapes.forEach((shape: any) => shapeOperations.update(shape.id, { x: minX }));
+					break;
+				}
+				case 'right': {
+					const maxX = Math.max(...positions.map((p: { x: number; y: number }) => p.x));
+					shapes.forEach((shape: any) => shapeOperations.update(shape.id, { x: maxX }));
+					break;
+				}
+				case 'center': {
+					const avgX =
+						positions.reduce((sum: number, p: { x: number; y: number }) => sum + p.x, 0) /
+						positions.length;
+					shapes.forEach((shape: any) => shapeOperations.update(shape.id, { x: avgX }));
+					break;
+				}
+				case 'top': {
+					const minY = Math.min(...positions.map((p: { x: number; y: number }) => p.y));
+					shapes.forEach((shape: any) => shapeOperations.update(shape.id, { y: minY }));
+					break;
+				}
+				case 'bottom': {
+					const maxY = Math.max(...positions.map((p: { x: number; y: number }) => p.y));
+					shapes.forEach((shape: any) => shapeOperations.update(shape.id, { y: maxY }));
+					break;
+				}
+				case 'middle': {
+					const avgY =
+						positions.reduce((sum: number, p: { x: number; y: number }) => sum + p.y, 0) /
+						positions.length;
+					shapes.forEach((shape: any) => shapeOperations.update(shape.id, { y: avgY }));
+					break;
+				}
+			}
+		}
+		// Query tools (getCanvasState, findShapesByType, findShapesByColor)
+		// These are informational and don't modify canvas, so no client-side action needed
 	}
 </script>
 

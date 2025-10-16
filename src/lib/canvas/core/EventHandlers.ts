@@ -201,6 +201,10 @@ export class CanvasEventHandlers {
 
         this.stage.on('dragend', () => {
             this.isDraggingStage = false;
+
+            // Sync viewport store with final stage position
+            this.viewportManager.syncStore();
+
             console.log('[DragEnd] Stage drag ended');
 
             // Reset cursor based on spacebar state
@@ -330,8 +334,12 @@ export class CanvasEventHandlers {
      */
     setupKeyboardHandlers(): void {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Spacebar - Enable pan mode
-            if (e.code === 'Space' && !this.isSpacePressed) {
+            // Check if user is typing in an input field
+            const target = e.target as HTMLElement;
+            const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+
+            // Spacebar - Enable pan mode (ONLY if not typing in input)
+            if (e.code === 'Space' && !this.isSpacePressed && !isTyping) {
                 // Prevent space from scrolling the page
                 e.preventDefault();
                 this.isSpacePressed = true;
