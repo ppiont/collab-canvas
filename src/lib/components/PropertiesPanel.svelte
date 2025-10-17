@@ -2,7 +2,6 @@
 	import { shapes, shapeOperations } from '$lib/stores/shapes';
 	import { selectedShapeIds } from '$lib/stores/selection';
 	import type { Shape, BlendMode } from '$lib/types/shapes';
-	import ControlSection from './controls/ControlSection.svelte';
 	import ColorControl from './controls/ColorControl.svelte';
 	import StrokeWidthControl from './controls/StrokeWidthControl.svelte';
 	import OpacityControl from './controls/OpacityControl.svelte';
@@ -73,7 +72,8 @@
 
 		<div class="space-y-3">
 			<!-- Transform Section -->
-			<ControlSection title="Transform" sectionId="transform">
+			<div class="bg-gray-50 rounded-lg p-4">
+				<h3 class="font-semibold text-xs mb-2">Transform</h3>
 				<!-- Position -->
 				<div class="grid grid-cols-2 gap-2">
 					<div class="space-y-1">
@@ -127,10 +127,11 @@
 						/>
 					</div>
 				{/if}
-			</ControlSection>
+			</div>
 
 			<!-- Fill Section -->
-			<ControlSection title="Fill" sectionId="fill">
+			<div class="bg-gray-50 rounded-lg p-4">
+				<h3 class="font-semibold text-xs mb-2">Fill</h3>
 				{#if fill !== 'mixed'}
 					<ColorControl
 						label="Color"
@@ -141,10 +142,11 @@
 				{:else}
 					<div class="text-sm text-gray-500 py-2">Multiple colors</div>
 				{/if}
-			</ControlSection>
+			</div>
 
 			<!-- Stroke Section -->
-			<ControlSection title="Stroke" sectionId="stroke">
+			<div class="bg-gray-50 rounded-lg p-4">
+				<h3 class="font-semibold text-xs mb-2">Stroke</h3>
 				{#if stroke !== 'mixed' || strokeWidth !== 'mixed'}
 					{#if stroke !== 'mixed'}
 						<ColorControl
@@ -164,10 +166,11 @@
 				{:else}
 					<div class="text-sm text-gray-500 py-2">Mixed stroke properties</div>
 				{/if}
-			</ControlSection>
+			</div>
 
 			<!-- Effects Section -->
-			<ControlSection title="Effects" sectionId="effects">
+			<div class="bg-gray-50 rounded-lg p-4">
+				<h3 class="font-semibold text-xs mb-2">Effects</h3>
 				{#if opacity !== 'mixed'}
 					<OpacityControl
 						value={(opacity as number) ?? 1}
@@ -194,11 +197,12 @@
 						onchange={(s) => updateSelected('shadow', s)}
 					/>
 				{/if}
-			</ControlSection>
+			</div>
 
 			<!-- Shape-Specific Controls -->
 			{#if selectedShapes.length === 1 && firstShape.type === 'text'}
-				<ControlSection title="Text" sectionId="text-props">
+				<div class="bg-gray-50 rounded-lg p-4">
+					<h3 class="font-semibold text-xs mb-2">Text</h3>
 					<div class="space-y-3">
 						<div class="space-y-1">
 							<Label class="text-xs" for="font-family">Font Family</Label>
@@ -263,7 +267,7 @@
 							</select>
 						</div>
 					</div>
-				</ControlSection>
+				</div>
 			{/if}
 		</div>
 	</div>

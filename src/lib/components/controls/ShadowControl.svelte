@@ -86,14 +86,16 @@
 					</div>
 
 					<Popover>
-						<PopoverTrigger asChild let:builder>
-							<!-- @ts-ignore asChild and builders are valid shadcn-svelte patterns -->
-							<Button builders={[builder]} variant="outline" size="sm" class="w-8 h-8 p-0">
+						<PopoverTrigger asChild>
+							<Button variant="outline" size="sm" class="w-8 h-8 p-0">
 								<ChevronDown class="w-4 h-4" />
 							</Button>
 						</PopoverTrigger>
 						<PopoverContent class="w-80 p-0">
-							<ColorPicker value={shadowValue.color} onchange={(c) => updateShadow({ color: c })} />
+							<ColorPicker
+								value={shadowValue.color}
+								onchange={(c) => updateShadow({ color: c })}
+							/>
 						</PopoverContent>
 					</Popover>
 				</div>

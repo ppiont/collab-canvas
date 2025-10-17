@@ -43,9 +43,8 @@
 		{/if}
 
 		<Popover>
-			<PopoverTrigger asChild let:builder>
-				<!-- @ts-ignore asChild and builders are valid shadcn-svelte patterns -->
-				<Button builders={[builder]} variant="outline" size="sm" class="w-10 h-10 p-0">
+			<PopoverTrigger asChild>
+				<Button variant="outline" size="sm" class="w-10 h-10 p-0">
 					<ChevronDown class="w-4 h-4" />
 				</Button>
 			</PopoverTrigger>
