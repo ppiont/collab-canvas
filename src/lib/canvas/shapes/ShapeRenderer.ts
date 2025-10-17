@@ -252,7 +252,7 @@ export class ShapeRenderer {
 			}
 		}
 
-		konvaShape.opacity(shape.opacity || 1);
+		konvaShape.opacity(shape.opacity ?? 1);
 
 		// Apply shadow if configured
 		if (shape.shadow) {
@@ -586,7 +586,7 @@ export class ShapeRenderer {
 			const currentShape = this.callbacks!.getShapeById?.(shapeId) || shape;
 
 			// Reset visual feedback to original shape properties (from current state)
-			konvaShape.opacity(currentShape.opacity || 1);
+			konvaShape.opacity(currentShape.opacity ?? 1);
 			konvaShape.shadowColor('');
 			konvaShape.shadowBlur(0);
 			konvaShape.shadowOpacity(0);
