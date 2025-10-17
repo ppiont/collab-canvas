@@ -16,25 +16,36 @@
 	let sliderValue = $state(value);
 
 	$effect(() => {
-		sliderValue = value;
+		// Always sync the slider value when the prop changes
+		sliderValue = Math.round(value);
 	});
 
 	function handleSliderChange() {
-		onchange?.(sliderValue);
+		// Round to integer and update immediately
+		const rounded = Math.round(sliderValue);
+		sliderValue = rounded;
+		onchange?.(rounded);
 	}
 
 	function handleInputChange(e: Event) {
 		const target = e.target as HTMLInputElement;
-		const num = parseInt(target.value) || 0;
+		const num = parseInt(target.value, 10) || 0;
 		const clamped = Math.max(min, Math.min(max, num));
+		sliderValue = clamped;
 		onchange?.(clamped);
+	}
+
+	function handleInputFocus(e: Event) {
+		// Auto-select all text when input is focused
+		const target = e.target as HTMLInputElement;
+		target.select();
 	}
 </script>
 
 <div class="space-y-2">
 	<div class="flex justify-between items-center">
 		<Label>Stroke Width</Label>
-		<span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{sliderValue}px</span>
+		<span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{Math.round(sliderValue)}px</span>
 	</div>
 
 	<Slider
@@ -43,16 +54,17 @@
 		onchange={handleSliderChange}
 		{min}
 		{max}
-		step={0.5}
+		step={1}
 	/>
 
 	<Input
 		type="number"
-		value={sliderValue}
+		value={Math.round(sliderValue)}
 		onchange={handleInputChange}
+		onfocus={handleInputFocus}
 		{min}
 		{max}
-		step="0.5"
+		step="1"
 		class="text-sm font-mono"
 	/>
 </div>

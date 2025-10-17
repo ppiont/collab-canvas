@@ -23,11 +23,11 @@ export type ToolType =
 	| 'select'
 	| 'rectangle'
 	| 'circle'
-	| 'ellipse'
 	| 'line'
 	| 'text'
 	| 'polygon'
 	| 'star'
+	| 'triangle'
 	| 'image'
 	| 'pan';
 

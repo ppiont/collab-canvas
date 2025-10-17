@@ -80,6 +80,32 @@
 		}
 	}
 
+	// Helper function to create a line with accumulated points
+	function createLineWithPoints(points: number[]): void {
+		try {
+			const newLine = ShapeFactory.create(
+				'line',
+				{
+					x: 0,
+					y: 0,
+					points,
+					fill: undefined,
+					stroke: darkenColor(data.userProfile.color, 20),
+					strokeWidth: 2,
+					zIndex: maxZIndex + 1
+				},
+				data.user.id
+			);
+			shapeOperations.add(newLine);
+			maxZIndex++;
+			// Switch back to select mode and select the new line
+			activeTool.set('select');
+			selectionManager.select(newLine.id);
+		} catch (error) {
+			console.error('Failed to create line:', error);
+		}
+	}
+
 	// Track last paste position for cumulative offsets
 	let lastPasteOffset = { x: 0, y: 0 };
 
@@ -252,6 +278,10 @@
 			getSelectedIds: () => {
 				return selectionManager.getSelectedIds();
 			},
+			getShapeById: (id: string) => {
+				// Look up current shape from store to ensure fresh data in event handlers
+				return $shapes.find((s) => s.id === id);
+			},
 			onBroadcastCursor: () => {
 				cursorManager?.broadcastCursorImmediate();
 			},
@@ -260,15 +290,8 @@
 
 		// Wire transformer to shapeRenderer so it stays on top during renders
 		const transformer = selectionManager.getTransformer();
-		console.log('[Canvas] Wiring transformer to shapeRenderer:', {
-			hasTransformer: !!transformer,
-			hasShapeRenderer: !!shapeRenderer
-		});
 		if (transformer) {
 			shapeRenderer.setTransformer(transformer);
-			console.log('[Canvas] Transformer wired successfully!');
-		} else {
-			console.warn('[Canvas] No transformer found from SelectionManager!');
 		}
 
 		// Initialize cursor manager
@@ -310,6 +333,9 @@
 					activeTool.set('select');
 					selectionManager.select(newShape.id);
 				}
+			},
+			(points) => {
+				createLineWithPoints(points);
 			},
 			() => $shapes // Get all shapes for drag-net selection
 		);

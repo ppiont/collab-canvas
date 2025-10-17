@@ -11,14 +11,13 @@
 
 	// Icons from lucide-svelte
 	import {
-		MousePointer2,
 		Square,
 		Circle,
-		Disc,
 		Minus,
 		Type,
 		Pentagon,
 		Star,
+		Triangle,
 		Undo,
 		Redo,
 		Sparkles
@@ -35,14 +34,13 @@
 
 	const shapeTools: Array<{ id: ToolType; icon: ComponentType; label: string; shortcut: string }> =
 		[
-			{ id: 'select', icon: MousePointer2, label: 'Select', shortcut: 'V' },
 			{ id: 'rectangle', icon: Square, label: 'Rectangle', shortcut: 'R' },
 			{ id: 'circle', icon: Circle, label: 'Circle', shortcut: 'C' },
-			{ id: 'ellipse', icon: Disc, label: 'Ellipse', shortcut: 'E' },
-			{ id: 'line', icon: Minus, label: 'Line', shortcut: 'L' },
-			{ id: 'text', icon: Type, label: 'Text', shortcut: 'T' },
+			{ id: 'triangle', icon: Triangle, label: 'Triangle', shortcut: 'G' },
 			{ id: 'polygon', icon: Pentagon, label: 'Polygon', shortcut: 'P' },
-			{ id: 'star', icon: Star, label: 'Star', shortcut: 'S' }
+			{ id: 'star', icon: Star, label: 'Star', shortcut: 'S' },
+			{ id: 'line', icon: Minus, label: 'Line', shortcut: 'L' },
+			{ id: 'text', icon: Type, label: 'Text', shortcut: 'T' }
 		];
 </script>
 

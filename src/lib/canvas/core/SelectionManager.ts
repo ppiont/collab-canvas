@@ -32,6 +32,9 @@ export class SelectionManager {
 	private onSelectionChange: SelectionChangeCallback | null = null;
 	private onDelete: DeleteCallback | null = null;
 	private onShapeUpdate: ShapeUpdateCallback | null = null;
+	private lineTransformerGroup: Konva.Group | null = null; // Custom transformer for lines
+	private lineEndpoints: Konva.Circle[] = []; // Draggable endpoint circles
+	private isDraggingLineEndpoint = false; // Prevent transformer recreation during drag
 
 	constructor(stage: Konva.Stage, layer: Konva.Layer) {
 		this.stage = stage;
@@ -40,6 +43,12 @@ export class SelectionManager {
 		this.layer.add(this.transformer);
 		this.createSizeLabel();
 		this.setupTransformerEvents();
+
+		// Create group for line transformer UI
+		this.lineTransformerGroup = new Konva.Group({
+			listening: true
+		});
+		this.layer.add(this.lineTransformerGroup);
 	}
 
 	/**
@@ -112,6 +121,98 @@ export class SelectionManager {
 	}
 
 	/**
+	 * Create custom line transformer with draggable endpoints
+	 */
+	private createLineTransformer(line: Konva.Line, lineId: string): void {
+		if (!this.lineTransformerGroup) return;
+
+		// Clear previous endpoints
+		this.lineTransformerGroup.destroyChildren();
+		this.lineEndpoints = [];
+
+		const points = line.points();
+		if (points.length < 4) return;
+
+		// Get line's actual position (including transformations)
+		const x1 = points[0] + line.x();
+		const y1 = points[1] + line.y();
+		const x2 = points[2] + line.x();
+		const y2 = points[3] + line.y();
+
+		// Create endpoint circles
+		for (let i = 0; i < 2; i++) {
+			const x = i === 0 ? x1 : x2;
+			const y = i === 0 ? y1 : y2;
+			const pointIndex = i * 2;
+
+			const circle = new Konva.Circle({
+				x,
+				y,
+				radius: 6,
+				fill: '#667eea',
+				stroke: '#ffffff',
+				strokeWidth: 2,
+				draggable: true,
+				cursor: 'grab',
+				listening: true
+			});
+
+			circle.on('dragstart', () => {
+				this.isDraggingLineEndpoint = true;
+			});
+
+			circle.on('dragmove', () => {
+				// Update the line's points LOCALLY only
+				const newPoints = [...points];
+				newPoints[pointIndex] = circle.x() - line.x();
+				newPoints[pointIndex + 1] = circle.y() - line.y();
+				line.points(newPoints);
+
+				// Sync all endpoint circles to the updated line points
+				const updatedPoints = line.points();
+				for (let j = 0; j < this.lineEndpoints.length; j++) {
+					const endpoint = this.lineEndpoints[j];
+					const pIndex = j * 2;
+					endpoint.x(updatedPoints[pIndex] + line.x());
+					endpoint.y(updatedPoints[pIndex + 1] + line.y());
+				}
+
+				// Only refresh visuals locally, don't sync to Yjs yet
+				if (this.layer) {
+					this.layer.batchDraw();
+				}
+			});
+
+			circle.on('dragend', () => {
+				this.isDraggingLineEndpoint = false;
+				// NOW sync to Yjs after drag is complete
+				const finalPoints = line.points();
+				if (this.onShapeUpdate) {
+					this.onShapeUpdate(lineId, { points: finalPoints });
+				}
+				// Refresh all visuals after drag is complete
+				this.updateVisuals();
+			});
+
+			this.lineTransformerGroup.add(circle);
+			this.lineEndpoints.push(circle);
+		}
+
+		this.lineTransformerGroup.moveToTop();
+		this.layer?.batchDraw();
+	}
+
+	/**
+	 * Hide line transformer
+	 */
+	private hideLineTransformer(): void {
+		if (this.lineTransformerGroup) {
+			this.lineTransformerGroup.destroyChildren();
+			this.lineEndpoints = [];
+		}
+	}
+
+	/**
 	 * Update size label position and text
 	 */
 	private updateSizeLabel(): void {
@@ -123,35 +224,77 @@ export class SelectionManager {
 			return;
 		}
 
-		// Force transformer to recalculate to get accurate box
-		this.transformer.forceUpdate();
+		// Check if the selected node is a line
+		const node = nodes[0];
+		const isLine = node instanceof Konva.Line;
 
-		// Get bounding box - this returns dimensions scaled by stage zoom
-		const box = this.transformer.getClientRect();
+		if (isLine) {
+			// For lines, calculate and show length
+			const line = node as Konva.Line;
+			const points = line.points();
 
-		// Calculate actual canvas dimensions (not scaled by stage zoom)
-		const stageScale = this.stage.scaleX();
-		const width = Math.round(box.width / stageScale);
-		const height = Math.round(box.height / stageScale);
+			if (points.length >= 4) {
+				// Calculate distance between first and last point
+				const x1 = points[0];
+				const y1 = points[1];
+				const x2 = points[2];
+				const y2 = points[3];
 
-		// Update text
-		const text = this.sizeLabel.findOne('Text') as Konva.Text;
-		if (text) {
-			text.text(`${width} × ${height}`);
+				const dx = x2 - x1;
+				const dy = y2 - y1;
+				const length = Math.round(Math.sqrt(dx * dx + dy * dy));
+
+				// Update text
+				const text = this.sizeLabel.findOne('Text') as Konva.Text;
+				if (text) {
+					text.text(`${length}px`);
+				}
+
+				// Position near the line midpoint
+				const midX = (x1 + x2) / 2;
+				const midY = (y1 + y2) / 2;
+				const scale = this.stage.scaleX();
+
+				this.sizeLabel.position({
+					x: midX + 12,
+					y: midY - 12
+				});
+
+				this.sizeLabel.visible(true);
+				this.sizeLabel.moveToTop();
+			}
+		} else {
+			// For regular shapes, show dimensions
+			// Force transformer to recalculate to get accurate box
+			this.transformer.forceUpdate();
+
+			// Get bounding box - this returns dimensions scaled by stage zoom
+			const box = this.transformer.getClientRect();
+
+			// Calculate actual canvas dimensions (not scaled by stage zoom)
+			const stageScale = this.stage.scaleX();
+			const width = Math.round(box.width / stageScale);
+			const height = Math.round(box.height / stageScale);
+
+			// Update text
+			const text = this.sizeLabel.findOne('Text') as Konva.Text;
+			if (text) {
+				text.text(`${width} × ${height}`);
+			}
+
+			// Position below the transformer box (in canvas coordinates)
+			// The box is already in canvas coordinates, so we can use it directly
+			const scale = this.stage.scaleX();
+			this.sizeLabel.position({
+				x: box.x / scale + box.width / scale / 2,
+				y: box.y / scale + box.height / scale + 12
+			});
+
+			this.sizeLabel.visible(true);
+
+			// Move size label to top so it's always visible
+			this.sizeLabel.moveToTop();
 		}
-
-		// Position below the transformer box (in canvas coordinates)
-		// The box is already in canvas coordinates, so we can use it directly
-		const scale = this.stage.scaleX();
-		this.sizeLabel.position({
-			x: box.x / scale + box.width / scale / 2,
-			y: box.y / scale + box.height / scale + 12
-		});
-
-		this.sizeLabel.visible(true);
-
-		// Move size label to top so it's always visible
-		this.sizeLabel.moveToTop();
 	}
 
 	/**
@@ -278,11 +421,21 @@ export class SelectionManager {
 						changes.scaleY = scaleY;
 						shouldResetScale = false;
 					} else {
-						// Line - keep scale as well (lines can be stretched)
-						changes.scaleX = scaleX;
-						changes.scaleY = scaleY;
-						shouldResetScale = false;
+						// Open Line - scale the points directly instead of using scale transform
+						const points = line.points();
+						const scaledPoints: number[] = [];
+						for (let i = 0; i < points.length; i += 2) {
+							scaledPoints.push(points[i] * scaleX, points[i + 1] * scaleY);
+						}
+						changes.points = scaledPoints;
+						line.points(scaledPoints);
 					}
+				} else if (className === 'RegularPolygon') {
+					const polygon = node as Konva.RegularPolygon;
+					// Triangle - allow independent X/Y scaling like stars
+					changes.scaleX = scaleX;
+					changes.scaleY = scaleY;
+					shouldResetScale = false;
 				}
 
 				// Reset scale to 1 after baking it into the size (unless we're keeping scale)
@@ -290,8 +443,6 @@ export class SelectionManager {
 					node.scaleX(1);
 					node.scaleY(1);
 				}
-
-				console.log(`[SelectionManager] Transform end for ${id}:`, changes);
 
 				// Save to Yjs
 				updateCallback(id, changes);
@@ -420,6 +571,9 @@ export class SelectionManager {
 	private updateTransformer(): void {
 		if (!this.transformer || !this.layer) return;
 
+		// Skip updating transformer if we're dragging a line endpoint
+		if (this.isDraggingLineEndpoint) return;
+
 		// Remove old drag listeners from previous nodes
 		const oldNodes = this.transformer.nodes();
 		oldNodes.forEach((node) => {
@@ -428,43 +582,48 @@ export class SelectionManager {
 
 		if (this.selectedIds.size > 0) {
 			const selectedNodes: Konva.Node[] = [];
-
-			console.log('[SelectionManager] Updating transformer for IDs:', Array.from(this.selectedIds));
+			let lineNode: Konva.Line | null = null;
+			let lineId = '';
 
 			this.selectedIds.forEach((id) => {
 				const node = this.layer.findOne(`#${id}`);
-				console.log(`[SelectionManager] Finding node #${id}:`, node ? 'FOUND' : 'NOT FOUND');
 				if (node) {
-					selectedNodes.push(node);
+					if (node instanceof Konva.Line && !node.closed()) {
+						// It's an open line - use custom transformer
+						lineNode = node;
+						lineId = id;
+					} else {
+						selectedNodes.push(node);
+					}
 				}
 			});
 
-			console.log('[SelectionManager] Selected nodes:', selectedNodes.length);
-
-			if (selectedNodes.length > 0) {
-				this.transformer.nodes(selectedNodes);
-				this.transformer.moveToTop();
-				this.transformer.forceUpdate(); // Force transformer to recalculate
-
-				// Add drag listeners to update all visuals during drag
-				selectedNodes.forEach((node) => {
-					node.on('dragmove.sizeLabel', () => {
-						this.updateVisuals();
-					});
-				});
-
-				console.log('[SelectionManager] Transformer attached to', selectedNodes.length, 'nodes');
-				console.log('[SelectionManager] Transformer visible?', this.transformer.visible());
-				console.log('[SelectionManager] Transformer parent:', this.transformer.getParent()?.name());
-			} else {
+			// If a line is selected, use custom line transformer
+			if (lineNode) {
 				this.transformer.nodes([]);
-				console.log('[SelectionManager] WARNING: No nodes found for IDs!');
+				this.createLineTransformer(lineNode, lineId);
+			} else {
+				// Use regular transformer for other shapes
+				this.hideLineTransformer();
+				if (selectedNodes.length > 0) {
+					this.transformer.nodes(selectedNodes);
+					this.transformer.moveToTop();
+					this.transformer.forceUpdate(); // Force transformer to recalculate
+
+					// Add drag listeners to update all visuals during drag
+					selectedNodes.forEach((node) => {
+						node.on('dragmove.sizeLabel', () => {
+							this.updateVisuals();
+						});
+					});
+				} else {
+					this.transformer.nodes([]);
+				}
 			}
 		} else {
 			this.transformer.nodes([]);
+			this.hideLineTransformer();
 		}
-
-		console.log('[SelectionManager] Layer redrawn');
 
 		// Update all visuals after transformer is updated
 		this.updateVisuals();

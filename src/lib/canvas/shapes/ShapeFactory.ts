@@ -9,11 +9,11 @@ import type {
 	ShapeType,
 	RectangleShape,
 	CircleShape,
-	EllipseShape,
 	LineShape,
 	TextShape,
 	PolygonShape,
 	StarShape,
+	TriangleShape,
 	ImageShape
 } from '$lib/types/shapes';
 import { DEFAULT_BASE_SHAPE, DEFAULT_SHAPE_DIMENSIONS } from '$lib/types/shapes';
@@ -53,16 +53,6 @@ export class ShapeFactory {
 					type: 'circle',
 					radius: props.radius ?? DEFAULT_SHAPE_DIMENSIONS.circle.radius
 				} as CircleShape;
-			}
-
-			case 'ellipse': {
-				const props = baseProps as Partial<EllipseShape>;
-				return {
-					...base,
-					type: 'ellipse',
-					radiusX: props.radiusX ?? DEFAULT_SHAPE_DIMENSIONS.ellipse.radiusX,
-					radiusY: props.radiusY ?? DEFAULT_SHAPE_DIMENSIONS.ellipse.radiusY
-				} as EllipseShape;
 			}
 
 			case 'line': {
@@ -109,6 +99,16 @@ export class ShapeFactory {
 					innerRadius: props.innerRadius ?? DEFAULT_SHAPE_DIMENSIONS.star.innerRadius,
 					outerRadius: props.outerRadius ?? DEFAULT_SHAPE_DIMENSIONS.star.outerRadius
 				} as StarShape;
+			}
+
+			case 'triangle': {
+				const props = baseProps as Partial<TriangleShape>;
+				return {
+					...base,
+					type: 'triangle',
+					width: props.width ?? DEFAULT_SHAPE_DIMENSIONS.triangle.width,
+					height: props.height ?? DEFAULT_SHAPE_DIMENSIONS.triangle.height
+				} as TriangleShape;
 			}
 
 			case 'image': {

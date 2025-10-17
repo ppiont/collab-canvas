@@ -23,6 +23,7 @@ export interface ShapeEventCallbacks {
 	onBroadcastCursor: () => void;
 	getMaxZIndex: () => number;
 	getSelectedIds: () => string[]; // NEW: Get currently selected shape IDs
+	getShapeById: (id: string) => Shape | undefined; // NEW: Get shape by ID
 }
 
 /**
@@ -139,13 +140,7 @@ export class ShapeRenderer {
 			// Update statistics
 			this.lastCullingStats = getCullingStats(shapes.length, shapesToRender.length);
 
-			// Log stats if culling is significant (optional, can be removed)
-			if (shapes.length > 100 && this.lastCullingStats.cullingRatio > 0.3) {
-				console.log(
-					`[Viewport Culling] Rendering ${shapesToRender.length}/${shapes.length} shapes ` +
-						`(${Math.round(this.lastCullingStats.cullingRatio * 100)}% culled)`
-				);
-			}
+			// Stats available for debugging if needed
 		}
 
 		// Get currently selected shape IDs for styling
@@ -237,16 +232,40 @@ export class ShapeRenderer {
 		node.rotation(shape.rotation || 0);
 
 		const konvaShape = node as Konva.Shape;
-		konvaShape.fill(shape.fill || (shape.type === 'text' ? '#000000' : undefined));
+		// Only apply fill if it's enabled (default true if not specified)
+		if (shape.fillEnabled !== false) {
+			konvaShape.fill(shape.fill || (shape.type === 'text' ? '#000000' : undefined));
+		} else {
+			konvaShape.fill(undefined);
+		}
 
 		// CRITICAL: Never apply stroke to text shapes
 		// Konva.Text doesn't support stroke rendering properly - it creates visual artifacts
 		if (shape.type !== 'text') {
-			konvaShape.stroke(shape.stroke);
-			konvaShape.strokeWidth(shape.strokeWidth);
+			// Only apply stroke if it's enabled (default true if not specified)
+			if (shape.strokeEnabled !== false) {
+				konvaShape.stroke(shape.stroke);
+				konvaShape.strokeWidth(shape.strokeWidth);
+			} else {
+				konvaShape.stroke(undefined);
+				konvaShape.strokeWidth(0);
+			}
 		}
 
 		konvaShape.opacity(shape.opacity || 1);
+
+		// Apply shadow if configured
+		if (shape.shadow) {
+			konvaShape.shadowColor(shape.shadow.color);
+			konvaShape.shadowBlur(shape.shadow.blur);
+			konvaShape.shadowOffset({ x: shape.shadow.offsetX, y: shape.shadow.offsetY });
+			konvaShape.shadowOpacity(0.5); // Default shadow opacity
+		} else {
+			// Clear shadow if not configured
+			konvaShape.shadowColor('');
+			konvaShape.shadowBlur(0);
+			konvaShape.shadowOpacity(0);
+		}
 
 		// Update shape-specific properties based on type
 		switch (shape.type) {
@@ -259,11 +278,6 @@ export class ShapeRenderer {
 				(node as Konva.Circle).radius(shape.radius);
 				break;
 
-			case 'ellipse':
-				(node as Konva.Ellipse).radiusX(shape.radiusX);
-				(node as Konva.Ellipse).radiusY(shape.radiusY);
-				break;
-
 			case 'line':
 				(node as Konva.Line).points(shape.points);
 				break;
@@ -273,6 +287,13 @@ export class ShapeRenderer {
 				star.numPoints(shape.numPoints);
 				star.innerRadius(shape.innerRadius);
 				star.outerRadius(shape.outerRadius);
+				break;
+			}
+
+			case 'triangle': {
+				const triangle = node as Konva.RegularPolygon;
+				triangle.sides(3);
+				triangle.radius(Math.max(shape.width, shape.height) / 2);
 				break;
 			}
 
@@ -359,15 +380,16 @@ export class ShapeRenderer {
 			x: shape.x,
 			y: shape.y,
 			rotation: shape.rotation || 0, // Apply stored rotation
-			fill: shape.fill,
-			stroke: shape.stroke,
-			strokeWidth: shape.strokeWidth,
+			fill: shape.fillEnabled !== false ? shape.fill : undefined,
+			stroke: shape.strokeEnabled !== false ? shape.stroke : undefined,
+			strokeWidth: shape.strokeEnabled !== false ? shape.strokeWidth : 0,
 			strokeScaleEnabled: false, // Keep stroke width constant when scaling
 			draggable: (('draggable' in shape ? shape.draggable : true) ?? true) && !isDraggedByOther,
 			opacity: isDraggedByOther ? 0.5 : shape.opacity || 1, // Use stored opacity
-			shadowColor: isDraggedByOther ? '#667eea' : '',
-			shadowBlur: isDraggedByOther ? 8 : 0,
-			shadowOpacity: isDraggedByOther ? 0.6 : 0
+			shadowColor: isDraggedByOther ? '#667eea' : (shape.shadow?.color || ''),
+			shadowBlur: isDraggedByOther ? 8 : (shape.shadow?.blur || 0),
+			shadowOpacity: isDraggedByOther ? 0.6 : (shape.shadow ? 0.5 : 0),
+			shadowOffset: shape.shadow ? { x: shape.shadow.offsetX, y: shape.shadow.offsetY } : { x: 0, y: 0 }
 		};
 
 		switch (shape.type) {
@@ -382,13 +404,6 @@ export class ShapeRenderer {
 				return new Konva.Circle({
 					...baseConfig,
 					radius: shape.radius
-				});
-
-			case 'ellipse':
-				return new Konva.Ellipse({
-					...baseConfig,
-					radiusX: shape.radiusX,
-					radiusY: shape.radiusY
 				});
 
 			case 'line':
@@ -423,6 +438,23 @@ export class ShapeRenderer {
 				});
 			}
 
+			case 'triangle': {
+				const triangleShape = shape as Extract<Shape, { type: 'triangle' }>;
+				return new Konva.RegularPolygon({
+					...baseConfig,
+					sides: 3,
+					radius: Math.max(triangleShape.width, triangleShape.height) / 2,
+					fill: triangleShape.fill || undefined,
+					stroke: triangleShape.stroke || undefined,
+					strokeWidth: triangleShape.strokeWidth || 0,
+					strokeEnabled: triangleShape.strokeEnabled !== false,
+					shadowColor: triangleShape.shadow?.color || undefined,
+					shadowBlur: triangleShape.shadow?.blur || 0,
+					shadowOpacity: triangleShape.shadow ? 0.5 : 0,
+					shadowOffset: triangleShape.shadow ? { x: triangleShape.shadow.offsetX, y: triangleShape.shadow.offsetY } : { x: 0, y: 0 }
+				});
+			}
+
 			case 'text':
 				// Text shapes need special config: exclude stroke properties entirely
 				// Konva.Text doesn't support stroke rendering properly - it creates artifacts
@@ -452,7 +484,6 @@ export class ShapeRenderer {
 			case 'image':
 				// Image shapes need special handling with Image objects
 				// For now, return a placeholder rect (will be implemented in image support phase)
-				console.warn('Image shape rendering not yet implemented');
 				return new Konva.Rect({
 					...baseConfig,
 					width: shape.width,
@@ -462,13 +493,14 @@ export class ShapeRenderer {
 				});
 
 			default:
-				console.warn('Unknown shape type:', (shape as Shape).type);
 				return null;
 		}
 	}
 
 	/**
 	 * Attach event handlers to a Konva shape
+	 * CRITICAL: Do NOT close over shape data - look it up fresh from the callbacks
+	 * This ensures hover effects, drag handling, etc. always use current Yjs state
 	 */
 	private attachEventHandlers(
 		konvaShape: Konva.Shape,
@@ -477,13 +509,18 @@ export class ShapeRenderer {
 	): void {
 		if (!this.callbacks || !this.stage) return;
 
-		// Hover effects
+		const shapeId = shape.id;
+
+		// Hover effects - lookup current shape from callbacks to get fresh data
 		konvaShape.on('mouseenter', () => {
 			if (!this.stage) return;
 			this.stage.container().style.cursor = isDraggedByOther ? 'not-allowed' : 'move';
 
 			if (!isDraggedByOther) {
-				konvaShape.strokeWidth((shape.strokeWidth || 2) + 1);
+				// Hover outline: same color as transformer
+				konvaShape.strokeEnabled(true);
+				konvaShape.stroke('#667eea');
+				konvaShape.strokeWidth(2);
 				this.shapesLayer.batchDraw();
 			}
 		});
@@ -493,7 +530,16 @@ export class ShapeRenderer {
 			this.stage.container().style.cursor = 'default';
 
 			if (!isDraggedByOther) {
-				konvaShape.strokeWidth(shape.strokeWidth);
+				// Get current shape data instead of using closure
+				const currentShape = this.callbacks!.getShapeById?.(shapeId) || shape;
+				// Restore actual stroke configuration
+				if (currentShape.strokeEnabled !== false) {
+					konvaShape.stroke(currentShape.stroke);
+					konvaShape.strokeWidth(currentShape.strokeWidth || 0);
+				} else {
+					konvaShape.stroke(undefined);
+					konvaShape.strokeWidth(0);
+				}
 				this.shapesLayer.batchDraw();
 			}
 		});
@@ -517,10 +563,10 @@ export class ShapeRenderer {
 			this.callbacks!.onBroadcastCursor();
 
 			// Track local drag
-			this.locallyDraggingId = shape.id;
+			this.locallyDraggingId = shapeId;
 
 			// Update with highest zIndex
-			this.callbacks!.onShapeUpdate(shape.id, {
+			this.callbacks!.onShapeUpdate(shapeId, {
 				draggedBy: this.localUserId || undefined,
 				zIndex: this.callbacks!.getMaxZIndex() + 1
 			});
@@ -536,8 +582,11 @@ export class ShapeRenderer {
 		konvaShape.on('dragend', (e) => {
 			if (!this.stage) return;
 
-			// Reset visual feedback
-			konvaShape.opacity(1);
+			// Get current shape data for accurate reset
+			const currentShape = this.callbacks!.getShapeById?.(shapeId) || shape;
+
+			// Reset visual feedback to original shape properties (from current state)
+			konvaShape.opacity(currentShape.opacity || 1);
 			konvaShape.shadowColor('');
 			konvaShape.shadowBlur(0);
 			konvaShape.shadowOpacity(0);
@@ -545,7 +594,7 @@ export class ShapeRenderer {
 			this.stage.container().style.cursor = 'move';
 
 			// Update final position and clear drag state
-			this.callbacks!.onShapeUpdate(shape.id, {
+			this.callbacks!.onShapeUpdate(shapeId, {
 				x: e.target.x(),
 				y: e.target.y(),
 				draggedBy: undefined

@@ -60,16 +60,11 @@
 
 			const url = `http://${PUBLIC_PARTYKIT_HOST}/parties/yjs/main/api/ai/command`;
 
-			console.log('[AI] Sending request to:', url);
-			console.log('[AI] Current viewport:', viewport);
-
 			// Calculate visible center of viewport
 			const stageWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
 			const stageHeight = typeof window !== 'undefined' ? window.innerHeight : 1080;
 			const visibleCenterX = (-viewport.x + stageWidth / 2) / viewport.scale;
 			const visibleCenterY = (-viewport.y + stageHeight / 2) / viewport.scale;
-
-			console.log('[AI] Visible center:', visibleCenterX, visibleCenterY);
 
 			const response = await fetch(url, {
 				method: 'POST',
@@ -92,9 +87,6 @@
 				signal: controller.signal
 			});
 
-			console.log('[AI] Response status:', response.status, response.statusText);
-			console.log('[AI] Response headers:', Array.from(response.headers.entries()));
-
 			clearTimeout(timeoutId);
 
 			if (!response.ok) {
@@ -104,26 +96,18 @@
 
 			const data = await response.json();
 
-			console.log('[AI Response]', data);
-
 			if (!data.success) {
 				throw new Error(data.error || 'Command failed');
 			}
 
 			// Execute AI tools client-side using our Yjs connection
 			if (data.toolsToExecute && data.toolsToExecute.length > 0) {
-				console.log('[AI] Executing', data.toolsToExecute.length, 'tools:', data.toolsToExecute);
-
 				// Execute tools in parallel for faster performance
 				await Promise.all(
 					data.toolsToExecute.map((tool: { name: string; params: Record<string, unknown> }) =>
 						executeAITool(tool.name, tool.params)
 					)
 				);
-
-				console.log('[AI] All tools executed');
-			} else {
-				console.warn('[AI] No tools to execute in response');
 			}
 
 			commandState = 'success';
@@ -159,17 +143,15 @@
 	 * Execute an AI tool client-side
 	 */
 	async function executeAITool(toolName: string, params: Record<string, unknown>): Promise<void> {
-		console.log('[AI Tool Execution]', toolName, params);
-
 		// Creation tools - use ShapeFactory
 		const creationTools = [
 			'createRectangle',
 			'createCircle',
-			'createEllipse',
 			'createLine',
 			'createText',
 			'createPolygon',
 			'createStar',
+			'createTriangle',
 			'createImage'
 		];
 
@@ -177,11 +159,11 @@
 			const typeMap: Record<string, string> = {
 				createRectangle: 'rectangle',
 				createCircle: 'circle',
-				createEllipse: 'ellipse',
 				createLine: 'line',
 				createText: 'text',
 				createPolygon: 'polygon',
 				createStar: 'star',
+				createTriangle: 'triangle',
 				createImage: 'image'
 			};
 
@@ -230,13 +212,9 @@
 		}
 		// Layout tools
 		else if (toolName === 'arrangeHorizontal') {
-			console.log('[Layout] arrangeHorizontal - IDs:', params.shapeIds);
 			const shapes = getShapesForLayout(params.shapeIds as string[]);
 
-			console.log('[Layout] Found', shapes.length, 'shapes:', shapes);
-
 			if (shapes.length === 0) {
-				console.warn('[Layout] No shapes found!');
 				return;
 			}
 
@@ -244,27 +222,11 @@
 			let currentX = (params.startX as number) || 100;
 			const y = (params.startY as number) || (shapes[0].y as number);
 
-			console.log('[Layout] Starting at X:', currentX, 'Y:', y, 'Spacing:', spacing);
-
 			shapes.forEach((shape) => {
 				const width = getShapeWidth(shape);
-				console.log(
-					'[Layout] Shape',
-					shapes.indexOf(shape),
-					'- ID:',
-					shape.id,
-					'Moving to X:',
-					currentX,
-					'Y:',
-					y,
-					'Width:',
-					width
-				);
 				shapeOperations.update(shape.id, { x: currentX, y });
 				currentX += width + spacing;
 			});
-
-			console.log('[Layout] arrangeHorizontal complete');
 		} else if (toolName === 'arrangeVertical') {
 			const shapes = getShapesForLayout(params.shapeIds as string[]);
 

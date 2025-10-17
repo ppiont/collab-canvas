@@ -1,17 +1,17 @@
 /**
  * Comprehensive Shape Type System for CollabCanvas
- * Supports 8 shape types: rectangle, circle, ellipse, line, text, polygon, star, image
+ * Supports 8 shape types: rectangle, circle, line, text, polygon, star, triangle, image
  */
 
 /** All supported shape types */
 export type ShapeType =
 	| 'rectangle'
 	| 'circle'
-	| 'ellipse'
 	| 'line'
 	| 'text'
 	| 'polygon'
 	| 'star'
+	| 'triangle'
 	| 'image';
 
 /** Blend modes for shape rendering */
@@ -35,7 +35,9 @@ export interface BaseShape {
 	opacity: number; // 0-1
 	rotation: number; // 0-360
 	fill?: string;
+	fillEnabled?: boolean; // Whether fill is active (true by default if fill is set)
 	stroke?: string;
+	strokeEnabled?: boolean; // Whether stroke is active (true by default if stroke is set)
 	strokeWidth?: number;
 	blendMode?: BlendMode;
 	shadow?: ShadowConfig;
@@ -58,13 +60,6 @@ export interface RectangleShape extends BaseShape {
 export interface CircleShape extends BaseShape {
 	type: 'circle';
 	radius: number;
-}
-
-/** Ellipse shape */
-export interface EllipseShape extends BaseShape {
-	type: 'ellipse';
-	radiusX: number;
-	radiusY: number;
 }
 
 /** Line/polyline shape */
@@ -106,6 +101,13 @@ export interface StarShape extends BaseShape {
 	outerRadius: number;
 }
 
+/** Triangle shape */
+export interface TriangleShape extends BaseShape {
+	type: 'triangle';
+	width: number;
+	height: number;
+}
+
 /** Image shape */
 export interface ImageShape extends BaseShape {
 	type: 'image';
@@ -118,11 +120,11 @@ export interface ImageShape extends BaseShape {
 export type Shape =
 	| RectangleShape
 	| CircleShape
-	| EllipseShape
 	| LineShape
 	| TextShape
 	| PolygonShape
 	| StarShape
+	| TriangleShape
 	| ImageShape;
 
 /** Type guards for discriminated unions */
@@ -132,10 +134,6 @@ export function isRectangle(shape: Shape): shape is RectangleShape {
 
 export function isCircle(shape: Shape): shape is CircleShape {
 	return shape.type === 'circle';
-}
-
-export function isEllipse(shape: Shape): shape is EllipseShape {
-	return shape.type === 'ellipse';
 }
 
 export function isLine(shape: Shape): shape is LineShape {
@@ -152,6 +150,10 @@ export function isPolygon(shape: Shape): shape is PolygonShape {
 
 export function isStar(shape: Shape): shape is StarShape {
 	return shape.type === 'star';
+}
+
+export function isTriangle(shape: Shape): shape is TriangleShape {
+	return shape.type === 'triangle';
 }
 
 export function isImage(shape: Shape): shape is ImageShape {
@@ -174,9 +176,9 @@ export const DEFAULT_BASE_SHAPE: Omit<
 export const DEFAULT_SHAPE_DIMENSIONS = {
 	rectangle: { width: 150, height: 100 },
 	circle: { radius: 50 },
-	ellipse: { radiusX: 75, radiusY: 50 },
 	text: { fontSize: 16, fontFamily: 'system-ui' },
 	polygon: { sides: 5, radius: 50 },
 	star: { numPoints: 5, innerRadius: 25, outerRadius: 50 },
-	image: { width: 200, height: 150 }
+	image: { width: 200, height: 150 },
+	triangle: { width: 100, height: 100 }
 } as const;

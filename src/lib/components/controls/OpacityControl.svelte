@@ -14,10 +14,12 @@
 	let percentValue = $state(Math.round(value * 100));
 
 	$effect(() => {
+		// Sync prop changes but don't override local changes in progress
 		percentValue = Math.round(value * 100);
 	});
 
 	function handleSliderChange() {
+		// Immediately update local state for visual feedback
 		const opacity = percentValue / 100;
 		onchange?.(opacity);
 	}
@@ -26,6 +28,7 @@
 		const target = e.target as HTMLInputElement;
 		const num = parseInt(target.value) || 0;
 		const clamped = Math.max(0, Math.min(100, num));
+		percentValue = clamped;
 		onchange?.(clamped / 100);
 	}
 </script>

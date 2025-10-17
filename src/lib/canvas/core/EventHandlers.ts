@@ -11,6 +11,7 @@
  */
 
 import Konva from 'konva';
+import { get } from 'svelte/store';
 import type { ViewportManager } from './ViewportManager';
 import type { SelectionManager } from './SelectionManager';
 import type { CursorManager } from '../collaboration/CursorManager';
@@ -21,6 +22,9 @@ import { shapeOperations } from '$lib/stores/shapes';
 
 /** Callback for shape creation */
 export type ShapeCreateCallback = (x: number, y: number) => void;
+
+/** Callback for line shape creation with points */
+export type LineCreateCallback = (points: number[]) => void;
 
 /** Callback to get all shapes for selection net */
 export type GetShapesCallback = () => Shape[];
@@ -37,12 +41,17 @@ export class CanvasEventHandlers {
 	private selectionNet: SelectionNet;
 	private isCreateMode: () => boolean;
 	private onShapeCreate: ShapeCreateCallback;
+	private onLineCreate: LineCreateCallback;
 	private getShapes: GetShapesCallback;
 	private isDraggingStage = false;
 	private isDrawingNet = false;
 	private netStartPos: { x: number; y: number } | null = null;
 	private isSpacePressed = false; // Track spacebar for pan mode
 	private justCompletedDragNet = false; // Prevent click from clearing drag-net selection
+	private isDrawingLine = false; // Track if currently drawing a line
+	private currentLinePoints: number[] = []; // Points for current line being drawn
+	private linePreviewLayer: Konva.Layer | null = null; // Layer for line preview
+	private linePreviewGroup: Konva.Group | null = null; // Group for preview line and points
 
 	constructor(
 		stage: Konva.Stage,
@@ -52,6 +61,7 @@ export class CanvasEventHandlers {
 		cursorManager: CursorManager,
 		isCreateMode: () => boolean,
 		onShapeCreate: ShapeCreateCallback,
+		onLineCreate: LineCreateCallback,
 		getShapes: GetShapesCallback
 	) {
 		this.stage = stage;
@@ -61,8 +71,15 @@ export class CanvasEventHandlers {
 		this.cursorManager = cursorManager;
 		this.isCreateMode = isCreateMode;
 		this.onShapeCreate = onShapeCreate;
+		this.onLineCreate = onLineCreate;
 		this.getShapes = getShapes;
 		this.selectionNet = new SelectionNet(stage, shapesLayer);
+
+		// Create preview layer for line drawing UI
+		this.linePreviewLayer = new Konva.Layer();
+		this.stage.add(this.linePreviewLayer);
+		this.linePreviewGroup = new Konva.Group();
+		this.linePreviewLayer.add(this.linePreviewGroup);
 	}
 
 	/**
@@ -83,7 +100,12 @@ export class CanvasEventHandlers {
 	 */
 	setupMouseMoveHandler(): void {
 		this.stage.on('mousemove', (e) => {
-			this.cursorManager?.broadcastCursor(e);
+			this.cursorManager?.broadcastCursor();
+
+			// Update line preview if drawing
+			if (this.isDrawingLine) {
+				this.updateLinePreview();
+			}
 
 			// Update cursor based on what we're hovering over
 			// Don't change cursor if we're actively dragging the stage
@@ -117,6 +139,25 @@ export class CanvasEventHandlers {
 			// Get keyboard modifiers
 			const isShift = e.evt.shiftKey;
 			const isCmd = e.evt.metaKey || e.evt.ctrlKey;
+			const activeToolValue = get(activeTool);
+
+			// Handle line drawing mode
+			if (activeToolValue === 'line') {
+				const pos = this.stage.getPointerPosition();
+				if (pos) {
+					const transform = this.stage.getAbsoluteTransform().copy().invert();
+					const canvasPos = transform.point(pos);
+
+					this.currentLinePoints.push(canvasPos.x, canvasPos.y);
+					this.isDrawingLine = true;
+
+					// Finish drawing after 2 points (4 coordinate values)
+					if (this.currentLinePoints.length >= 4) {
+						this.finishLineDrawing();
+					}
+				}
+				return;
+			}
 
 			// If clicked on empty canvas
 			if (e.target === this.stage) {
@@ -137,24 +178,19 @@ export class CanvasEventHandlers {
 			} else if (e.target.hasName('shape')) {
 				// Clicked on a shape
 				const shapeId = e.target.id();
-				console.log('[Click] Shape clicked:', shapeId, 'Shift:', isShift, 'Cmd:', isCmd);
 
 				if (isCmd) {
 					// Cmd/Ctrl+Click: Toggle selection
-					console.log('[Click] Cmd mode - toggling');
 					this.selectionManager.toggleSelection(shapeId);
 				} else if (isShift) {
 					// Shift+Click: Add to or remove from selection
 					if (this.selectionManager.isSelected(shapeId)) {
-						console.log('[Click] Shift mode - removing from selection');
 						this.selectionManager.removeFromSelection(shapeId);
 					} else {
-						console.log('[Click] Shift mode - adding to selection');
 						this.selectionManager.addToSelection(shapeId);
 					}
 				} else {
 					// Normal click: Single select
-					console.log('[Click] Normal mode - single select');
 					this.selectionManager.select(shapeId);
 				}
 			}
@@ -177,7 +213,6 @@ export class CanvasEventHandlers {
 					const pos = this.stage.getPointerPosition();
 					if (pos) {
 						this.netStartPos = pos;
-						console.log('[MouseDown] Recorded netStartPos:', this.netStartPos);
 					}
 				}
 
@@ -196,7 +231,6 @@ export class CanvasEventHandlers {
 			if (e.target === this.stage) {
 				this.isDraggingStage = true;
 				this.stage.container().style.cursor = 'grabbing';
-				console.log('[DragStart] Stage drag started');
 			}
 		});
 
@@ -213,8 +247,6 @@ export class CanvasEventHandlers {
 
 			// Sync viewport store with final stage position
 			this.viewportManager.syncStore();
-
-			console.log('[DragEnd] Stage drag ended');
 
 			// Reset cursor based on spacebar state
 			if (this.isSpacePressed) {
@@ -262,7 +294,6 @@ export class CanvasEventHandlers {
 
 					// Start net if dragged more than 5px
 					if (distance > 5) {
-						console.log('[DragNet] Starting drag-net, distance:', distance);
 						this.isDrawingNet = true;
 						this.stage.draggable(false); // Ensure stage drag is disabled
 						this.stage.container().style.cursor = 'crosshair'; // Crosshair during selection
@@ -284,14 +315,11 @@ export class CanvasEventHandlers {
 			if (this.isDrawingNet) {
 				// Finalize selection
 				const bounds = this.selectionNet.end();
-				console.log('[DragNet] Bounds:', bounds);
 
 				if (bounds && (bounds.width > 0 || bounds.height > 0)) {
 					const allShapes = this.getShapes();
-					console.log('[DragNet] All shapes:', allShapes.length);
 
 					const intersectingIds = this.selectionNet.getIntersectingShapes(bounds, allShapes);
-					console.log('[DragNet] Intersecting shapes:', intersectingIds);
 
 					// Get keyboard modifiers
 					const isShift = e.evt.shiftKey;
@@ -302,7 +330,6 @@ export class CanvasEventHandlers {
 						const current = this.selectionManager.getSelectedIds();
 						const combined = [...new Set([...current, ...intersectingIds])];
 						this.selectionManager.selectMultiple(combined);
-						console.log('[DragNet] Shift mode - Combined selection:', combined);
 					} else if (isCmd) {
 						// Cmd: Toggle selection
 						const current = new Set(this.selectionManager.getSelectedIds());
@@ -315,11 +342,9 @@ export class CanvasEventHandlers {
 						});
 						const toggled = Array.from(current);
 						this.selectionManager.selectMultiple(toggled);
-						console.log('[DragNet] Cmd mode - Toggled selection:', toggled);
 					} else {
 						// Default: Replace selection
 						this.selectionManager.selectMultiple(intersectingIds);
-						console.log('[DragNet] Default mode - Selected:', intersectingIds);
 					}
 
 					// Mark that we just completed drag-net to prevent click handler from clearing selection
@@ -379,11 +404,6 @@ export class CanvasEventHandlers {
 
 			// Tool selection shortcuts (only when not typing)
 			if (!isTyping && !e.metaKey && !e.ctrlKey && !e.altKey) {
-				if (e.key === 'v') {
-					e.preventDefault();
-					activeTool.set('select');
-					return;
-				}
 				if (e.key === 'r') {
 					e.preventDefault();
 					activeTool.set('rectangle');
@@ -394,14 +414,21 @@ export class CanvasEventHandlers {
 					activeTool.set('circle');
 					return;
 				}
-				if (e.key === 'e') {
+				if (e.key === 'g') {
 					e.preventDefault();
-					activeTool.set('ellipse');
+					activeTool.set('triangle');
 					return;
 				}
 				if (e.key === 'l') {
 					e.preventDefault();
-					activeTool.set('line');
+					// If already drawing a line, finish it; otherwise start drawing
+					if (this.isDrawingLine) {
+						if (this.currentLinePoints.length >= 4) {
+							this.finishLineDrawing();
+						}
+					} else {
+						activeTool.set('line');
+					}
 					return;
 				}
 				if (e.key === 't') {
@@ -423,6 +450,14 @@ export class CanvasEventHandlers {
 
 			// Escape key - deselect and cancel
 			if (e.key === 'Escape') {
+				// Cancel line drawing if in progress
+				if (this.isDrawingLine) {
+					this.currentLinePoints = [];
+					this.isDrawingLine = false;
+					this.clearLinePreview();
+					return;
+				}
+
 				// Cancel drag-net if active
 				if (this.isDrawingNet) {
 					this.selectionNet.cancel();
@@ -447,9 +482,21 @@ export class CanvasEventHandlers {
 				}
 			}
 
-			// Delete/Backspace - delete selected shapes
+			// Delete/Backspace - delete selected shapes or undo last point when drawing line
 			if (e.key === 'Delete' || e.key === 'Backspace') {
 				if (!isTyping) {
+					// If drawing a line, remove the last point
+					if (this.isDrawingLine) {
+						e.preventDefault();
+						if (this.currentLinePoints.length >= 2) {
+							this.currentLinePoints.pop();
+							this.currentLinePoints.pop();
+							this.updateLinePreview();
+						}
+						return;
+					}
+
+					// Otherwise delete selected shapes
 					e.preventDefault();
 					this.selectionManager.delete();
 				}
@@ -602,6 +649,103 @@ export class CanvasEventHandlers {
 
 	private keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 	private keyupHandler: ((e: KeyboardEvent) => void) | null = null;
+
+	/**
+	 * Update line preview visualization as user moves mouse while drawing
+	 */
+	private updateLinePreview(): void {
+		if (!this.linePreviewGroup) return;
+
+		const pos = this.stage.getPointerPosition();
+		if (!pos) return;
+
+		const transform = this.stage.getAbsoluteTransform().copy().invert();
+		const canvasPos = transform.point(pos);
+
+		// Clear previous preview
+		this.linePreviewGroup.destroyChildren();
+
+		// Draw the preview line from all placed points to current position
+		if (this.currentLinePoints.length >= 2) {
+			const previewPoints = [...this.currentLinePoints, canvasPos.x, canvasPos.y];
+
+			const previewLine = new Konva.Line({
+				points: previewPoints,
+				stroke: '#667eea',
+				strokeWidth: 2,
+				lineCap: 'round',
+				lineJoin: 'round',
+				dash: [5, 5], // Dashed line to show it's temporary
+				listening: false
+			});
+
+			this.linePreviewGroup.add(previewLine);
+		}
+
+		// Draw circles at each placed point
+		for (let i = 0; i < this.currentLinePoints.length; i += 2) {
+			const x = this.currentLinePoints[i];
+			const y = this.currentLinePoints[i + 1];
+
+			const circle = new Konva.Circle({
+				x,
+				y,
+				radius: 4,
+				fill: '#667eea',
+				stroke: '#ffffff',
+				strokeWidth: 1,
+				listening: false
+			});
+
+			this.linePreviewGroup.add(circle);
+		}
+
+		// Draw a circle at current mouse position
+		const currentCircle = new Konva.Circle({
+			x: canvasPos.x,
+			y: canvasPos.y,
+			radius: 3,
+			fill: '#667eea',
+			stroke: '#ffffff',
+			strokeWidth: 1,
+			opacity: 0.6,
+			listening: false
+		});
+
+		this.linePreviewGroup.add(currentCircle);
+
+		this.linePreviewLayer?.batchDraw();
+	}
+
+	/**
+	 * Clear line preview
+	 */
+	private clearLinePreview(): void {
+		if (this.linePreviewGroup) {
+			this.linePreviewGroup.destroyChildren();
+			this.linePreviewLayer?.batchDraw();
+		}
+	}
+
+	/**
+	 * Finish drawing a line and create the shape
+	 */
+	private finishLineDrawing(): void {
+		if (this.currentLinePoints.length < 4) {
+			// Not enough points for a line
+			this.currentLinePoints = [];
+			this.isDrawingLine = false;
+			this.clearLinePreview();
+			return;
+		}
+
+		// Call the line creation callback
+		this.onLineCreate(this.currentLinePoints);
+
+		this.currentLinePoints = [];
+		this.isDrawingLine = false;
+		this.clearLinePreview();
+	}
 
 	/**
 	 * Clean up all event handlers

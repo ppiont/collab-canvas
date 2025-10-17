@@ -53,6 +53,12 @@
 			fontSizeValue = (firstShape as { fontSize: number }).fontSize || 16;
 		}
 	});
+
+	// Helper function to auto-select input text on focus
+	function handleInputFocus(e: Event) {
+		const target = e.target as HTMLInputElement;
+		target.select();
+	}
 </script>
 
 <!-- Floating Properties Panel -->
@@ -86,10 +92,11 @@
 									const val = parseInt((e.target as HTMLInputElement).value) || 0;
 									updateSelected('x', val);
 								}}
+								onfocus={handleInputFocus}
 								class="text-sm"
 							/>
 						{:else}
-							<Input disabled placeholder="mixed" class="text-sm" />
+							<Input disabled placeholder="mixed" onfocus={handleInputFocus} class="text-sm" />
 						{/if}
 					</div>
 					<div class="space-y-1">
@@ -102,10 +109,11 @@
 									const val = parseInt((e.target as HTMLInputElement).value) || 0;
 									updateSelected('y', val);
 								}}
+								onfocus={handleInputFocus}
 								class="text-sm"
 							/>
 						{:else}
-							<Input disabled placeholder="mixed" class="text-sm" />
+							<Input disabled placeholder="mixed" onfocus={handleInputFocus} class="text-sm" />
 						{/if}
 					</div>
 				</div>
@@ -136,7 +144,9 @@
 					<ColorControl
 						label="Color"
 						value={fill as string | null}
-						onchange={(color: string | null) => updateSelected('fill', color ?? '')}
+						enabled={firstShape && firstShape.fillEnabled !== false}
+						onchange={(color: string | null) => updateSelected('fill', color as any)}
+						onEnabledChange={(enabled: boolean) => updateSelected('fillEnabled', enabled)}
 						allowNone={true}
 					/>
 				{:else}
@@ -152,9 +162,13 @@
 						<ColorControl
 							label="Color"
 							value={stroke as string | null}
-							onchange={(color: string | null) => updateSelected('stroke', color ?? '')}
+							enabled={firstShape && firstShape.strokeEnabled !== false}
+							onchange={(color: string | null) => updateSelected('stroke', color as any)}
+							onEnabledChange={(enabled: boolean) => updateSelected('strokeEnabled', enabled)}
 							allowNone={true}
 						/>
+					{:else}
+						<div class="text-sm text-gray-500 py-2">Multiple stroke colors</div>
 					{/if}
 
 					{#if strokeWidth !== 'mixed'}
@@ -216,6 +230,7 @@
 										e.currentTarget.value as unknown as Shape[keyof Shape]
 									);
 								}}
+								onfocus={handleInputFocus}
 								class="w-full px-2 py-1 border rounded text-sm bg-white"
 							>
 								<option value="Arial">Arial</option>
@@ -259,6 +274,7 @@
 										e.currentTarget.value as unknown as Shape[keyof Shape]
 									);
 								}}
+								onfocus={handleInputFocus}
 								class="w-full px-2 py-1 border rounded text-sm bg-white"
 							>
 								<option value="left">Left</option>

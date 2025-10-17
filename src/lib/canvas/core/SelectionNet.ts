@@ -136,23 +136,14 @@ export class SelectionNet {
 	getIntersectingShapes(bounds: SelectionNetBounds, shapes: Shape[]): string[] {
 		const intersecting: string[] = [];
 
-		console.log('[SelectionNet] Checking intersection with bounds:', bounds);
-		console.log('[SelectionNet] Total shapes to check:', shapes.length);
-
 		for (const shape of shapes) {
 			const doesIntersect = this.shapeIntersectsBounds(shape, bounds);
-			console.log(`[SelectionNet] Shape ${shape.id} (${shape.type}):`, {
-				x: shape.x,
-				y: shape.y,
-				intersects: doesIntersect
-			});
 
 			if (doesIntersect) {
 				intersecting.push(shape.id);
 			}
 		}
 
-		console.log('[SelectionNet] Intersecting shapes:', intersecting);
 		return intersecting;
 	}
 
@@ -173,7 +164,6 @@ export class SelectionNet {
 					width: shape.width,
 					height: shape.height
 				};
-				console.log(`[SelectionNet] Rectangle bounds:`, shapeBounds);
 				break;
 			}
 
@@ -253,12 +243,6 @@ export class SelectionNet {
 			shapeBounds.y + shapeBounds.height < bounds.y ||
 			shapeBounds.y > bounds.y + bounds.height
 		);
-
-		console.log(`[SelectionNet] AABB test:`, {
-			shapeBounds,
-			selectionBounds: bounds,
-			intersects
-		});
 
 		return intersects;
 	}

@@ -10,7 +10,7 @@ export const CANVAS = {
 	BACKGROUND_COLOR: '#ffffff',
 	MIN_ZOOM: 0.1,
 	MAX_ZOOM: 5,
-	ZOOM_STEP: 1.05,
+	ZOOM_STEP: 1.15,
 	DEFAULT_WIDTH: 1920,
 	DEFAULT_HEIGHT: 1080,
 	// Viewport culling settings
