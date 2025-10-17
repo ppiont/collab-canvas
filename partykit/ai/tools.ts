@@ -1,6 +1,6 @@
 /**
  * AI Tool Schema for OpenAI Function Calling
- * Defines 20 tools for canvas manipulation (6 creation, 6 manipulation, 5 layout, 3 query)
+ * Defines 22 tools for canvas manipulation (6 creation, 8 manipulation, 5 layout, 3 query)
  */
 
 import type { ChatCompletionTool } from 'openai/resources/chat/completions';
@@ -258,6 +258,44 @@ export const AI_TOOLS: ChatCompletionTool[] = [
 		}
 	},
 
+	{
+		type: 'function',
+		function: {
+			name: 'bringToFront',
+			description: 'Bring one or more shapes to the front (top z-order)',
+			parameters: {
+				type: 'object',
+				properties: {
+					shapeIds: {
+						type: 'array',
+						items: { type: 'string' },
+						description: 'IDs of shapes to bring to front'
+					}
+				},
+				required: ['shapeIds']
+			}
+		}
+	},
+
+	{
+		type: 'function',
+		function: {
+			name: 'sendToBack',
+			description: 'Send one or more shapes to the back (bottom z-order)',
+			parameters: {
+				type: 'object',
+				properties: {
+					shapeIds: {
+						type: 'array',
+						items: { type: 'string' },
+						description: 'IDs of shapes to send to back'
+					}
+				},
+				required: ['shapeIds']
+			}
+		}
+	},
+
 	// ═══════════════════════════════════════════════════════
 	// LAYOUT TOOLS (5 tools)
 	// ═══════════════════════════════════════════════════════
@@ -455,6 +493,8 @@ export const TOOL_NAMES = [
 	'updateShapeColor',
 	'deleteShape',
 	'duplicateShape',
+	'bringToFront',
+	'sendToBack',
 	// Layout
 	'arrangeHorizontal',
 	'arrangeVertical',
