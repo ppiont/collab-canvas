@@ -10,18 +10,19 @@
 
 	let { value = 1, onchange }: Props = $props();
 
-	// eslint-disable-next-line svelte/prefer-writable-derived
+	// Local state for percent value (0-100)
 	let percentValue = $state(Math.round(value * 100));
 
+	// Sync prop changes to local state
 	$effect(() => {
-		// Sync prop changes but don't override local changes in progress
 		percentValue = Math.round(value * 100);
 	});
 
-	function handleSliderChange() {
-		// Immediately update local state for visual feedback
-		const opacity = percentValue / 100;
-		onchange?.(opacity);
+	function handleSliderChange(e: Event) {
+		const event = e as CustomEvent<{ value: number[] }>;
+		const newPercent = event.detail.value[0];
+		percentValue = newPercent;
+		onchange?.(newPercent / 100);
 	}
 
 	function handleInputChange(e: Event) {
@@ -30,6 +31,11 @@
 		const clamped = Math.max(0, Math.min(100, num));
 		percentValue = clamped;
 		onchange?.(clamped / 100);
+	}
+
+	function handleInputFocus(e: Event) {
+		const target = e.target as HTMLInputElement;
+		target.select();
 	}
 </script>
 
@@ -41,7 +47,7 @@
 
 	<Slider
 		type="single"
-		bind:value={percentValue}
+		value={[percentValue]}
 		onchange={handleSliderChange}
 		min={0}
 		max={100}
@@ -52,6 +58,7 @@
 		type="number"
 		value={percentValue}
 		onchange={handleInputChange}
+		onfocus={handleInputFocus}
 		min="0"
 		max="100"
 		step="1"
