@@ -1,158 +1,158 @@
-import { writable, derived, type Writable } from 'svelte/store';
 import type { LineShape } from '$lib/types/shapes';
 
 /**
- * LineManager - Reactive line state management for Svelte 5
- * Uses Svelte stores for proper reactivity in .svelte.ts files
+ * LineManager - Simple reactive state management using class-based store pattern
+ * Compatible with all Svelte versions, no runes needed
+ * Subscribers are notified of changes to trigger reactivity in Svelte components
  */
-
-interface LineState {
-	selectedLineId: string | null;
-	selectedLinePoints: number[];
-	draggedEndpointIndex: number | null;
-	isDragging: boolean;
-}
-
-// Create writable store for line state
-function createLineStore() {
-	const initialState: LineState = {
-		selectedLineId: null,
-		selectedLinePoints: [],
-		draggedEndpointIndex: null,
-		isDragging: false
-	};
-
-	const { subscribe, set, update } = writable<LineState>(initialState);
+export class LineManager {
+	// State
+	selectedLineId: string | null = null;
+	selectedLinePoints: number[] = [];
+	draggedEndpointIndex: number | null = null;
+	isDragging = false;
 
 	// Callbacks for syncing with Yjs
-	let onPointsChange: ((points: number[]) => void) | null = null;
-	let getLineShape: ((id: string) => LineShape | undefined) | null = null;
+	private onPointsChange: ((points: number[]) => void) | null = null;
+	private getLineShape: ((id: string) => LineShape | undefined) | null = null;
 
-	return {
-		subscribe,
+	// Subscriber system for reactivity
+	private subscribers: Set<() => void> = new Set();
 
-		setCallbacks(
-			pointsChange: (points: number[]) => void,
-			getShape: (id: string) => LineShape | undefined
-		) {
-			onPointsChange = pointsChange;
-			getLineShape = getShape;
-		},
+	constructor() {}
 
-		selectLine(lineId: string) {
-			if (getLineShape) {
-				const line = getLineShape(lineId);
-				if (line && line.type === 'line') {
-					update((state) => ({
-						...state,
-						selectedLineId: lineId,
-						selectedLinePoints: [...line.points]
-					}));
-				}
+	/**
+	 * Subscribe to state changes
+	 */
+	subscribe(callback: () => void) {
+		this.subscribers.add(callback);
+		return () => this.subscribers.delete(callback);
+	}
+
+	/**
+	 * Notify subscribers of state changes
+	 */
+	private notify() {
+		this.subscribers.forEach((sub) => sub());
+	}
+
+	/**
+	 * Set callbacks for external integration
+	 */
+	setCallbacks(
+		onPointsChange: (points: number[]) => void,
+		getLineShape: (id: string) => LineShape | undefined
+	) {
+		this.onPointsChange = onPointsChange;
+		this.getLineShape = getLineShape;
+	}
+
+	/**
+	 * Select a line for editing
+	 */
+	selectLine(lineId: string) {
+		this.selectedLineId = lineId;
+		if (this.getLineShape) {
+			const line = this.getLineShape(lineId);
+			if (line && line.type === 'line') {
+				this.selectedLinePoints = [...line.points];
 			}
-		},
-
-		deselectLine() {
-			update((state) => ({
-				...state,
-				selectedLineId: null,
-				selectedLinePoints: [],
-				draggedEndpointIndex: null,
-				isDragging: false
-			}));
-		},
-
-		startDraggingEndpoint(endpointIndex: number) {
-			update((state) => ({
-				...state,
-				draggedEndpointIndex: endpointIndex,
-				isDragging: true
-			}));
-		},
-
-		updateEndpointPosition(x: number, y: number) {
-			update((state) => {
-				if (state.draggedEndpointIndex === null) return state;
-
-				const pointIndex = state.draggedEndpointIndex * 2;
-				const newPoints = [...state.selectedLinePoints];
-				newPoints[pointIndex] = x;
-				newPoints[pointIndex + 1] = y;
-
-				return {
-					...state,
-					selectedLinePoints: newPoints
-				};
-			});
-		},
-
-		finishDragging() {
-			update((state) => {
-				// Sync to Yjs on finish
-				if (onPointsChange) {
-					onPointsChange(state.selectedLinePoints);
-				}
-
-				return {
-					...state,
-					isDragging: false,
-					draggedEndpointIndex: null
-				};
-			});
-		},
-
-		getEndpoints(): Array<{ x: number; y: number; index: number }> {
-			let endpoints: Array<{ x: number; y: number; index: number }> = [];
-			let state: LineState | undefined;
-			subscribe((s) => {
-				state = s;
-			})();
-
-			if (state) {
-				for (let i = 0; i < state.selectedLinePoints.length; i += 2) {
-					endpoints.push({
-						x: state.selectedLinePoints[i],
-						y: state.selectedLinePoints[i + 1],
-						index: i / 2
-					});
-				}
-			}
-			return endpoints;
-		},
-
-		isDraggingState(): boolean {
-			let isDragging = false;
-			subscribe((state) => {
-				isDragging = state.isDragging;
-			})();
-			return isDragging;
-		},
-
-		hasSelectedLine(): boolean {
-			let hasLine = false;
-			subscribe((state) => {
-				hasLine = state.selectedLineId !== null;
-			})();
-			return hasLine;
-		},
-
-		getSelectedLineId(): string | null {
-			let lineId: string | null = null;
-			subscribe((state) => {
-				lineId = state.selectedLineId;
-			})();
-			return lineId;
-		},
-
-		getPoints(): number[] {
-			let points: number[] = [];
-			subscribe((state) => {
-				points = state.selectedLinePoints;
-			})();
-			return points;
 		}
-	};
+		this.notify();
+	}
+
+	/**
+	 * Deselect current line
+	 */
+	deselectLine() {
+		this.selectedLineId = null;
+		this.selectedLinePoints = [];
+		this.draggedEndpointIndex = null;
+		this.isDragging = false;
+		this.notify();
+	}
+
+	/**
+	 * Start dragging an endpoint
+	 */
+	startDraggingEndpoint(endpointIndex: number) {
+		this.draggedEndpointIndex = endpointIndex;
+		this.isDragging = true;
+		this.notify();
+	}
+
+	/**
+	 * Update endpoint position during drag
+	 */
+	updateEndpointPosition(x: number, y: number) {
+		if (this.draggedEndpointIndex === null) return;
+
+		const pointIndex = this.draggedEndpointIndex * 2;
+		const newPoints = [...this.selectedLinePoints];
+		newPoints[pointIndex] = x;
+		newPoints[pointIndex + 1] = y;
+
+		this.selectedLinePoints = newPoints;
+		this.notify();
+	}
+
+	/**
+	 * Finish dragging and sync to Yjs
+	 */
+	finishDragging() {
+		this.isDragging = false;
+		this.draggedEndpointIndex = null;
+
+		// Sync to Yjs
+		if (this.onPointsChange) {
+			this.onPointsChange(this.selectedLinePoints);
+		}
+		this.notify();
+	}
+
+	/**
+	 * Get endpoint positions for rendering
+	 */
+	getEndpoints() {
+		const endpoints: Array<{ x: number; y: number; index: number }> = [];
+		for (let i = 0; i < this.selectedLinePoints.length; i += 2) {
+			endpoints.push({
+				x: this.selectedLinePoints[i],
+				y: this.selectedLinePoints[i + 1],
+				index: i / 2
+			});
+		}
+		return endpoints;
+	}
+
+	/**
+	 * Check if is dragging
+	 */
+	isDraggingState() {
+		return this.isDragging;
+	}
+
+	/**
+	 * Check if has selected line
+	 */
+	hasSelectedLine() {
+		return this.selectedLineId !== null;
+	}
+
+	/**
+	 * Get selected line ID
+	 */
+	getSelectedLineId() {
+		return this.selectedLineId;
+	}
+
+	/**
+	 * Get current points
+	 */
+	getPoints() {
+		return this.selectedLinePoints;
+	}
 }
 
 // Export singleton instance
-export const lineManager = createLineStore();
+export const lineManager = new LineManager();

@@ -5,19 +5,23 @@
 
 	let { line, isSelected }: { line: any; isSelected: boolean } = $props();
 
-	// Subscribe to store for reactive updates
+	// Local reactive state that updates when lineManager changes
 	let endpoints = $state<Array<{ x: number; y: number; index: number }>>([]);
 	let isDragging = $state(false);
 
-	// Setup reactive subscription to lineManager
+	// Subscribe to lineManager changes and update local state
 	$effect(() => {
-		if (isSelected) {
-			endpoints = lineManager.getEndpoints();
-			isDragging = lineManager.isDraggingState();
-		} else {
-			endpoints = [];
-			isDragging = false;
-		}
+		const unsubscribe = lineManager.subscribe(() => {
+			if (isSelected) {
+				endpoints = lineManager.getEndpoints();
+				isDragging = lineManager.isDraggingState();
+			} else {
+				endpoints = [];
+				isDragging = false;
+			}
+		});
+
+		return () => unsubscribe();
 	});
 
 	function handleEndpointMouseDown(index: number) {
