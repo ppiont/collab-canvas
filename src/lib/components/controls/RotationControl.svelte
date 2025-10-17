@@ -16,16 +16,6 @@
 	$effect(() => {
 		rotationValue = Math.round(value);
 	});
-
-	// Handle slider changes - call onchange immediately with new value
-	function handleSliderChange() {
-		// Ensure value is within bounds
-		const constrained = Math.max(-180, Math.min(180, rotationValue));
-		rotationValue = constrained;
-		
-		// Call callback immediately with the new value
-		onchange?.(constrained);
-	}
 </script>
 
 <div class="space-y-2">
@@ -36,7 +26,7 @@
 	<Slider
 		type="single"
 		bind:value={rotationValue}
-		onchange={handleSliderChange}
+		onchange={() => onchange?.(Math.max(-180, Math.min(180, Math.round(rotationValue))))}
 		min={-180}
 		max={180}
 		step={1}
