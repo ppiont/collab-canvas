@@ -12,26 +12,8 @@
 	import { Label } from './ui/label';
 	import { Slider } from './ui/slider';
 
-	// Subscribe to stores
-	let allShapes = $state<Shape[]>([]);
-	let selectedIds = $state<Set<string>>(new Set());
-
-	// Subscribe to store changes
-	$effect(() => {
-		const unsubscribeShapes = shapes.subscribe((s) => {
-			allShapes = s;
-		});
-		const unsubscribeSelection = selectedShapeIds.subscribe((ids) => {
-			selectedIds = ids;
-		});
-		return () => {
-			unsubscribeShapes();
-			unsubscribeSelection();
-		};
-	});
-
-	// Get selected shapes
-	const selectedShapes = $derived(allShapes.filter((s) => selectedIds.has(s.id)));
+	// Get selected shapes from stores using Svelte 5 auto-subscription
+	const selectedShapes = $derived($shapes.filter((s) => $selectedShapeIds.has(s.id)));
 
 	// Check if property values are uniform across selected shapes
 	function getUniformValue<K extends keyof Shape>(key: K): Shape[K] | 'mixed' | undefined {
@@ -45,7 +27,7 @@
 
 	// Update multiple shapes with new value
 	function updateSelected<K extends keyof Shape>(key: K, value: Shape[K]) {
-		selectedIds.forEach((id) => {
+		$selectedShapeIds.forEach((id) => {
 			shapeOperations.update(id, { [key]: value });
 		});
 	}
@@ -197,7 +179,7 @@
 					<BlendModeControl
 						value={(blendMode as BlendMode | undefined) ?? 'normal'}
 						onchange={(mode: string) => {
-							selectedIds.forEach((id) => {
+							$selectedShapeIds.forEach((id) => {
 								shapeOperations.update(id, { blendMode: mode as BlendMode });
 							});
 						}}
