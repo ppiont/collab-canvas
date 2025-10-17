@@ -3,6 +3,7 @@
 **Approach:** Linear, chronological tasks. Each task = 1 commit minimum, atomic PR maximum.
 
 **Updated Prioritization (Oct 15, 2025):**
+
 - ✅ **Phase 1-3:** Complete (Foundation, Modularization, Components)
 - 🔄 **Phase 4 (AI Agent):** In Progress - Highest rubric value (25 points)
 - ⏸️ **Images (Phase 3):** DEFERRED - Lower priority
@@ -13,7 +14,9 @@
 ## Phase 1: Core Design Tools Foundation (Days 1-3)
 
 ### Task 1.1: Add Circle Shape Support
+
 **Goal:** Implement circle creation, manipulation, and sync
+
 - [ ] Update Yjs schema to include `Circle` type
 - [ ] Add circle data structure in types
 - [ ] Create `Circle.svelte` component with Konva Circle
@@ -28,7 +31,9 @@
 ---
 
 ### Task 1.2: Add Ellipse Shape Support
+
 **Goal:** Implement ellipse with independent X/Y radius
+
 - [ ] Update Yjs schema for `Ellipse` type
 - [ ] Add ellipse data structure with `radiusX`, `radiusY`
 - [ ] Create `Ellipse.svelte` component
@@ -43,7 +48,9 @@
 ---
 
 ### Task 1.3: Add Line/Polyline Shape Support
+
 **Goal:** Implement line drawing with multiple points
+
 - [ ] Update Yjs schema for `Line` type with points array
 - [ ] Add line data structure: `points: number[]`, `stroke`, `dash`
 - [ ] Create `Line.svelte` component with Konva Line
@@ -59,7 +66,9 @@
 ---
 
 ### Task 1.4: Add Text Layer Support
+
 **Goal:** Implement text with inline editing
+
 - [ ] Update Yjs schema for `Text` type
 - [ ] Add text data structure: `text`, `fontSize`, `fontFamily`, `align`
 - [ ] Create `Text.svelte` component with Konva Text
@@ -76,7 +85,9 @@
 ---
 
 ### Task 1.5: Add Polygon Shape Support
+
 **Goal:** Implement regular polygons (3-12 sides)
+
 - [ ] Update Yjs schema for `Polygon` type
 - [ ] Add polygon data structure: `sides`, `radius`
 - [ ] Create `Polygon.svelte` component with Konva RegularPolygon
@@ -91,7 +102,9 @@
 ---
 
 ### Task 1.6: Add Star Shape Support
+
 **Goal:** Implement star shapes (5-12 points)
+
 - [ ] Update Yjs schema for `Star` type
 - [ ] Add star data structure: `numPoints`, `innerRadius`, `outerRadius`
 - [ ] Create `Star.svelte` component with Konva Star
@@ -106,7 +119,9 @@
 ---
 
 ### Task 1.7: Implement Rotation for All Shapes
+
 **Goal:** Add rotation handle to transformer
+
 - [ ] Update transformer component to show rotation handle
 - [ ] Add rotation logic to transformer dragmove
 - [ ] Implement shift-key constraint (15° increments)
@@ -120,7 +135,9 @@
 ---
 
 ### Task 1.8: Implement Multi-Select
+
 **Goal:** Select multiple shapes simultaneously
+
 - [ ] Implement shift+click to toggle selection
 - [ ] Maintain `selectedShapeIds: Set<string>` state
 - [ ] Update transformer to show group bounding box
@@ -135,7 +152,9 @@
 ---
 
 ### Task 1.9: Implement Layer Management (Z-Index)
+
 **Goal:** Control shape stacking order
+
 - [ ] Add z-index controls to context menu: front, forward, backward, back
 - [ ] Implement keyboard shortcuts (Cmd+], Cmd+[, Cmd+Shift+], Cmd+Shift+[)
 - [ ] Add z-index badge on selected shapes
@@ -149,7 +168,9 @@
 ---
 
 ### Task 1.10: Implement Delete Operation
+
 **Goal:** Delete shapes with keyboard and context menu
+
 - [ ] Add Delete/Backspace keyboard handler
 - [ ] Add "Delete" to right-click context menu
 - [ ] Implement multi-delete (works with multi-select)
@@ -162,7 +183,9 @@
 ---
 
 ### Task 1.11: Implement Duplicate Operation
+
 **Goal:** Duplicate shapes with offset
+
 - [ ] Add Cmd/Ctrl+D keyboard handler
 - [ ] Add "Duplicate" to right-click context menu
 - [ ] Implement duplication logic: copy all properties, new ID, offset 20px
@@ -178,7 +201,9 @@
 ## Phase 2: AI Canvas Agent (Days 4-6)
 
 ### Task 2.1: OpenAI Integration Setup
+
 **Goal:** Configure OpenAI API in PartyKit backend
+
 - [ ] Install `openai@^4.0.0` in PartyKit server
 - [ ] Add `OPENAI_API_KEY` to Cloudflare Workers secrets
 - [ ] Create `ai-service.ts` with OpenAI client initialization
@@ -191,7 +216,9 @@
 ---
 
 ### Task 2.2: Define AI Tool Schema
+
 **Goal:** Create function definitions for GPT-4
+
 - [ ] Create `ai-tools.ts` with tool schema definitions
 - [ ] Implement creation tools: `createRectangle`, `createCircle`, `createEllipse`, `createLine`, `createText`, `createPolygon`, `createStar`
 - [ ] Implement manipulation tools: `moveShape`, `resizeShape`, `rotateShape`, `updateShapeColor`, `deleteShape`, `duplicateShape`
@@ -206,7 +233,9 @@
 ---
 
 ### Task 2.3: Implement Tool Executors
+
 **Goal:** Execute tool functions that modify Yjs document
+
 - [ ] Create `ai-executors.ts` with executor functions
 - [ ] Implement each creation executor (adds shapes to Yjs)
 - [ ] Implement each manipulation executor (modifies shapes in Yjs)
@@ -221,7 +250,9 @@
 ---
 
 ### Task 2.4: Create AI Command Handler
+
 **Goal:** Process natural language commands
+
 - [ ] Create `/api/ai/command` endpoint in PartyKit
 - [ ] Implement command handler: receives user input, calls GPT-4
 - [ ] Pass tool schema to GPT-4 function calling
@@ -237,7 +268,9 @@
 ---
 
 ### Task 2.5: Build Command Palette UI
+
 **Goal:** Create keyboard-activated AI interface
+
 - [ ] Create `CommandPalette.svelte` component
 - [ ] Implement modal overlay with backdrop
 - [ ] Add input field with auto-focus
@@ -253,7 +286,9 @@
 ---
 
 ### Task 2.6: Connect Command Palette to AI Backend
+
 **Goal:** Send commands from UI to backend
+
 - [ ] Implement fetch to `/api/ai/command` in CommandPalette
 - [ ] Show loading state during request
 - [ ] Handle success: close palette, show success toast
@@ -268,7 +303,9 @@
 ---
 
 ### Task 2.7: Implement Context-Aware Commands
+
 **Goal:** AI uses current canvas state for decisions
+
 - [ ] Update command handler to call `getCanvasState()` before GPT-4
 - [ ] Pass canvas state in system prompt
 - [ ] Update prompt to reference viewport for "center" commands
@@ -280,7 +317,9 @@
 ---
 
 ### Task 2.8: Test AI Command Types
+
 **Goal:** Validate all 6+ command categories work
+
 - [ ] Test creation commands: circle, text, star, etc.
 - [ ] Test manipulation commands: move, resize, rotate, color
 - [ ] Test layout commands: horizontal, vertical, grid, align
@@ -294,7 +333,9 @@
 ---
 
 ### Task 2.9: Implement AI Rate Limiting
+
 **Goal:** Prevent abuse and manage costs
+
 - [ ] Add rate limiter in PartyKit: 10 commands/minute per user
 - [ ] Store rate limit state in Durable Object
 - [ ] Return 429 error when limit exceeded
@@ -308,7 +349,9 @@
 ---
 
 ### Task 2.10: Add AI Command Logging
+
 **Goal:** Debug and monitor AI usage
+
 - [ ] Log all commands to console with user ID, timestamp
 - [ ] Log tool executions with parameters
 - [ ] Log errors with stack traces
@@ -323,7 +366,9 @@
 ## Phase 3: Image Support (Days 7-8) - ⏸️ DEFERRED TO PHASE 6+
 
 ### Task 3.1: Setup Cloudflare R2 Bucket
+
 **Goal:** Configure image storage
+
 - [ ] Create R2 bucket: `collabcanvas-images`
 - [ ] Configure public read access
 - [ ] Add bucket credentials to Cloudflare Workers secrets
@@ -336,7 +381,9 @@
 ---
 
 ### Task 3.2: Implement Image Upload Flow
+
 **Goal:** Users can upload images to canvas
+
 - [ ] Create `ImageUpload.svelte` component (button + drag-drop)
 - [ ] Add file validation: max 4MB, formats PNG/JPG/GIF/WebP
 - [ ] Implement upload: request presigned URL → upload to R2
@@ -350,7 +397,9 @@
 ---
 
 ### Task 3.3: Add Image Shape Rendering
+
 **Goal:** Display images on canvas
+
 - [ ] Update Yjs schema for `Image` type
 - [ ] Create `ImageShape.svelte` component with Konva Image
 - [ ] Load image from URL asynchronously
@@ -364,7 +413,9 @@
 ---
 
 ### Task 3.4: Add Image to AI Tool Schema
+
 **Goal:** AI can create image placeholders
+
 - [ ] Add `createImage` tool to schema
 - [ ] Implement executor: adds Image shape with URL
 - [ ] Update prompt to suggest placeholder URLs (e.g., unsplash)
@@ -376,7 +427,9 @@
 ---
 
 ### Task 3.5: Implement Image Opacity Control
+
 **Goal:** Adjust image transparency
+
 - [ ] Add opacity slider to properties panel (when image selected)
 - [ ] Update Image shape component to apply opacity
 - [ ] Sync opacity via Yjs
@@ -390,7 +443,9 @@
 ## Phase 4: Enhanced UX (Days 9-11)
 
 ### Task 4.1: Implement Undo/Redo with Yjs
+
 **Goal:** Support undo/redo for all operations
+
 - [ ] Import Yjs UndoManager: `import { UndoManager } from 'yjs'`
 - [ ] Initialize UndoManager for shapes map
 - [ ] Add Cmd/Ctrl+Z for undo
@@ -404,7 +459,9 @@
 ---
 
 ### Task 4.2: Implement Comprehensive Keyboard Shortcuts
+
 **Goal:** Add all keyboard shortcuts from PRD
+
 - [ ] Create `useKeyboardShortcuts.ts` composable
 - [ ] Implement shape tool shortcuts: R, C, T, L, V
 - [ ] Implement layer shortcuts: Cmd+], Cmd+[, etc.
@@ -419,7 +476,9 @@
 ---
 
 ### Task 4.3: Build Color Picker with Gradients
+
 **Goal:** Advanced color selection
+
 - [ ] Create `ColorPicker.svelte` component
 - [ ] Add solid color picker (hex, RGB, HSL inputs)
 - [ ] Add gradient picker (linear, radial)
@@ -434,7 +493,9 @@
 ---
 
 ### Task 4.4: Add Stroke Controls
+
 **Goal:** Customize borders
+
 - [ ] Create `StrokeControls.svelte` component
 - [ ] Add width slider (0-20px)
 - [ ] Add style selector: solid, dashed, dotted
@@ -448,7 +509,9 @@
 ---
 
 ### Task 4.5: Add Shadow Controls
+
 **Goal:** Add drop shadows to shapes
+
 - [ ] Create `ShadowControls.svelte` component
 - [ ] Add enable/disable toggle
 - [ ] Add color, blur, offsetX, offsetY controls
@@ -463,7 +526,9 @@
 ---
 
 ### Task 4.6: Add Opacity & Blend Modes
+
 **Goal:** Layer transparency and compositing
+
 - [ ] Add opacity slider to properties panel (0-100%)
 - [ ] Add blend mode selector: normal, multiply, screen, overlay, darken, lighten
 - [ ] Implement keyboard shortcuts (1-9 for 10%-90%)
@@ -477,7 +542,9 @@
 ---
 
 ### Task 4.7: Implement PNG Export
+
 **Goal:** Export canvas to PNG
+
 - [ ] Create `ExportDialog.svelte` component
 - [ ] Add resolution selector: 1x, 2x, 4x
 - [ ] Add background toggle: transparent or white
@@ -492,7 +559,9 @@
 ---
 
 ### Task 4.8: Implement SVG Export
+
 **Goal:** Export canvas to SVG
+
 - [ ] Use Konva `toSVG()` or custom SVG generator
 - [ ] Preserve vector quality for all shapes
 - [ ] Embed fonts or convert text to paths
@@ -506,7 +575,9 @@
 ---
 
 ### Task 4.9: Add Properties Panel
+
 **Goal:** Centralize shape editing controls
+
 - [ ] Create `PropertiesPanel.svelte` component (right sidebar)
 - [ ] Show when shape selected
 - [ ] Display controls for: color, stroke, shadow, opacity, blend mode
@@ -520,7 +591,9 @@
 ---
 
 ### Task 4.10: Improve Toolbar UX
+
 **Goal:** Better visual feedback for tools
+
 - [ ] Add active state indicators for selected tool
 - [ ] Group related tools (shapes, text, AI)
 - [ ] Add tooltips with keyboard shortcuts
@@ -536,7 +609,9 @@
 ## Phase 5: Multi-Canvas & Project Management (Days 12-14) - ⏸️ DEFERRED TO PHASE 5+
 
 ### Task 5.1: Design Database Schema for Projects
+
 **Goal:** Plan data model for multi-canvas
+
 - [ ] Create schema in project docs: Projects, Canvases, Permissions
 - [ ] Decide on storage: Cloudflare D1 (SQLite) or KV for metadata
 - [ ] Design PartyKit room strategy: `canvas-${canvasId}`
@@ -549,7 +624,9 @@
 ---
 
 ### Task 5.2: Setup Database (Cloudflare D1)
+
 **Goal:** Initialize SQL database for metadata
+
 - [ ] Create D1 database in Cloudflare dashboard
 - [ ] Create tables: `projects`, `canvases`, `permissions`
 - [ ] Add database binding to PartyKit Worker
@@ -562,7 +639,9 @@
 ---
 
 ### Task 5.3: Create Project Management API
+
 **Goal:** CRUD endpoints for projects
+
 - [ ] Create `/api/projects` endpoint
 - [ ] Implement: GET (list), POST (create), PATCH (update), DELETE (delete)
 - [ ] Add auth checks (owner only for delete/update)
@@ -575,7 +654,9 @@
 ---
 
 ### Task 5.4: Create Canvas Management API
+
 **Goal:** CRUD endpoints for canvases
+
 - [ ] Create `/api/projects/:projectId/canvases` endpoint
 - [ ] Implement: GET (list), POST (create), PATCH (update), DELETE (delete)
 - [ ] Generate thumbnail on canvas save (Konva screenshot)
@@ -588,7 +669,9 @@
 ---
 
 ### Task 5.5: Build Home Page
+
 **Goal:** Project list view
+
 - [ ] Create `/routes/+page.svelte` (new home page)
 - [ ] Fetch projects from API
 - [ ] Display as grid with cards (name, canvas count, updated date)
@@ -603,7 +686,9 @@
 ---
 
 ### Task 5.6: Build Project Page
+
 **Goal:** Canvas list within project
+
 - [ ] Create `/routes/project/[projectId]/+page.svelte`
 - [ ] Fetch canvases from API
 - [ ] Display as grid with thumbnails
@@ -619,7 +704,9 @@
 ---
 
 ### Task 5.7: Update Canvas Page Routing
+
 **Goal:** Support per-canvas rooms
+
 - [ ] Rename route: `/canvas` → `/project/[projectId]/canvas/[canvasId]`
 - [ ] Update PartyKit connection to use `canvas-${canvasId}` room
 - [ ] Load canvas metadata from API
@@ -632,7 +719,9 @@
 ---
 
 ### Task 5.8: Migrate Existing Data
+
 **Goal:** Move "main" room to default project
+
 - [ ] Create migration script
 - [ ] Create default project: "My First Project"
 - [ ] Create default canvas: "Untitled Canvas"
@@ -646,7 +735,9 @@
 ---
 
 ### Task 5.9: Implement Sharing & Permissions
+
 **Goal:** Invite collaborators to projects
+
 - [ ] Create `PermissionsManager.svelte` component
 - [ ] Add "Share" button in project page
 - [ ] Implement invite flow: add email, select role (editor/viewer)
@@ -660,7 +751,9 @@
 ---
 
 ### Task 5.10: Update Presence for Multi-Canvas
+
 **Goal:** Show who's in which canvas
+
 - [ ] Update presence to include `canvasId`
 - [ ] Show collaborators only in current canvas
 - [ ] Add global presence view (all users across project)
@@ -675,7 +768,9 @@
 ## Phase 6: Polish & Testing (Days 15-16)
 
 ### Task 6.1: Comprehensive Integration Testing
+
 **Goal:** Test all features together
+
 - [ ] Test AI commands with all shape types
 - [ ] Test multi-user collaboration with 5+ users
 - [ ] Test image uploads during active collaboration
@@ -690,7 +785,9 @@
 ---
 
 ### Task 6.2: Performance Testing
+
 **Goal:** Validate performance requirements
+
 - [ ] Load canvas with 500+ shapes, measure FPS
 - [ ] Test AI command response times (simple & complex)
 - [ ] Test image upload speed (4MB files)
@@ -704,7 +801,9 @@
 ---
 
 ### Task 6.3: Error Handling & Edge Cases
+
 **Goal:** Graceful failure modes
+
 - [ ] Test network disconnection/reconnection
 - [ ] Test invalid AI commands
 - [ ] Test image upload failures
@@ -718,7 +817,9 @@
 ---
 
 ### Task 6.4: Accessibility Audit
+
 **Goal:** Ensure keyboard and screen reader support
+
 - [ ] Test all keyboard shortcuts
 - [ ] Add ARIA labels to all interactive elements
 - [ ] Test with screen reader (VoiceOver/NVDA)
@@ -732,7 +833,9 @@
 ---
 
 ### Task 6.5: Mobile Responsiveness (Basic)
+
 **Goal:** Canvas works on tablets (not primary focus)
+
 - [ ] Test on iPad/tablet devices
 - [ ] Adjust toolbar for smaller screens
 - [ ] Ensure touch gestures work (pan, zoom)
@@ -745,7 +848,9 @@
 ---
 
 ### Task 6.6: Documentation Updates
+
 **Goal:** Update all project documentation
+
 - [ ] Update README with final feature list
 - [ ] Update PRD with any changes during implementation
 - [ ] Create user guide (markdown in docs/)
@@ -759,7 +864,9 @@
 ---
 
 ### Task 6.7: Final Bug Fixes
+
 **Goal:** Address any remaining issues
+
 - [ ] Review all GitHub issues
 - [ ] Fix critical bugs
 - [ ] Triage low-priority bugs (defer or fix)
@@ -772,7 +879,9 @@
 ---
 
 ### Task 6.8: Demo Video & Submission Prep
+
 **Goal:** Prepare for submission
+
 - [ ] Record 3-5 minute demo video
 - [ ] Show real-time collaboration (2+ users)
 - [ ] Demonstrate AI commands (simple & complex)

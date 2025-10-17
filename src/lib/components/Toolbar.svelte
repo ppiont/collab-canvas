@@ -24,31 +24,33 @@
 		Sparkles
 	} from 'lucide-svelte';
 
-	let { onCommandPaletteOpen, onUndo, onRedo } = $props<{ 
+	let { onCommandPaletteOpen, onUndo, onRedo } = $props<{
 		onCommandPaletteOpen: () => void;
 		onUndo?: () => void;
 		onRedo?: () => void;
 	}>();
 
 	import type { ToolType } from '$lib/stores/tool';
+	import type { ComponentType } from 'svelte';
 
-	const shapeTools: Array<{ id: ToolType; icon: any; label: string; shortcut: string }> = [
-		{ id: 'select', icon: MousePointer2, label: 'Select', shortcut: 'V' },
-		{ id: 'rectangle', icon: Square, label: 'Rectangle', shortcut: 'R' },
-		{ id: 'circle', icon: Circle, label: 'Circle', shortcut: 'C' },
-		{ id: 'ellipse', icon: Disc, label: 'Ellipse', shortcut: 'E' },
-		{ id: 'line', icon: Minus, label: 'Line', shortcut: 'L' },
-		{ id: 'text', icon: Type, label: 'Text', shortcut: 'T' },
-		{ id: 'polygon', icon: Pentagon, label: 'Polygon', shortcut: 'P' },
-		{ id: 'star', icon: Star, label: 'Star', shortcut: 'S' }
-	];
+	const shapeTools: Array<{ id: ToolType; icon: ComponentType; label: string; shortcut: string }> =
+		[
+			{ id: 'select', icon: MousePointer2, label: 'Select', shortcut: 'V' },
+			{ id: 'rectangle', icon: Square, label: 'Rectangle', shortcut: 'R' },
+			{ id: 'circle', icon: Circle, label: 'Circle', shortcut: 'C' },
+			{ id: 'ellipse', icon: Disc, label: 'Ellipse', shortcut: 'E' },
+			{ id: 'line', icon: Minus, label: 'Line', shortcut: 'L' },
+			{ id: 'text', icon: Type, label: 'Text', shortcut: 'T' },
+			{ id: 'polygon', icon: Pentagon, label: 'Polygon', shortcut: 'P' },
+			{ id: 'star', icon: Star, label: 'Star', shortcut: 'S' }
+		];
 </script>
 
 <div
 	class="fixed left-4 top-4 z-10 flex flex-col gap-2 rounded-lg border bg-white/95 p-2 shadow-lg backdrop-blur-sm"
 >
 	<!-- Shape tools -->
-	{#each shapeTools as tool}
+	{#each shapeTools as tool (tool.id)}
 		<Button
 			variant={$activeTool === tool.id ? 'default' : 'ghost'}
 			size="icon"

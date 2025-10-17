@@ -36,6 +36,10 @@ export default defineConfig(
 				parser: ts.parser,
 				svelteConfig
 			}
+		},
+		rules: {
+			// Disable false positive navigation warnings for conditional links and dynamic gotos
+			'svelte/no-navigation-without-resolve': 'off'
 		}
 	}
 );

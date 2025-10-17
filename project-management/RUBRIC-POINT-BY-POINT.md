@@ -11,16 +11,15 @@
 ### Real-Time Synchronization (12 points)
 
 #### Excellent (11-12 points) Requirements:
+
 - [ ] **Sub-100ms object sync** - ⚠️ IMPLEMENTED but NOT MEASURED
   - Code: Yjs + PartyKit (should be fast)
   - Evidence: NO performance measurement found
   - Status: **CLAIM UNVERIFIED**
-  
 - [ ] **Sub-50ms cursor sync** - ⚠️ IMPLEMENTED but NOT MEASURED
   - Code: CursorManager.ts throttle 30ms
   - Evidence: NO latency measurement found
   - Status: **CLAIM UNVERIFIED**
-  
 - [ ] **Zero visible lag during rapid multi-user edits** - ❌ NOT TESTED
   - Evidence: NO multi-user rapid edit tests found
   - Status: **NOT VERIFIED**
@@ -32,28 +31,26 @@
 ### Conflict Resolution & State Management (9 points)
 
 #### Excellent (8-9 points) Requirements:
+
 - [x] **Two users edit same object simultaneously → both see consistent final state** - ✅ IMPLEMENTED
   - Evidence: Yjs CRDT, `draggedBy` field prevents conflicts
   - File: src/lib/canvas/shapes/ShapeRenderer.ts:194
-  
 - [x] **Documented strategy (last-write-wins, CRDT, etc.)** - ✅ YES
   - Evidence: Yjs CRDT is documented
-  
 - [ ] **No "ghost" objects or duplicates** - ⚠️ UNTESTED
   - Evidence: No test logs found
   - Status: **ASSUME WORKING** (no bugs reported)
-  
 - [ ] **Rapid edits (10+ changes/sec) don't corrupt state** - ❌ NOT TESTED
   - Evidence: NO stress testing found
-  
 - [ ] **Clear visual feedback on who last edited** - ✅ PARTIAL
   - Evidence: `draggedBy` shows visual feedback during drag
   - File: ShapeRenderer.ts:352-355 (opacity + shadow)
 
 **Testing Scenarios from Rubric:**
+
 - [ ] Simultaneous Move - NOT TESTED
 - [ ] Rapid Edit Storm - NOT TESTED
-- [ ] Delete vs Edit - NOT TESTED  
+- [ ] Delete vs Edit - NOT TESTED
 - [ ] Create Collision - NOT TESTED
 
 **Realistic Score: 6-7 / 9** (good implementation, no explicit testing)
@@ -63,22 +60,20 @@
 ### Persistence & Reconnection (9 points)
 
 #### Excellent (8-9 points) Requirements:
+
 - [ ] **User refreshes mid-edit → returns to exact state** - ⚠️ SHOULD WORK but NOT TESTED
   - Evidence: Durable Objects persist: true
   - File: partykit/server.ts:27-29
-  
 - [ ] **All users disconnect → canvas persists fully** - ⚠️ SHOULD WORK but NOT TESTED
-  
 - [ ] **Network drop (30s+) → auto-reconnects with complete state** - ❌ NOT TESTED
   - Evidence: Y-PartyKit has auto-reconnect but not verified
-  
 - [ ] **Operations during disconnect queue and sync on reconnect** - ❌ NOT TESTED
-  
 - [x] **Clear UI indicator for connection status** - ✅ YES
   - Evidence: ConnectionStatus.svelte exists
   - File: src/lib/components/ConnectionStatus.svelte
 
 **Testing Scenarios from Rubric:**
+
 - [ ] Mid-Operation Refresh - NOT TESTED
 - [ ] Total Disconnect - NOT TESTED
 - [ ] Network Simulation (30s offline) - NOT TESTED
@@ -95,35 +90,31 @@
 ### Canvas Functionality (8 points)
 
 #### Excellent (7-8 points) Requirements:
+
 - [x] **Smooth pan/zoom** - ✅ YES
   - Evidence: ViewportManager.ts exists and works
-  
 - [ ] **3+ shape types** - ✅ YES (7 types fully working, 1 partial)
   - Rectangle ✅, Circle ✅, Ellipse ✅, Line ✅, Text ✅, Polygon ✅, Star ✅
   - Image ⚠️ (placeholder rects only, not real images)
-  
 - [ ] **Text with formatting** - ❌ NO
   - Has: Double-click to edit, fontSize slider
   - Missing: Bold/italic/underline toggle buttons
   - Evidence: PropertiesPanel.svelte - NO formatting buttons found
   - **RUBRIC LIKELY EXPECTS FORMATTING BUTTONS**
-  
 - [x] **Multi-select (shift-click or drag)** - ✅ YES
   - Evidence: EventHandlers.ts shift detection, SelectionNet drag-net
-  
 - [ ] **Layer management** - ⚠️ PARTIAL
   - Has: Z-index in data model, LayerManager class methods
   - Missing: NO keyboard shortcuts wired up, NO UI panel
   - Evidence: EventHandlers.ts - NO Cmd+] handlers found
-  
 - [x] **Transform operations (move/resize/rotate)** - ✅ YES
   - Evidence: Konva Transformer, SelectionManager handles transform events
-  
 - [x] **Duplicate/delete** - ⚠️ PARTIAL
   - Delete: ✅ YES (Delete/Backspace key - line 381-382)
   - Duplicate: ❌ NO keyboard shortcut (Cmd+D not found)
 
 **Missing from "Excellent":**
+
 - Text formatting buttons
 - Proper layer management UI or keyboard shortcuts
 - Duplicate keyboard shortcut
@@ -135,16 +126,19 @@
 ### Performance & Scalability (12 points)
 
 #### Excellent (11-12 points) Requirements:
+
 - [ ] **Consistent performance with 500+ objects** - ❌ NOT TESTED
 - [ ] **Supports 5+ concurrent users** - ❌ NOT TESTED
 - [ ] **No degradation under load** - ❌ NOT TESTED
 - [ ] **Smooth interactions at scale** - ❌ NOT TESTED
 
 #### Good (9-10 points) Requirements:
+
 - [ ] **Consistent performance with 300+ objects** - ❌ NOT TESTED
 - [ ] **Handles 4-5 users** - ❌ NOT TESTED
 
 #### Satisfactory (6-8 points) Requirements:
+
 - [ ] **Consistent performance with 100+ objects** - ⚠️ POSSIBLY
   - Evidence: Tested with ~50-100 shapes informally
   - NO documented performance tests
@@ -152,6 +146,7 @@
   - Evidence: Tested with 2-3 browser windows
 
 **Optimizations Implemented:**
+
 - ✅ Viewport culling exists (viewport-culling.ts)
 - ✅ Konva layer batching exists
 - ✅ Yjs binary protocol
@@ -169,18 +164,21 @@
 ### Tier 1 Features (2 points each, max 3 features = 6 points)
 
 #### ✅ Color picker with recent colors/saved palettes
+
 - [ ] **NOT IMPLEMENTED**
 - Evidence: PropertiesPanel uses basic `<input type="color">`
 - No recent colors tracking
 - No Material Design palette
 
 #### ✅ Undo/redo with keyboard shortcuts (Cmd+Z/Cmd+Shift+Z)
+
 - [x] **IMPLEMENTED** ✅ **+2 points**
 - Evidence: src/routes/canvas/+page.svelte:366-376
 - Undo: Cmd+Z working
 - Redo: Cmd+Shift+Z or Cmd+Y working
 
-####  Keyboard shortcuts for common operations
+#### Keyboard shortcuts for common operations
+
 - [ ] **PARTIALLY IMPLEMENTED** ⚠️ **+1 point**
 - Rubric says: "Delete, Duplicate, Arrow keys to move"
 - Implemented: Delete/Backspace ✅
@@ -189,18 +187,22 @@
 - Evidence: EventHandlers.ts:381-383 (only Delete found)
 
 #### ❌ Export canvas or objects as PNG/SVG
+
 - [ ] **NOT IMPLEMENTED**
 - Evidence: No export code found anywhere
 
 #### ❌ Snap-to-grid or smart guides when moving objects
+
 - [ ] **NOT IMPLEMENTED**
 - Evidence: No snap code found
 
 #### ❌ Object grouping/ungrouping
+
 - [ ] **NOT IMPLEMENTED**
 - Evidence: No grouping code found
 
 #### ✅ Copy/paste functionality
+
 - [x] **IMPLEMENTED** ✅ **+2 points**
 - Evidence: src/routes/canvas/+page.svelte:333-360
 - Cmd+C, Cmd+V working
@@ -213,19 +215,23 @@
 ### Tier 2 Features (3 points each, max 2 features = 6 points)
 
 #### ❌ Component system (create reusable components/symbols)
+
 - [ ] **NOT IMPLEMENTED**
 
 #### ❌ Layers panel with drag-to-reorder and hierarchy
+
 - [ ] **NOT IMPLEMENTED**
 - Evidence: No LayersPanel.svelte component found
 - LayerManager.ts exists but no UI
 
 #### ❌ Alignment tools (align left/right/center, distribute evenly)
+
 - [ ] **NOT IMPLEMENTED AS UI**
 - AI has alignment commands BUT line 176 says "TODO: Implement layout tools"
 - NO UI buttons for manual alignment
 
 #### ⚠️ Z-index management (bring to front, send to back)
+
 - [ ] **PARTIALLY IMPLEMENTED** ⚠️ **+1.5 points**
 - LayerManager.ts has methods (bringToFront, sendToBack, etc.)
 - BUT NO keyboard shortcuts wired up (no Cmd+], Cmd+[ found)
@@ -236,15 +242,18 @@
 Actually, z-index just works via drag ordering (dragging brings to top). That's BASIC functionality, not full "management". **+0 points** for Tier 2 unless there are explicit controls.
 
 #### ❌ Selection tools (lasso select, select all of type)
+
 - [ ] **PARTIALLY IMPLEMENTED**
 - Has: Drag-net (marquee) selection ✅
 - Missing: Lasso selection, select all of type
 - Probably doesn't count as full feature
 
 #### ❌ Styles/design tokens (save and reuse colors, text styles)
+
 - [ ] **NOT IMPLEMENTED**
 
 #### ❌ Canvas frames/artboards for organizing work
+
 - [ ] **NOT IMPLEMENTED**
 
 **Tier 2 Total: 0 / 6 points** (nothing fully implemented to rubric standards)
@@ -254,6 +263,7 @@ Actually, z-index just works via drag ordering (dragging brings to top). That's 
 ### Tier 3 Features (3 points each, max 1 feature = 3 points)
 
 #### ❌ ALL TIER 3 - NOT IMPLEMENTED
+
 - Auto-layout: NO
 - Collaborative comments: NO
 - Version history: NO
@@ -273,15 +283,18 @@ Actually, z-index just works via drag ordering (dragging brings to top). That's 
 ### Command Breadth & Capability (10 points)
 
 #### Excellent (9-10 points) Requirements:
+
 - [x] **8+ distinct command types** - ✅ YES (22 tools defined)
 - [x] **Covers all categories: creation, manipulation, layout, complex** - ✅ YES
 - [x] **Commands are diverse and meaningful** - ✅ YES
 
 **Evidence:**
+
 - ✅ partykit/ai/tools.ts - 22 tool definitions
 - ✅ All 4 categories present
 
 **Categories Verified:**
+
 - [x] **Creation Commands (at least 2 required)** - ✅ 8 tools
 - [x] **Manipulation Commands (at least 2 required)** - ✅ 6 tools
 - [x] **Layout Commands (at least 1 required)** - ⚠️ 5 tools defined BUT...
@@ -294,6 +307,7 @@ Actually, z-index just works via drag ordering (dragging brings to top). That's 
 ### Complex Command Execution (8 points)
 
 #### Excellent (7-8 points) Requirements:
+
 - [ ] **"Create login form" produces 3+ properly arranged elements** - ❌ NOT TESTED
 - [ ] **Complex layouts execute multi-step plans correctly** - ❌ BROKEN
 - [ ] **Smart positioning and styling** - ⚠️ PARTIAL
@@ -321,6 +335,7 @@ Actually, z-index just works via drag ordering (dragging brings to top). That's 
    - **All will fail due to TODO on line 176**
 
 **Testing Status:**
+
 - [ ] Login form command - NOT TESTED
 - [ ] Navigation bar command - NOT TESTED
 - [ ] Card layout command - NOT TESTED
@@ -333,6 +348,7 @@ Actually, z-index just works via drag ordering (dragging brings to top). That's 
 ### AI Performance & Reliability (7 points)
 
 #### Excellent (6-7 points) Requirements:
+
 - [ ] **Sub-2 second responses** - ❌ NOT MEASURED
 - [ ] **90%+ accuracy** - ❌ NOT MEASURED
 - [ ] **Natural UX with feedback** - ⚠️ PARTIAL
@@ -342,6 +358,7 @@ Actually, z-index just works via drag ordering (dragging brings to top). That's 
 - [ ] **Multiple users can use AI simultaneously** - ❌ NOT TESTED
 
 **Implemented Features:**
+
 - [x] OpenAI GPT-4-turbo integration ✅
 - [x] Rate limiting (10 commands/minute) ✅
 - [x] Error handling ✅
@@ -349,6 +366,7 @@ Actually, z-index just works via drag ordering (dragging brings to top). That's 
 - [ ] Command history ❌ - NOT FOUND
 
 **Evidence:**
+
 - ✅ partykit/server.ts:88-187 - AI endpoint
 - ✅ partykit/server.ts:193-210 - Rate limiting
 - ❌ NO performance measurements
@@ -366,6 +384,7 @@ Actually, z-index just works via drag ordering (dragging brings to top). That's 
 ### Architecture Quality (5 points)
 
 #### Excellent (5 points) Requirements:
+
 - [x] **Clean, well-organized code** - ✅ YES
 - [x] **Clear separation of concerns** - ✅ YES
   - canvas/core/, canvas/shapes/, stores/, components/
@@ -374,6 +393,7 @@ Actually, z-index just works via drag ordering (dragging brings to top). That's 
 - [x] **Modular components** - ✅ YES
 
 **Evidence:**
+
 - ✅ Clean directory structure
 - ✅ Manager classes (CanvasEngine, ViewportManager, etc.)
 - ✅ Type-safe TypeScript
@@ -385,6 +405,7 @@ Actually, z-index just works via drag ordering (dragging brings to top). That's 
 ### Authentication & Security (5 points)
 
 #### Excellent (5 points) Requirements:
+
 - [x] **Robust auth system** - ✅ YES (Auth0)
 - [x] **Secure user management** - ✅ YES
 - [x] **Proper session handling** - ✅ YES (JWT, HTTP-only cookies)
@@ -392,6 +413,7 @@ Actually, z-index just works via drag ordering (dragging brings to top). That's 
 - [x] **No exposed credentials** - ✅ YES (env vars)
 
 **Evidence:**
+
 - ✅ src/hooks.server.ts - JWT verification
 - ✅ src/lib/auth0.server.ts - Auth0 integration
 - ✅ Rate limiting on AI endpoint
@@ -407,6 +429,7 @@ Actually, z-index just works via drag ordering (dragging brings to top). That's 
 ### Repository & Setup (3 points)
 
 #### Excellent (3 points) Requirements:
+
 - [x] **Clear README** - ✅ YES (just updated)
 - [x] **Detailed setup guide** - ✅ YES (in README)
 - [x] **Architecture documentation** - ✅ YES (memory-bank/)
@@ -414,6 +437,7 @@ Actually, z-index just works via drag ordering (dragging brings to top). That's 
 - [x] **Dependencies listed** - ✅ YES (package.json)
 
 **Issues:**
+
 - Multiple PRD versions create confusion
 - Some docs outdated
 
@@ -424,12 +448,14 @@ Actually, z-index just works via drag ordering (dragging brings to top). That's 
 ### Deployment (2 points)
 
 #### Excellent (2 points) Requirements:
+
 - [ ] **Stable deployment** - ⚠️ UNVERIFIED (need to check if URLs work)
 - [ ] **Publicly accessible** - ⚠️ UNVERIFIED
 - [ ] **Supports 5+ users** - ❌ NOT TESTED
 - [ ] **Fast load times** - ❌ NOT MEASURED
 
 **Evidence:**
+
 - ✅ railway.json exists
 - ✅ PartyKit deployed (allegedly)
 - ❌ No verification of current accessibility
@@ -448,6 +474,7 @@ Actually, z-index just works via drag ordering (dragging brings to top). That's 
 File: `.human/mylog.md`
 
 Requirements (need 3/5):
+
 1. [ ] Tools & Workflow used - NEEDS REVIEW
 2. [ ] 3-5 effective prompting strategies - NEEDS COMPLETION
 3. [ ] Code analysis (AI-generated vs hand-written) - NEEDS COMPLETION
@@ -463,6 +490,7 @@ Requirements (need 3/5):
 **Status:** ❌ NOT STARTED
 
 Requirements:
+
 - [ ] 3-5 minute video
 - [ ] Real-time collaboration with 2+ users (show both screens)
 - [ ] Multiple AI commands executing
@@ -476,40 +504,40 @@ Requirements:
 
 ## MASTER SCORE SUMMARY
 
-| Section | Max | Honest Score | What's Wrong |
-|---------|-----|--------------|--------------|
-| **1.1** Real-Time Sync | 12 | **8-9** | No measurements or testing |
-| **1.2** Conflict Resolution | 9 | **6-7** | No explicit test scenarios |
-| **1.3** Persistence | 9 | **6-7** | No reconnection tests |
-| **Section 1 Total** | **30** | **20-23** | **Missing 7-10 points** |
-| | | | |
-| **2.1** Canvas Functionality | 8 | **5-6** | No text formatting, no layer management, no duplicate shortcut |
-| **2.2** Performance | 12 | **4-6** | ZERO scale testing |
-| **Section 2 Total** | **20** | **9-12** | **Missing 8-11 points** |
-| | | | |
-| **3.1** Tier 1 Features | 6 | **5** | Missing 4 Tier 1 features |
-| **3.2** Tier 2 Features | 6 | **0** | Missing all Tier 2 features |
-| **3.3** Tier 3 Features | 3 | **0** | Missing all Tier 3 features |
-| **Section 3 Total** | **15** | **5** | **Missing 10 points** |
-| | | | |
-| **4.1** Command Breadth | 10 | **9-10** | Actually good! |
-| **4.2** Complex Execution | 8 | **2-3** | **LAYOUT TOOLS BROKEN** |
-| **4.3** AI Performance | 7 | **3-4** | No testing, layout broken |
-| **Section 4 Total** | **25** | **14-17** | **Missing 8-11 points** |
-| | | | |
-| **5.1** Architecture | 5 | **5** | Actually excellent! |
-| **5.2** Security | 5 | **5** | Actually excellent! |
-| **Section 5 Total** | **10** | **10** | Perfect! |
-| | | | |
-| **6.1** Repository | 3 | **2-3** | Some confusion |
-| **6.2** Deployment | 2 | **1** | Not verified |
-| **Section 6 Total** | **5** | **3-4** | Acceptable |
-| | | | |
-| **SUBTOTAL** | **105** | **61-71** | |
-| **7** AI Dev Log | Req | **Incomplete** | Must complete or FAIL |
-| **8** Demo Video | Req | **Missing** | **-10 if not done** |
-| | | | |
-| **REALISTIC TOTAL** | **100** | **51-61** | **Before fixes** |
+| Section                      | Max     | Honest Score   | What's Wrong                                                   |
+| ---------------------------- | ------- | -------------- | -------------------------------------------------------------- |
+| **1.1** Real-Time Sync       | 12      | **8-9**        | No measurements or testing                                     |
+| **1.2** Conflict Resolution  | 9       | **6-7**        | No explicit test scenarios                                     |
+| **1.3** Persistence          | 9       | **6-7**        | No reconnection tests                                          |
+| **Section 1 Total**          | **30**  | **20-23**      | **Missing 7-10 points**                                        |
+|                              |         |                |                                                                |
+| **2.1** Canvas Functionality | 8       | **5-6**        | No text formatting, no layer management, no duplicate shortcut |
+| **2.2** Performance          | 12      | **4-6**        | ZERO scale testing                                             |
+| **Section 2 Total**          | **20**  | **9-12**       | **Missing 8-11 points**                                        |
+|                              |         |                |                                                                |
+| **3.1** Tier 1 Features      | 6       | **5**          | Missing 4 Tier 1 features                                      |
+| **3.2** Tier 2 Features      | 6       | **0**          | Missing all Tier 2 features                                    |
+| **3.3** Tier 3 Features      | 3       | **0**          | Missing all Tier 3 features                                    |
+| **Section 3 Total**          | **15**  | **5**          | **Missing 10 points**                                          |
+|                              |         |                |                                                                |
+| **4.1** Command Breadth      | 10      | **9-10**       | Actually good!                                                 |
+| **4.2** Complex Execution    | 8       | **2-3**        | **LAYOUT TOOLS BROKEN**                                        |
+| **4.3** AI Performance       | 7       | **3-4**        | No testing, layout broken                                      |
+| **Section 4 Total**          | **25**  | **14-17**      | **Missing 8-11 points**                                        |
+|                              |         |                |                                                                |
+| **5.1** Architecture         | 5       | **5**          | Actually excellent!                                            |
+| **5.2** Security             | 5       | **5**          | Actually excellent!                                            |
+| **Section 5 Total**          | **10**  | **10**         | Perfect!                                                       |
+|                              |         |                |                                                                |
+| **6.1** Repository           | 3       | **2-3**        | Some confusion                                                 |
+| **6.2** Deployment           | 2       | **1**          | Not verified                                                   |
+| **Section 6 Total**          | **5**   | **3-4**        | Acceptable                                                     |
+|                              |         |                |                                                                |
+| **SUBTOTAL**                 | **105** | **61-71**      |                                                                |
+| **7** AI Dev Log             | Req     | **Incomplete** | Must complete or FAIL                                          |
+| **8** Demo Video             | Req     | **Missing**    | **-10 if not done**                                            |
+|                              |         |                |                                                                |
+| **REALISTIC TOTAL**          | **100** | **51-61**      | **Before fixes**                                               |
 
 ---
 
@@ -550,7 +578,6 @@ Requirements:
 
 6. **Text Formatting Buttons** (bold/italic/underline)
    - Types defined, NO UI buttons
-   
 7. **Layer Management Panel** or any layer UI
    - LayerManager.ts exists, NO UI component
 
@@ -574,6 +601,7 @@ Requirements:
 ## WHAT ACTUALLY WORKS (Verified)
 
 ### ✅ Confirmed Working
+
 1. Create shapes (8 types via toolbar click)
 2. Move shapes (drag and drop)
 3. Resize shapes (transformer handles)
@@ -588,6 +616,7 @@ Requirements:
 12. PropertiesPanel (basic editing: position, size, color, opacity, rotation, fontSize)
 
 ### ❌ Claimed But NOT Working
+
 1. Tool selection keyboard shortcuts (V, R, C, T, L, P, S)
 2. Duplicate keyboard shortcut (Cmd+D)
 3. Layer keyboard shortcuts (Cmd+], Cmd+[, etc.)
@@ -609,12 +638,14 @@ Requirements:
 ## REALISTIC SCORING
 
 ### Current State (As-Is)
+
 - **Base Points:** 61-71 points
 - **AI Dev Log:** Incomplete (potential FAIL)
 - **Demo Video:** Missing (-10 points)
 - **Current Grade:** **41-61 points (F to D)**
 
 ### With Critical Bug Fixes (1 day)
+
 **Fix:** Implement layout tools client-side
 **Fix:** Wire up keyboard shortcuts (tools, duplicate, layers)
 
@@ -624,6 +655,7 @@ Requirements:
 - **Grade:** D to D+
 
 ### With Bug Fixes + Testing (1 week)
+
 **Fix:** All bugs above
 **Do:** Scale testing, AI command testing
 
@@ -633,6 +665,7 @@ Requirements:
 - **Grade:** D+ to C
 
 ### With Full Implementation (2-3 weeks)
+
 **Add:** Export, color picker, more keyboard shortcuts
 **Add:** More Tier 1/2 features
 **Do:** Comprehensive testing
@@ -647,30 +680,27 @@ Requirements:
 ## IMMEDIATE PRIORITIES (Critical Path)
 
 ### Must Fix (2-3 days)
+
 1. **Implement AI layout tools client-side** (2-3 hours)
    - File: src/lib/components/CommandPalette.svelte
    - Add arrangeHorizontal, arrangeVertical, arrangeGrid, etc.
-   
 2. **Wire up keyboard shortcuts** (4-6 hours)
    - Tool selection: V, R, C, E, L, T, P, S
    - Duplicate: Cmd+D
    - Layer management: Cmd+], Cmd+[, etc.
    - Arrow keys: nudge shapes
-   
 3. **Complete AI Dev Log** (1 day)
    - Required for Pass/Fail
-   
 4. **Create Demo Video** (1 day)
    - Required or -10 points
 
 ### High Value (3-5 days)
+
 5. **Test AI complex commands** (1 day)
    - After fixing layout tools
-   
 6. **Scale testing** (1 day)
    - 500 shapes performance
    - 5 user load test
-   
 7. **Implement PNG export** (1 day)
    - Use Konva toDataURL()
 
@@ -684,6 +714,7 @@ Requirements:
 **Stretch Goal:** 85-90 points (with full implementation)
 
 **Critical Next Steps:**
+
 1. Fix AI layout tools bug (MUST DO)
 2. Implement missing keyboard shortcuts (MUST DO)
 3. Complete AI Dev Log (REQUIRED)
@@ -691,4 +722,3 @@ Requirements:
 5. Do actual testing (validates all claims)
 
 **Timeline:** 1-2 weeks minimum to reach passing grade (70+)
-

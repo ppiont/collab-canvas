@@ -1,7 +1,7 @@
 /**
  * Shape Renderer - Konva Shape Rendering and Event Handling
  * Extracted from canvas/+page.svelte (200+ lines)
- * 
+ *
  * Handles:
  * - Generic shape rendering (rectangles, circles, ellipses, etc.)
  * - Drag and drop with real-time sync
@@ -18,11 +18,11 @@ import { filterVisibleShapes, getCullingStats } from '$lib/utils/viewport-cullin
 
 /** Event callbacks for shape interactions */
 export interface ShapeEventCallbacks {
-    onShapeUpdate: (id: string, changes: Partial<Shape>) => void;
-    onShapeSelect: (id: string) => void;
-    onBroadcastCursor: () => void;
-    getMaxZIndex: () => number;
-    getSelectedIds: () => string[]; // NEW: Get currently selected shape IDs
+	onShapeUpdate: (id: string, changes: Partial<Shape>) => void;
+	onShapeSelect: (id: string) => void;
+	onBroadcastCursor: () => void;
+	getMaxZIndex: () => number;
+	getSelectedIds: () => string[]; // NEW: Get currently selected shape IDs
 }
 
 /**
@@ -30,607 +30,633 @@ export interface ShapeEventCallbacks {
  * Supports all shape types and manages event handlers
  */
 export class ShapeRenderer {
-    private shapesLayer: Konva.Layer;
-    private stage: Konva.Stage | null = null;
-    private callbacks: ShapeEventCallbacks | null = null;
-
-    // Track locally dragging/editing shape to prevent render interruption
-    private locallyDraggingId: string | null = null;
-    private locallyEditingId: string | null = null;
-    private localUserId: string | null = null;
-    private isCreateMode = false;
-
-    // Transformer reference to ensure it stays on top
-    private transformer: Konva.Transformer | null = null;
-
-    // Viewport culling settings
-    private enableCulling = true; // Enable by default
-    private cullingPadding = 100; // Pixels of padding around viewport
-
-    // Performance stats (for debugging)
-    private lastCullingStats: ReturnType<typeof getCullingStats> | null = null;
-
-    constructor(shapesLayer: Konva.Layer, stage: Konva.Stage) {
-        this.shapesLayer = shapesLayer;
-        this.stage = stage;
-    }
-
-    /**
-     * Set event callbacks
-     */
-    setCallbacks(callbacks: ShapeEventCallbacks): void {
-        this.callbacks = callbacks;
-    }
-
-    /**
-     * Set transformer reference to ensure it stays on top during renders
-     */
-    setTransformer(transformer: Konva.Transformer): void {
-        this.transformer = transformer;
-    }
-
-    /**
-     * Set local user ID
-     */
-    setLocalUserId(userId: string): void {
-        this.localUserId = userId;
-    }
-
-    /**
-     * Set create mode (disables selection on click)
-     */
-    setCreateMode(enabled: boolean): void {
-        this.isCreateMode = enabled;
-    }
-
-    /**
-     * Enable or disable viewport culling
-     */
-    setViewportCulling(enabled: boolean): void {
-        this.enableCulling = enabled;
-    }
-
-    /**
-     * Set culling padding (extra pixels rendered off-screen)
-     */
-    setCullingPadding(padding: number): void {
-        this.cullingPadding = padding;
-    }
-
-    /**
-     * Get last culling statistics (for debugging)
-     */
-    getCullingStats(): ReturnType<typeof getCullingStats> | null {
-        return this.lastCullingStats;
-    }
-
-    /**
-     * Set currently dragging shape ID
-     */
-    setDraggingShape(shapeId: string | null): void {
-        this.locallyDraggingId = shapeId;
-    }
-
-    /**
-     * Render all shapes to the Konva layer
-     * 
-     * @param shapes - All shapes to potentially render
-     * @param viewport - Current viewport (for culling). If not provided, culling is disabled.
-     */
-    renderShapes(shapes: Shape[], viewport?: CanvasViewport): void {
-        if (!this.shapesLayer || !this.stage) {
-            return;
-        }
-
-        // Apply viewport culling if enabled and viewport provided
-        let shapesToRender = shapes;
-        if (this.enableCulling && viewport) {
-            const stageWidth = this.stage.width();
-            const stageHeight = this.stage.height();
-
-            shapesToRender = filterVisibleShapes(
-                shapes,
-                viewport,
-                stageWidth,
-                stageHeight,
-                this.cullingPadding
-            );
-
-            // Update statistics
-            this.lastCullingStats = getCullingStats(shapes.length, shapesToRender.length);
-
-            // Log stats if culling is significant (optional, can be removed)
-            if (shapes.length > 100 && this.lastCullingStats.cullingRatio > 0.3) {
-                console.log(
-                    `[Viewport Culling] Rendering ${shapesToRender.length}/${shapes.length} shapes ` +
-                    `(${Math.round(this.lastCullingStats.cullingRatio * 100)}% culled)`
-                );
-            }
-        }
-
-        // Get currently selected shape IDs for styling
-        const selectedIds = this.callbacks?.getSelectedIds?.() || [];
-
-        // Create map of shapes to render for quick lookup
-        const shapeMap = new Map(shapesToRender.map(s => [s.id, s]));
-
-        // First pass: Remove shapes that no longer exist in shapesToRender
-        // BUT preserve shapes we're currently dragging locally
-        const existingShapes = this.shapesLayer.find('.shape');
-        existingShapes.forEach((node) => {
-            const shapeId = node.id();
-            const isLocallyDragging = shapeId === this.locallyDraggingId;
-
-            // Only preserve shapes being dragged by this user
-            if (!isLocallyDragging && !shapeMap.has(shapeId)) {
-                node.destroy();
-            }
-        });
-
-        // Sort by zIndex before rendering (lower zIndex = bottom)
-        const sortedShapes = [...shapesToRender].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
-
-        sortedShapes.forEach((shape) => {
-            const existingNode = this.shapesLayer.findOne(`#${shape.id}`);
-            const isLocallyDragging = shape.id === this.locallyDraggingId;
-            const isSelected = selectedIds.includes(shape.id);
-
-            // CRITICAL FIX: If node exists AND we're not currently dragging it,
-            // UPDATE its properties from Yjs instead of skipping it
-            if (existingNode && !isLocallyDragging) {
-                // Sync Konva node properties from Yjs shape data
-                this.updateKonvaNodeProperties(existingNode, shape);
-                this.applySelectionStyling(existingNode, isSelected, shape);
-                return;
-            }
-
-            // If we're dragging this shape locally, don't recreate it
-            if (existingNode && isLocallyDragging) {
-                this.applySelectionStyling(existingNode, isSelected, shape);
-                return;
-            }
-
-            // Shape doesn't exist, create it
-            const isDraggedByOther = !!(shape.draggedBy && shape.draggedBy !== this.localUserId);
-            const konvaShape = this.createKonvaShape(shape, isDraggedByOther);
-            if (!konvaShape) {
-                return;
-            }
-
-            // Attach event handlers
-            this.attachEventHandlers(konvaShape, shape, isDraggedByOther);
-
-            // Apply selection styling
-            this.applySelectionStyling(konvaShape, isSelected, shape);
-
-            this.shapesLayer.add(konvaShape);
-        });
-
-        // Keep locally dragging shape on top
-        if (this.locallyDraggingId) {
-            const draggedNode = this.shapesLayer.findOne(`#${this.locallyDraggingId}`);
-            if (draggedNode) {
-                draggedNode.moveToTop();
-            }
-        }
-
-        // CRITICAL: Move transformer to top after rendering shapes
-        // This ensures the transformer is always visible above shapes
-        if (this.transformer) {
-            this.transformer.moveToTop();
-        }
-
-        this.shapesLayer.batchDraw();
-    }
-
-    /**
-     * Update existing Konva node properties from shape data
-     * This is CRITICAL for undo/redo to work on selected shapes
-     */
-    private updateKonvaNodeProperties(node: Konva.Node, shape: Shape): void {
-        // Update common properties
-        node.x(shape.x);
-        node.y(shape.y);
-        node.rotation(shape.rotation || 0);
-
-        const konvaShape = node as Konva.Shape;
-        konvaShape.fill(shape.fill);
-        konvaShape.stroke(shape.stroke);
-        konvaShape.strokeWidth(shape.strokeWidth);
-        konvaShape.opacity(shape.opacity || 1);
-
-        // Update shape-specific properties based on type
-        switch (shape.type) {
-            case 'rectangle':
-                (node as Konva.Rect).width(shape.width);
-                (node as Konva.Rect).height(shape.height);
-                break;
-
-            case 'circle':
-                (node as Konva.Circle).radius(shape.radius);
-                break;
-
-            case 'ellipse':
-                (node as Konva.Ellipse).radiusX(shape.radiusX);
-                (node as Konva.Ellipse).radiusY(shape.radiusY);
-                break;
-
-            case 'line':
-                (node as Konva.Line).points(shape.points);
-                break;
-
-            case 'star': {
-                const star = node as Konva.Star;
-                star.numPoints(shape.numPoints);
-                star.innerRadius(shape.innerRadius);
-                star.outerRadius(shape.outerRadius);
-                break;
-            }
-
-            case 'text': {
-                const text = node as Konva.Text;
-                text.text(shape.text);
-                text.fontSize(shape.fontSize);
-                text.fontFamily(shape.fontFamily || 'system-ui');
-                text.fontStyle(shape.fontStyle);
-                text.align(shape.align || 'left');
-                break;
-            }
-
-            case 'image':
-                (node as Konva.Rect).width(shape.width);
-                (node as Konva.Rect).height(shape.height);
-                break;
-        }
-    }
-
-    /**
-     * Apply selection styling to a shape
-     * Matches the transformer border color for visual consistency
-     */
-    private applySelectionStyling(node: Konva.Node, isSelected: boolean, shapeData: Shape): void {
-        const konvaShape = node as Konva.Shape;
-
-        if (isSelected) {
-            // Apply selection outline matching transformer border
-            konvaShape.stroke('#667eea'); // Same color as transformer
-            konvaShape.strokeWidth(2);
-            konvaShape.dash([]); // Solid line
-            // No shadow - just clean outline
-            konvaShape.shadowColor('');
-            konvaShape.shadowBlur(0);
-            konvaShape.shadowOpacity(0);
-        } else {
-            // Restore original values from shape data
-            konvaShape.stroke(shapeData.stroke);
-            konvaShape.strokeWidth(shapeData.strokeWidth);
-            konvaShape.dash([]);
-            konvaShape.shadowColor('');
-            konvaShape.shadowBlur(0);
-            konvaShape.shadowOpacity(0);
-        }
-    }
-
-    /**
-     * Update selection styling for all shapes based on current selection
-     */
-    updateSelectionStyling(selectedIds: string[], shapes: Shape[]): void {
-        if (!this.shapesLayer) return;
-
-        // Create a map for quick lookup
-        const shapeDataMap = new Map(shapes.map(s => [s.id, s]));
-
-        // Update all shape nodes in the layer
-        const shapeNodes = this.shapesLayer.find('.shape');
-        shapeNodes.forEach((node) => {
-            const shapeId = node.id();
-            const shapeData = shapeDataMap.get(shapeId);
-            if (shapeData) {
-                const isSelected = selectedIds.includes(shapeId);
-                this.applySelectionStyling(node, isSelected, shapeData);
-            }
-        });
-
-        this.shapesLayer.batchDraw();
-    }
-
-    /**
-     * Create Konva shape based on shape type
-     */
-    private createKonvaShape(shape: Shape, isDraggedByOther: boolean): Konva.Shape | null {
-        const baseConfig = {
-            id: shape.id,
-            name: 'shape',
-            x: shape.x,
-            y: shape.y,
-            rotation: shape.rotation || 0,  // Apply stored rotation
-            fill: shape.fill,
-            stroke: shape.stroke,
-            strokeWidth: shape.strokeWidth,
-            strokeScaleEnabled: false,  // Keep stroke width constant when scaling
-            draggable: (('draggable' in shape ? shape.draggable : true) ?? true) && !isDraggedByOther,
-            opacity: isDraggedByOther ? 0.5 : (shape.opacity || 1),  // Use stored opacity
-            shadowColor: isDraggedByOther ? '#667eea' : '',
-            shadowBlur: isDraggedByOther ? 8 : 0,
-            shadowOpacity: isDraggedByOther ? 0.6 : 0
-        };
-
-        switch (shape.type) {
-            case 'rectangle':
-                return new Konva.Rect({
-                    ...baseConfig,
-                    width: shape.width,
-                    height: shape.height
-                });
-
-            case 'circle':
-                return new Konva.Circle({
-                    ...baseConfig,
-                    radius: shape.radius
-                });
-
-            case 'ellipse':
-                return new Konva.Ellipse({
-                    ...baseConfig,
-                    radiusX: shape.radiusX,
-                    radiusY: shape.radiusY
-                });
-
-            case 'line':
-                return new Konva.Line({
-                    ...baseConfig,
-                    points: shape.points,
-                    fill: undefined // Lines don't have fill
-                });
-
-            case 'polygon': {
-                const polygonShape = shape as Extract<Shape, { type: 'polygon' }>;
-                // Generate points for polygon from sides and radius
-                const points: number[] = [];
-                for (let i = 0; i < polygonShape.sides; i++) {
-                    const angle = (i / polygonShape.sides) * Math.PI * 2 - Math.PI / 2;
-                    points.push(
-                        Math.cos(angle) * polygonShape.radius,
-                        Math.sin(angle) * polygonShape.radius
-                    );
-                }
-                return new Konva.Line({
-                    ...baseConfig,
-                    points: points,
-                    closed: true
-                });
-            }
-
-            case 'star':
-                return new Konva.Star({
-                    ...baseConfig,
-                    numPoints: shape.numPoints,
-                    innerRadius: shape.innerRadius,
-                    outerRadius: shape.outerRadius
-                });
-
-            case 'text':
-                return new Konva.Text({
-                    ...baseConfig,
-                    text: shape.text,
-                    fontSize: shape.fontSize,
-                    fontFamily: shape.fontFamily || SHAPES.DEFAULT_FONT_FAMILY,
-                    fontStyle: shape.fontStyle,
-                    align: shape.align || 'left',
-                    fill: shape.fill || '#000000',
-                    stroke: undefined // Text typically doesn't have stroke
-                });
-
-            case 'image':
-                // Image shapes need special handling with Image objects
-                // For now, return a placeholder rect (will be implemented in image support phase)
-                console.warn('Image shape rendering not yet implemented');
-                return new Konva.Rect({
-                    ...baseConfig,
-                    width: shape.width,
-                    height: shape.height,
-                    fill: '#e2e8f0',
-                    stroke: '#94a3b8'
-                });
-
-            default:
-                console.warn('Unknown shape type:', (shape as Shape).type);
-                return null;
-        }
-    }
-
-    /**
-     * Attach event handlers to a Konva shape
-     */
-    private attachEventHandlers(
-        konvaShape: Konva.Shape,
-        shape: Shape,
-        isDraggedByOther: boolean
-    ): void {
-        if (!this.callbacks || !this.stage) return;
-
-        // Hover effects
-        konvaShape.on('mouseenter', () => {
-            if (!this.stage) return;
-            this.stage.container().style.cursor = isDraggedByOther ? 'not-allowed' : 'move';
-
-            if (!isDraggedByOther) {
-                konvaShape.strokeWidth((shape.strokeWidth || 2) + 1);
-                this.shapesLayer.batchDraw();
-            }
-        });
-
-        konvaShape.on('mouseleave', () => {
-            if (!this.stage) return;
-            this.stage.container().style.cursor = 'default';
-
-            if (!isDraggedByOther) {
-                konvaShape.strokeWidth(shape.strokeWidth);
-                this.shapesLayer.batchDraw();
-            }
-        });
-
-        // Drag events
-        konvaShape.on('dragstart', () => {
-            if (!this.stage) return;
-
-            // Visual feedback
-            konvaShape.opacity(0.7);
-            konvaShape.shadowColor('black');
-            konvaShape.shadowBlur(10);
-            konvaShape.shadowOffset({ x: 5, y: 5 });
-            konvaShape.shadowOpacity(0.3);
-            this.stage.container().style.cursor = 'grabbing';
-
-            // Move to top locally
-            konvaShape.moveToTop();
-
-            // Broadcast cursor
-            this.callbacks!.onBroadcastCursor();
-
-            // Track local drag
-            this.locallyDraggingId = shape.id;
-
-            // Update with highest zIndex
-            this.callbacks!.onShapeUpdate(shape.id, {
-                draggedBy: this.localUserId || undefined,
-                zIndex: this.callbacks!.getMaxZIndex() + 1
-            });
-        });
-
-        konvaShape.on('dragmove', () => {
-            // Broadcast cursor position
-            // DO NOT write to Yjs on every dragmove - causes too many undo steps
-            // Only write final position on dragend
-            this.callbacks!.onBroadcastCursor();
-        });
-
-        konvaShape.on('dragend', (e) => {
-            if (!this.stage) return;
-
-            // Reset visual feedback
-            konvaShape.opacity(1);
-            konvaShape.shadowColor('');
-            konvaShape.shadowBlur(0);
-            konvaShape.shadowOpacity(0);
-            konvaShape.shadowOffset({ x: 0, y: 0 });
-            this.stage.container().style.cursor = 'move';
-
-            // Update final position and clear drag state
-            this.callbacks!.onShapeUpdate(shape.id, {
-                x: e.target.x(),
-                y: e.target.y(),
-                draggedBy: undefined
-            });
-
-            // Broadcast final cursor position
-            this.callbacks!.onBroadcastCursor();
-
-            // Clear drag tracking
-            requestAnimationFrame(() => {
-                this.locallyDraggingId = null;
-            });
-        });
-
-        // Double-click to edit text
-        if (shape.type === 'text') {
-            konvaShape.on('dblclick dbltap', () => {
-                this.enableTextEditing(konvaShape as Konva.Text, shape);
-            });
-        }
-
-        // NOTE: Click handling is done in EventHandlers.ts on the stage level
-        // to support multi-select with Shift/Cmd modifiers. Don't add click
-        // handlers here as they would prevent event bubbling.
-
-    }
-
-    /**
-     * Enable text editing for a text shape
-     */
-    private enableTextEditing(textNode: Konva.Text, shape: Extract<Shape, { type: 'text' }>): void {
-        if (!this.stage) return;
-
-        // Track that we're editing this shape
-        this.locallyEditingId = shape.id;
-
-        // Hide text node
-        textNode.hide();
-
-        // Create textarea
-        const textPosition = textNode.absolutePosition();
-        const stageBox = this.stage.container().getBoundingClientRect();
-        const scale = this.stage.scaleX();
-
-        const textarea = document.createElement('textarea');
-        document.body.appendChild(textarea);
-
-        // Position textarea
-        textarea.value = shape.text;
-        textarea.style.position = 'absolute';
-        textarea.style.top = `${stageBox.top + textPosition.y * scale}px`;
-        textarea.style.left = `${stageBox.left + textPosition.x * scale}px`;
-        textarea.style.width = `${textNode.width() * scale}px`;
-        textarea.style.fontSize = `${shape.fontSize * scale}px`;
-        textarea.style.fontFamily = shape.fontFamily || 'system-ui';
-        textarea.style.border = '2px solid #667eea';
-        textarea.style.padding = '4px';
-        textarea.style.margin = '0';
-        textarea.style.overflow = 'hidden';
-        textarea.style.background = 'white';
-        textarea.style.outline = 'none';
-        textarea.style.resize = 'none';
-        textarea.style.lineHeight = '1.2';
-        textarea.style.transformOrigin = 'left top';
-        textarea.style.textAlign = shape.align || 'left';
-        textarea.style.color = shape.fill || '#000000';
-
-        textarea.focus();
-        textarea.select();
-
-        let removed = false;
-        const removeTextarea = () => {
-            if (removed) return;
-            removed = true;
-
-            const newText = textarea.value.trim() || shape.text;
-
-            // Remove textarea
-            textarea.remove();
-
-            // Clear editing state
-            this.locallyEditingId = null;
-
-            // Update text if changed
-            if (newText !== shape.text) {
-                this.callbacks!.onShapeUpdate(shape.id, { text: newText });
-                // Re-render will happen automatically with new text
-            } else {
-                // No change, just show the existing node
-                textNode.show();
-                this.shapesLayer.batchDraw();
-            }
-        };
-
-        textarea.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                removeTextarea();
-            }
-        });
-
-        textarea.addEventListener('blur', () => {
-            // Small delay to allow click events to process first
-            setTimeout(removeTextarea, 10);
-        });
-    }
-
-    /**
-     * Clean up resources
-     */
-    destroy(): void {
-        this.callbacks = null;
-        this.stage = null;
-    }
+	private shapesLayer: Konva.Layer;
+	private stage: Konva.Stage | null = null;
+	private callbacks: ShapeEventCallbacks | null = null;
+
+	// Track locally dragging/editing shape to prevent render interruption
+	private locallyDraggingId: string | null = null;
+	private locallyEditingId: string | null = null;
+	private localUserId: string | null = null;
+	private isCreateMode = false;
+
+	// Transformer reference to ensure it stays on top
+	private transformer: Konva.Transformer | null = null;
+
+	// Viewport culling settings
+	private enableCulling = true; // Enable by default
+	private cullingPadding = 100; // Pixels of padding around viewport
+
+	// Performance stats (for debugging)
+	private lastCullingStats: ReturnType<typeof getCullingStats> | null = null;
+
+	constructor(shapesLayer: Konva.Layer, stage: Konva.Stage) {
+		this.shapesLayer = shapesLayer;
+		this.stage = stage;
+	}
+
+	/**
+	 * Set event callbacks
+	 */
+	setCallbacks(callbacks: ShapeEventCallbacks): void {
+		this.callbacks = callbacks;
+	}
+
+	/**
+	 * Set transformer reference to ensure it stays on top during renders
+	 */
+	setTransformer(transformer: Konva.Transformer): void {
+		this.transformer = transformer;
+	}
+
+	/**
+	 * Set local user ID
+	 */
+	setLocalUserId(userId: string): void {
+		this.localUserId = userId;
+	}
+
+	/**
+	 * Set create mode (disables selection on click)
+	 */
+	setCreateMode(enabled: boolean): void {
+		this.isCreateMode = enabled;
+	}
+
+	/**
+	 * Enable or disable viewport culling
+	 */
+	setViewportCulling(enabled: boolean): void {
+		this.enableCulling = enabled;
+	}
+
+	/**
+	 * Set culling padding (extra pixels rendered off-screen)
+	 */
+	setCullingPadding(padding: number): void {
+		this.cullingPadding = padding;
+	}
+
+	/**
+	 * Get last culling statistics (for debugging)
+	 */
+	getCullingStats(): ReturnType<typeof getCullingStats> | null {
+		return this.lastCullingStats;
+	}
+
+	/**
+	 * Set currently dragging shape ID
+	 */
+	setDraggingShape(shapeId: string | null): void {
+		this.locallyDraggingId = shapeId;
+	}
+
+	/**
+	 * Render all shapes to the Konva layer
+	 *
+	 * @param shapes - All shapes to potentially render
+	 * @param viewport - Current viewport (for culling). If not provided, culling is disabled.
+	 */
+	renderShapes(shapes: Shape[], viewport?: CanvasViewport): void {
+		if (!this.shapesLayer || !this.stage) {
+			return;
+		}
+
+		// Apply viewport culling if enabled and viewport provided
+		let shapesToRender = shapes;
+		if (this.enableCulling && viewport) {
+			const stageWidth = this.stage.width();
+			const stageHeight = this.stage.height();
+
+			shapesToRender = filterVisibleShapes(
+				shapes,
+				viewport,
+				stageWidth,
+				stageHeight,
+				this.cullingPadding
+			);
+
+			// Update statistics
+			this.lastCullingStats = getCullingStats(shapes.length, shapesToRender.length);
+
+			// Log stats if culling is significant (optional, can be removed)
+			if (shapes.length > 100 && this.lastCullingStats.cullingRatio > 0.3) {
+				console.log(
+					`[Viewport Culling] Rendering ${shapesToRender.length}/${shapes.length} shapes ` +
+						`(${Math.round(this.lastCullingStats.cullingRatio * 100)}% culled)`
+				);
+			}
+		}
+
+		// Get currently selected shape IDs for styling
+		const selectedIds = this.callbacks?.getSelectedIds?.() || [];
+
+		// Create map of shapes to render for quick lookup
+		const shapeMap = new Map(shapesToRender.map((s) => [s.id, s]));
+
+		// First pass: Remove shapes that no longer exist in shapesToRender
+		// BUT preserve shapes we're currently dragging locally
+		const existingShapes = this.shapesLayer.find('.shape');
+		existingShapes.forEach((node) => {
+			const shapeId = node.id();
+			const isLocallyDragging = shapeId === this.locallyDraggingId;
+
+			// Only preserve shapes being dragged by this user
+			if (!isLocallyDragging && !shapeMap.has(shapeId)) {
+				node.destroy();
+			}
+		});
+
+		// Sort by zIndex before rendering (lower zIndex = bottom)
+		const sortedShapes = [...shapesToRender].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+
+		sortedShapes.forEach((shape) => {
+			const existingNode = this.shapesLayer.findOne(`#${shape.id}`);
+			const isLocallyDragging = shape.id === this.locallyDraggingId;
+			const isSelected = selectedIds.includes(shape.id);
+
+			// CRITICAL FIX: If node exists AND we're not currently dragging it,
+			// UPDATE its properties from Yjs instead of skipping it
+			if (existingNode && !isLocallyDragging) {
+				// Sync Konva node properties from Yjs shape data
+				this.updateKonvaNodeProperties(existingNode, shape);
+				this.applySelectionStyling(existingNode, isSelected, shape);
+				// CRITICAL: Ensure node is visible after update
+				// (fixes text disappearing after editing - node was hidden but never shown again)
+				existingNode.show();
+				return;
+			}
+
+			// If we're dragging this shape locally, don't recreate it
+			if (existingNode && isLocallyDragging) {
+				this.applySelectionStyling(existingNode, isSelected, shape);
+				return;
+			}
+
+			// Shape doesn't exist, create it
+			const isDraggedByOther = !!(shape.draggedBy && shape.draggedBy !== this.localUserId);
+			const konvaShape = this.createKonvaShape(shape, isDraggedByOther);
+			if (!konvaShape) {
+				return;
+			}
+
+			// Attach event handlers
+			this.attachEventHandlers(konvaShape, shape, isDraggedByOther);
+
+			// Apply selection styling
+			this.applySelectionStyling(konvaShape, isSelected, shape);
+
+			this.shapesLayer.add(konvaShape);
+		});
+
+		// Keep locally dragging shape on top
+		if (this.locallyDraggingId) {
+			const draggedNode = this.shapesLayer.findOne(`#${this.locallyDraggingId}`);
+			if (draggedNode) {
+				draggedNode.moveToTop();
+			}
+		}
+
+		// CRITICAL: Move transformer to top after rendering shapes
+		// This ensures the transformer is always visible above shapes
+		if (this.transformer) {
+			this.transformer.moveToTop();
+		}
+
+		this.shapesLayer.batchDraw();
+	}
+
+	/**
+	 * Update existing Konva node properties from shape data
+	 * This is CRITICAL for undo/redo to work on selected shapes
+	 */
+	private updateKonvaNodeProperties(node: Konva.Node, shape: Shape): void {
+		// Update common properties
+		node.x(shape.x);
+		node.y(shape.y);
+		node.rotation(shape.rotation || 0);
+
+		const konvaShape = node as Konva.Shape;
+		konvaShape.fill(shape.fill || (shape.type === 'text' ? '#000000' : undefined));
+
+		// CRITICAL: Never apply stroke to text shapes
+		// Konva.Text doesn't support stroke rendering properly - it creates visual artifacts
+		if (shape.type !== 'text') {
+			konvaShape.stroke(shape.stroke);
+			konvaShape.strokeWidth(shape.strokeWidth);
+		}
+
+		konvaShape.opacity(shape.opacity || 1);
+
+		// Update shape-specific properties based on type
+		switch (shape.type) {
+			case 'rectangle':
+				(node as Konva.Rect).width(shape.width);
+				(node as Konva.Rect).height(shape.height);
+				break;
+
+			case 'circle':
+				(node as Konva.Circle).radius(shape.radius);
+				break;
+
+			case 'ellipse':
+				(node as Konva.Ellipse).radiusX(shape.radiusX);
+				(node as Konva.Ellipse).radiusY(shape.radiusY);
+				break;
+
+			case 'line':
+				(node as Konva.Line).points(shape.points);
+				break;
+
+			case 'star': {
+				const star = node as Konva.Star;
+				star.numPoints(shape.numPoints);
+				star.innerRadius(shape.innerRadius);
+				star.outerRadius(shape.outerRadius);
+				break;
+			}
+
+			case 'text': {
+				const text = node as Konva.Text;
+				text.text(shape.text);
+				text.fontSize(shape.fontSize);
+				text.fontFamily(shape.fontFamily || 'system-ui');
+				text.fontStyle(shape.fontStyle);
+				text.align(shape.align || 'left');
+				break;
+			}
+
+			case 'image':
+				(node as Konva.Rect).width(shape.width);
+				(node as Konva.Rect).height(shape.height);
+				break;
+		}
+	}
+
+	/**
+	 * Apply selection styling to a shape
+	 * Matches the transformer border color for visual consistency
+	 */
+	private applySelectionStyling(node: Konva.Node, isSelected: boolean, shapeData: Shape): void {
+		const konvaShape = node as Konva.Shape;
+
+		if (isSelected) {
+			// Apply selection outline matching transformer border
+			// EXCEPTION: Text shapes should never have stroke - Konva.Text doesn't render it properly
+			if (shapeData.type !== 'text') {
+				konvaShape.stroke('#667eea'); // Same color as transformer
+				konvaShape.strokeWidth(2);
+			}
+			konvaShape.dash([]); // Solid line
+			// No shadow - just clean outline
+			konvaShape.shadowColor('');
+			konvaShape.shadowBlur(0);
+			konvaShape.shadowOpacity(0);
+		} else {
+			// Restore original values from shape data
+			// EXCEPTION: Text shapes should never have stroke
+			if (shapeData.type !== 'text') {
+				konvaShape.stroke(shapeData.stroke);
+				konvaShape.strokeWidth(shapeData.strokeWidth);
+			}
+			konvaShape.dash([]);
+			konvaShape.shadowColor('');
+			konvaShape.shadowBlur(0);
+			konvaShape.shadowOpacity(0);
+		}
+	}
+
+	/**
+	 * Update selection styling for all shapes based on current selection
+	 */
+	updateSelectionStyling(selectedIds: string[], shapes: Shape[]): void {
+		if (!this.shapesLayer) return;
+
+		// Create a map for quick lookup
+		const shapeDataMap = new Map(shapes.map((s) => [s.id, s]));
+
+		// Update all shape nodes in the layer
+		const shapeNodes = this.shapesLayer.find('.shape');
+		shapeNodes.forEach((node) => {
+			const shapeId = node.id();
+			const shapeData = shapeDataMap.get(shapeId);
+			if (shapeData) {
+				const isSelected = selectedIds.includes(shapeId);
+				this.applySelectionStyling(node, isSelected, shapeData);
+			}
+		});
+
+		this.shapesLayer.batchDraw();
+	}
+
+	/**
+	 * Create Konva shape based on shape type
+	 */
+	private createKonvaShape(shape: Shape, isDraggedByOther: boolean): Konva.Shape | null {
+		const baseConfig = {
+			id: shape.id,
+			name: 'shape',
+			x: shape.x,
+			y: shape.y,
+			rotation: shape.rotation || 0, // Apply stored rotation
+			fill: shape.fill,
+			stroke: shape.stroke,
+			strokeWidth: shape.strokeWidth,
+			strokeScaleEnabled: false, // Keep stroke width constant when scaling
+			draggable: (('draggable' in shape ? shape.draggable : true) ?? true) && !isDraggedByOther,
+			opacity: isDraggedByOther ? 0.5 : shape.opacity || 1, // Use stored opacity
+			shadowColor: isDraggedByOther ? '#667eea' : '',
+			shadowBlur: isDraggedByOther ? 8 : 0,
+			shadowOpacity: isDraggedByOther ? 0.6 : 0
+		};
+
+		switch (shape.type) {
+			case 'rectangle':
+				return new Konva.Rect({
+					...baseConfig,
+					width: shape.width,
+					height: shape.height
+				});
+
+			case 'circle':
+				return new Konva.Circle({
+					...baseConfig,
+					radius: shape.radius
+				});
+
+			case 'ellipse':
+				return new Konva.Ellipse({
+					...baseConfig,
+					radiusX: shape.radiusX,
+					radiusY: shape.radiusY
+				});
+
+			case 'line':
+				return new Konva.Line({
+					...baseConfig,
+					points: shape.points,
+					fill: undefined // Lines don't have fill
+				});
+
+			case 'polygon': {
+				const polygonShape = shape as Extract<Shape, { type: 'polygon' }>;
+				// Generate points for polygon from sides and radius
+				const points: number[] = [];
+				for (let i = 0; i < polygonShape.sides; i++) {
+					const angle = (i / polygonShape.sides) * Math.PI * 2 - Math.PI / 2;
+					points.push(Math.cos(angle) * polygonShape.radius, Math.sin(angle) * polygonShape.radius);
+				}
+				return new Konva.Line({
+					...baseConfig,
+					points: points,
+					closed: true
+				});
+			}
+
+			case 'star': {
+				const starShape = shape as Extract<Shape, { type: 'star' }>;
+				return new Konva.Star({
+					...baseConfig,
+					numPoints: starShape.numPoints,
+					innerRadius: starShape.innerRadius,
+					outerRadius: starShape.outerRadius
+				});
+			}
+
+			case 'text':
+				// Text shapes need special config: exclude stroke properties entirely
+				// Konva.Text doesn't support stroke rendering properly - it creates artifacts
+				return new Konva.Text({
+					// Common properties that text supports
+					id: shape.id,
+					name: 'shape',
+					x: shape.x,
+					y: shape.y,
+					rotation: shape.rotation || 0,
+					opacity: isDraggedByOther ? 0.5 : shape.opacity || 1,
+					fill: shape.fill || '#000000',
+					shadowColor: isDraggedByOther ? '#667eea' : '',
+					shadowBlur: isDraggedByOther ? 8 : 0,
+					shadowOpacity: isDraggedByOther ? 0.6 : 0,
+					draggable: (('draggable' in shape ? shape.draggable : true) ?? true) && !isDraggedByOther,
+					// Text-specific properties
+					text: shape.text,
+					fontSize: shape.fontSize,
+					fontFamily: shape.fontFamily || SHAPES.DEFAULT_FONT_FAMILY,
+					fontStyle: shape.fontStyle,
+					align: shape.align || 'left'
+					// NOTE: Intentionally NOT including stroke or strokeWidth
+					// Konva.Text stroke rendering creates visual artifacts
+				});
+
+			case 'image':
+				// Image shapes need special handling with Image objects
+				// For now, return a placeholder rect (will be implemented in image support phase)
+				console.warn('Image shape rendering not yet implemented');
+				return new Konva.Rect({
+					...baseConfig,
+					width: shape.width,
+					height: shape.height,
+					fill: '#e2e8f0',
+					stroke: '#94a3b8'
+				});
+
+			default:
+				console.warn('Unknown shape type:', (shape as Shape).type);
+				return null;
+		}
+	}
+
+	/**
+	 * Attach event handlers to a Konva shape
+	 */
+	private attachEventHandlers(
+		konvaShape: Konva.Shape,
+		shape: Shape,
+		isDraggedByOther: boolean
+	): void {
+		if (!this.callbacks || !this.stage) return;
+
+		// Hover effects
+		konvaShape.on('mouseenter', () => {
+			if (!this.stage) return;
+			this.stage.container().style.cursor = isDraggedByOther ? 'not-allowed' : 'move';
+
+			if (!isDraggedByOther) {
+				konvaShape.strokeWidth((shape.strokeWidth || 2) + 1);
+				this.shapesLayer.batchDraw();
+			}
+		});
+
+		konvaShape.on('mouseleave', () => {
+			if (!this.stage) return;
+			this.stage.container().style.cursor = 'default';
+
+			if (!isDraggedByOther) {
+				konvaShape.strokeWidth(shape.strokeWidth);
+				this.shapesLayer.batchDraw();
+			}
+		});
+
+		// Drag events
+		konvaShape.on('dragstart', () => {
+			if (!this.stage) return;
+
+			// Visual feedback
+			konvaShape.opacity(0.7);
+			konvaShape.shadowColor('black');
+			konvaShape.shadowBlur(10);
+			konvaShape.shadowOffset({ x: 5, y: 5 });
+			konvaShape.shadowOpacity(0.3);
+			this.stage.container().style.cursor = 'grabbing';
+
+			// Move to top locally
+			konvaShape.moveToTop();
+
+			// Broadcast cursor
+			this.callbacks!.onBroadcastCursor();
+
+			// Track local drag
+			this.locallyDraggingId = shape.id;
+
+			// Update with highest zIndex
+			this.callbacks!.onShapeUpdate(shape.id, {
+				draggedBy: this.localUserId || undefined,
+				zIndex: this.callbacks!.getMaxZIndex() + 1
+			});
+		});
+
+		konvaShape.on('dragmove', () => {
+			// Broadcast cursor position
+			// DO NOT write to Yjs on every dragmove - causes too many undo steps
+			// Only write final position on dragend
+			this.callbacks!.onBroadcastCursor();
+		});
+
+		konvaShape.on('dragend', (e) => {
+			if (!this.stage) return;
+
+			// Reset visual feedback
+			konvaShape.opacity(1);
+			konvaShape.shadowColor('');
+			konvaShape.shadowBlur(0);
+			konvaShape.shadowOpacity(0);
+			konvaShape.shadowOffset({ x: 0, y: 0 });
+			this.stage.container().style.cursor = 'move';
+
+			// Update final position and clear drag state
+			this.callbacks!.onShapeUpdate(shape.id, {
+				x: e.target.x(),
+				y: e.target.y(),
+				draggedBy: undefined
+			});
+
+			// Broadcast final cursor position
+			this.callbacks!.onBroadcastCursor();
+
+			// Clear drag tracking
+			requestAnimationFrame(() => {
+				this.locallyDraggingId = null;
+			});
+		});
+
+		// Double-click to edit text
+		if (shape.type === 'text') {
+			konvaShape.on('dblclick dbltap', () => {
+				this.enableTextEditing(konvaShape as Konva.Text, shape);
+			});
+		}
+
+		// NOTE: Click handling is done in EventHandlers.ts on the stage level
+		// to support multi-select with Shift/Cmd modifiers. Don't add click
+		// handlers here as they would prevent event bubbling.
+	}
+
+	/**
+	 * Enable text editing for a text shape
+	 */
+	private enableTextEditing(textNode: Konva.Text, shape: Extract<Shape, { type: 'text' }>): void {
+		if (!this.stage) return;
+
+		// Track that we're editing this shape
+		this.locallyEditingId = shape.id;
+
+		// Hide text node
+		textNode.hide();
+
+		// Create textarea
+		const textPosition = textNode.absolutePosition();
+		const stageBox = this.stage.container().getBoundingClientRect();
+		const scale = this.stage.scaleX();
+
+		const textarea = document.createElement('textarea');
+		document.body.appendChild(textarea);
+
+		// Position textarea
+		textarea.value = shape.text;
+		textarea.style.position = 'absolute';
+		textarea.style.top = `${stageBox.top + textPosition.y * scale}px`;
+		textarea.style.left = `${stageBox.left + textPosition.x * scale}px`;
+		textarea.style.width = `${textNode.width() * scale}px`;
+		textarea.style.fontSize = `${shape.fontSize * scale}px`;
+		textarea.style.fontFamily = shape.fontFamily || 'system-ui';
+		textarea.style.border = '2px solid #667eea';
+		textarea.style.padding = '4px';
+		textarea.style.margin = '0';
+		textarea.style.overflow = 'hidden';
+		textarea.style.background = 'white';
+		textarea.style.outline = 'none';
+		textarea.style.resize = 'none';
+		textarea.style.lineHeight = '1.2';
+		textarea.style.transformOrigin = 'left top';
+		textarea.style.textAlign = shape.align || 'left';
+		textarea.style.color = shape.fill || '#000000';
+
+		textarea.focus();
+		textarea.select();
+
+		let removed = false;
+		const removeTextarea = () => {
+			if (removed) return;
+			removed = true;
+
+			const newText = textarea.value.trim() || shape.text;
+
+			// Remove textarea
+			textarea.remove();
+
+			// Clear editing state
+			this.locallyEditingId = null;
+
+			// Update text if changed
+			if (newText !== shape.text) {
+				this.callbacks!.onShapeUpdate(shape.id, { text: newText });
+				// Re-render will happen automatically with new text
+			} else {
+				// No change, just show the existing node
+				textNode.show();
+				this.shapesLayer.batchDraw();
+			}
+		};
+
+		textarea.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape') {
+				e.preventDefault();
+				removeTextarea();
+			}
+		});
+
+		textarea.addEventListener('blur', () => {
+			// Small delay to allow click events to process first
+			setTimeout(removeTextarea, 10);
+		});
+	}
+
+	/**
+	 * Clean up resources
+	 */
+	destroy(): void {
+		this.callbacks = null;
+		this.stage = null;
+	}
 }
-

@@ -116,10 +116,9 @@ KEY PRINCIPLES:
 - NEVER call getCanvasState alone - if you need to arrange, also call the layout tool!`;
 
 export const AI_ERROR_MESSAGES = {
-    RATE_LIMITED: 'You\'ve reached the limit of 10 AI commands per minute. Please wait a moment.',
-    INVALID_COMMAND: 'I couldn\'t understand that command. Try being more specific.',
-    EXECUTION_ERROR: 'Something went wrong executing that command. Please try again.',
-    NETWORK_ERROR: 'Failed to connect to AI service. Please check your connection.',
-    TIMEOUT: 'AI request timed out. Please try a simpler command.'
+	RATE_LIMITED: "You've reached the limit of 10 AI commands per minute. Please wait a moment.",
+	INVALID_COMMAND: "I couldn't understand that command. Try being more specific.",
+	EXECUTION_ERROR: 'Something went wrong executing that command. Please try again.',
+	NETWORK_ERROR: 'Failed to connect to AI service. Please check your connection.',
+	TIMEOUT: 'AI request timed out. Please try a simpler command.'
 };
-

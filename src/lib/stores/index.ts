@@ -4,52 +4,40 @@
  */
 
 // Shapes store
-export {
-    shapes,
-    shapeOperations,
-    initializeShapesSync
-} from './shapes';
+export { shapes, shapeOperations, initializeShapesSync } from './shapes';
 
 // Selection store
 export {
-    selectedShapeIds,
-    selectedShapes,
-    hasSelection,
-    selectedCount,
-    selection
+	selectedShapeIds,
+	selectedShapes,
+	hasSelection,
+	selectedCount,
+	selection
 } from './selection';
 
 // Canvas viewport store
-export {
-    viewport,
-    viewportOperations,
-    zoomPercentage,
-    isViewportDefault
-} from './canvas';
+export { viewport, viewportOperations, zoomPercentage, isViewportDefault } from './canvas';
 
 // Tool store
 export {
-    activeTool,
-    toolOperations,
-    isSelectToolActive,
-    isCreateToolActive,
-    isPanToolActive,
-    TOOL_NAMES
+	activeTool,
+	toolOperations,
+	isSelectToolActive,
+	isCreateToolActive,
+	isPanToolActive,
+	TOOL_NAMES
 } from './tool';
 
 // History store
 export {
-    undoStackSize,
-    redoStackSize,
-    canUndo,
-    canRedo,
-    historyInfo,
-    history,
-    initializeUndoManager
+	undoStackSize,
+	redoStackSize,
+	canUndo,
+	canRedo,
+	historyInfo,
+	history,
+	initializeUndoManager
 } from './history';
 
 // Clipboard store
-export {
-    clipboard,
-    clipboardOperations
-} from './clipboard';
+export { clipboard, clipboardOperations } from './clipboard';

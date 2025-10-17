@@ -2,10 +2,10 @@
 	import { onMount } from 'svelte';
 	import Toolbar from '$lib/components/Toolbar.svelte';
 	import ConnectionStatus from '$lib/components/ConnectionStatus.svelte';
-	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import DebugOverlay from '$lib/components/DebugOverlay.svelte';
 	import Toast from '$lib/components/Toast.svelte';
+	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
 
 	// Import managers
 	import { CanvasEngine } from '$lib/canvas/core/CanvasEngine';
@@ -25,6 +25,8 @@
 	import { activeTool, isCreateToolActive } from '$lib/stores/tool';
 	import { clipboardOperations } from '$lib/stores/clipboard';
 	import { initializeUndoManager, history } from '$lib/stores/history';
+	import { darkenColor } from '$lib/user-utils';
+	import { selectedShapeIds } from '$lib/stores/selection';
 
 	let { data } = $props();
 
@@ -40,7 +42,6 @@
 	let containerDiv: HTMLDivElement;
 	let isCreateMode = $derived($isCreateToolActive);
 	let maxZIndex = $state(0);
-	let selectedShapeId = $state<string | null>(null);
 	let commandPaletteOpen = $state(false);
 
 	// Toast notification state
@@ -50,7 +51,6 @@
 
 	// Derive reactive values from stores (modern Svelte 5 pattern)
 	let stageScale = $derived($viewport.scale);
-	let currentViewport = $derived($viewport);
 
 	// Helper function to create shapes based on active tool
 	function createShapeAtPosition(x: number, y: number): Shape | null {
@@ -67,8 +67,8 @@
 				{
 					x,
 					y,
-					fill: '#3b82f6',
-					stroke: '#1e3a8a',
+					fill: data.userProfile.color, // Use user's color instead of hardcoded blue
+					stroke: darkenColor(data.userProfile.color, 20), // Use a darker version of the user's color for the stroke outline
 					strokeWidth: 2,
 					zIndex: maxZIndex + 1
 				},
@@ -159,8 +159,8 @@
 
 	// Broadcast cursor when viewport changes (modern Svelte 5 reactivity)
 	$effect(() => {
-		// Track viewport changes
-		const _ = $viewport;
+		// Track viewport changes to broadcast cursor
+		void $viewport;
 
 		// Broadcast cursor position when viewport changes
 		if (cursorManager) {
@@ -224,7 +224,8 @@
 		// Initialize selection manager
 		selectionManager = new SelectionManager(stage, layers.shapes);
 		selectionManager.setOnSelectionChange((selectedIds) => {
-			selectedShapeId = selectedIds.length > 0 ? selectedIds[0] : null;
+			// Sync with the selectedShapeIds store for UI components like PropertiesPanel
+			selectedShapeIds.set(new Set(selectedIds));
 			// Update selection styling immediately
 			if (shapeRenderer) {
 				shapeRenderer.updateSelectionStyling(selectedIds, $shapes);

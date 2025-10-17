@@ -2,17 +2,14 @@
 	/**
 	 * Debug Overlay - Performance Statistics
 	 * Shows viewport culling stats and other debug info
-	 * 
+	 *
 	 * Usage: Press '~' key to toggle
 	 */
 
 	import { onMount } from 'svelte';
 	import type { ShapeRenderer } from '$lib/canvas/shapes/ShapeRenderer';
 
-	let { 
-		shapeRenderer,
-		shapesCount 
-	} = $props<{ 
+	let { shapeRenderer, shapesCount } = $props<{
 		shapeRenderer: ShapeRenderer | null;
 		shapesCount: number;
 	}>();
@@ -154,4 +151,3 @@
 		text-shadow: 0 0 4px rgba(0, 255, 0, 0.5);
 	}
 </style>
-

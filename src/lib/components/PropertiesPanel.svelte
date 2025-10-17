@@ -1,198 +1,273 @@
 <script lang="ts">
-	/**
-	 * Properties Panel
-	 * Right sidebar showing editable properties for selected shapes
-	 */
+	import { shapes, shapeOperations } from '$lib/stores/shapes';
+	import { selectedShapeIds } from '$lib/stores/selection';
+	import type { Shape, BlendMode } from '$lib/types/shapes';
+	import ColorControl from './controls/ColorControl.svelte';
+	import StrokeWidthControl from './controls/StrokeWidthControl.svelte';
+	import OpacityControl from './controls/OpacityControl.svelte';
+	import BlendModeControl from './controls/BlendModeControl.svelte';
+	import ShadowControl from './controls/ShadowControl.svelte';
+	import { Input } from './ui/input';
+	import { Label } from './ui/label';
+	import { Slider } from './ui/slider';
 
-	import { selectedShapes } from '$lib/stores/selection';
-	import { shapeOperations } from '$lib/stores/shapes';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import { Slider } from '$lib/components/ui/slider';
-	import { Separator } from '$lib/components/ui/separator';
-	import { isRectangle, isCircle, isText } from '$lib/types/shapes';
-	import type { Shape } from '$lib/types/shapes';
+	// Get selected shapes from stores using Svelte 5 auto-subscription
+	const selectedShapes = $derived($shapes.filter((s) => $selectedShapeIds.has(s.id)));
 
-	let selected = $derived($selectedShapes);
-	let shape = $derived<Shape | null>(selected.length === 1 ? selected[0] : null);
+	// Check if property values are uniform across selected shapes
+	function getUniformValue<K extends keyof Shape>(key: K): Shape[K] | 'mixed' | undefined {
+		if (selectedShapes.length === 0) return undefined;
+		if (selectedShapes.length === 1) return selectedShapes[0][key];
 
-	function updateShape(updates: Partial<Shape>) {
-		if (shape) {
-			shapeOperations.update(shape.id, updates);
-		}
+		const firstValue = selectedShapes[0][key];
+		const allSame = selectedShapes.every((s) => s[key] === firstValue);
+		return allSame ? firstValue : 'mixed';
 	}
+
+	// Update multiple shapes with new value
+	function updateSelected<K extends keyof Shape>(key: K, value: Shape[K]) {
+		$selectedShapeIds.forEach((id) => {
+			shapeOperations.update(id, { [key]: value });
+		});
+	}
+
+	const firstShape = $derived(selectedShapes[0]);
+	const fill = $derived(getUniformValue('fill'));
+	const stroke = $derived(getUniformValue('stroke'));
+	const strokeWidth = $derived(getUniformValue('strokeWidth'));
+	const opacity = $derived(getUniformValue('opacity'));
+	const blendMode = $derived(getUniformValue('blendMode'));
+	const shadow = $derived(getUniformValue('shadow'));
+	const rotation = $derived(getUniformValue('rotation'));
+	const x = $derived(getUniformValue('x'));
+	const y = $derived(getUniformValue('y'));
+
+	let rotationValue = $state(0);
+	let fontSizeValue = $state(16);
+
+	$effect(() => {
+		if (rotation !== 'mixed') {
+			rotationValue = (rotation as number) ?? 0;
+		}
+		if (firstShape && firstShape.type === 'text' && 'fontSize' in firstShape) {
+			fontSizeValue = (firstShape as { fontSize: number }).fontSize || 16;
+		}
+	});
 </script>
 
-{#if shape}
-	<div class="fixed right-0 top-0 z-10 h-screen w-80 overflow-y-auto border-l bg-white shadow-lg">
-		<div class="space-y-6 p-4">
-			<!-- Header -->
-			<div>
-				<h2 class="text-lg font-semibold">Properties</h2>
-				<p class="text-sm text-muted-foreground">{shape.type}</p>
-			</div>
+<!-- Floating Properties Panel -->
+{#if selectedShapes.length > 0}
+	<div
+		class="fixed right-4 top-20 w-80 max-h-[calc(100vh-120px)] overflow-y-auto bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-40"
+	>
+		<!-- Header -->
+		<div class="flex items-center justify-between mb-4">
+			<h2 class="font-bold text-sm">
+				{selectedShapes.length === 1 ? 'Properties' : `${selectedShapes.length} Objects`}
+			</h2>
+			<span class="text-xs text-gray-500">
+				{selectedShapes.map((s) => s.type).join(', ')}
+			</span>
+		</div>
 
-			<Separator />
-
-			<!-- Transform section -->
-			<section class="space-y-3">
-				<h3 class="text-sm font-semibold">Transform</h3>
-				<div class="grid grid-cols-2 gap-3">
-					<div class="space-y-2">
-						<Label for="x">X</Label>
-						<Input
-							id="x"
-							type="number"
-							value={Math.round(shape.x)}
-							onchange={(e: Event) =>
-								updateShape({ x: Number((e.target as HTMLInputElement).value) })}
-						/>
+		<div class="space-y-3">
+			<!-- Transform Section -->
+			<div class="bg-gray-50 rounded-lg p-4">
+				<h3 class="font-semibold text-xs mb-2">Transform</h3>
+				<!-- Position -->
+				<div class="grid grid-cols-2 gap-2">
+					<div class="space-y-1">
+						<Label class="text-xs">X</Label>
+						{#if x !== 'mixed'}
+							<Input
+								type="number"
+								value={x ?? ''}
+								onchange={(e) => {
+									const val = parseInt((e.target as HTMLInputElement).value) || 0;
+									updateSelected('x', val);
+								}}
+								class="text-sm"
+							/>
+						{:else}
+							<Input disabled placeholder="mixed" class="text-sm" />
+						{/if}
 					</div>
-					<div class="space-y-2">
-						<Label for="y">Y</Label>
-						<Input
-							id="y"
-							type="number"
-							value={Math.round(shape.y)}
-							onchange={(e: Event) =>
-								updateShape({ y: Number((e.target as HTMLInputElement).value) })}
-						/>
+					<div class="space-y-1">
+						<Label class="text-xs">Y</Label>
+						{#if y !== 'mixed'}
+							<Input
+								type="number"
+								value={y ?? ''}
+								onchange={(e) => {
+									const val = parseInt((e.target as HTMLInputElement).value) || 0;
+									updateSelected('y', val);
+								}}
+								class="text-sm"
+							/>
+						{:else}
+							<Input disabled placeholder="mixed" class="text-sm" />
+						{/if}
 					</div>
 				</div>
-
-				<!-- Shape-specific dimensions -->
-				{#if isRectangle(shape)}
-					<div class="grid grid-cols-2 gap-3">
-						<div class="space-y-2">
-							<Label for="width">Width</Label>
-							<Input
-								id="width"
-								type="number"
-								value={Math.round(shape.width)}
-								onchange={(e: Event) =>
-									updateShape({ width: Number((e.target as HTMLInputElement).value) })}
-							/>
-						</div>
-						<div class="space-y-2">
-							<Label for="height">Height</Label>
-							<Input
-								id="height"
-								type="number"
-								value={Math.round(shape.height)}
-								onchange={(e: Event) =>
-									updateShape({ height: Number((e.target as HTMLInputElement).value) })}
-							/>
-						</div>
-					</div>
-				{/if}
-
-				{#if isCircle(shape)}
-					<div class="space-y-2">
-						<Label for="radius">Radius</Label>
-						<Input
-							id="radius"
-							type="number"
-							value={Math.round(shape.radius)}
-							onchange={(e: Event) =>
-								updateShape({ radius: Number((e.target as HTMLInputElement).value) })}
-						/>
-					</div>
-				{/if}
 
 				<!-- Rotation -->
-				<div class="space-y-2">
-					<Label for="rotation">Rotation ({Math.round(shape.rotation || 0)}°)</Label>
-					<Slider
-						type="single"
-						min={0}
-						max={360}
-						step={1}
-						value={[shape.rotation || 0]}
-						onValueChange={(values: number[]) => updateShape({ rotation: values[0] })}
-					/>
-				</div>
-			</section>
-
-			<Separator />
-
-			<!-- Appearance section -->
-			<section class="space-y-3">
-				<h3 class="text-sm font-semibold">Appearance</h3>
-
-				<!-- Fill Color -->
-				<div class="space-y-2">
-					<Label for="fill">Fill Color</Label>
-					<Input
-						id="fill"
-						type="color"
-						value={shape.fill || '#3b82f6'}
-						onchange={(e: Event) => updateShape({ fill: (e.target as HTMLInputElement).value })}
-					/>
-				</div>
-
-				<!-- Stroke -->
-				<div class="space-y-2">
-					<Label for="stroke">Stroke Color</Label>
-					<Input
-						id="stroke"
-						type="color"
-						value={shape.stroke || '#1e40af'}
-						onchange={(e: Event) => updateShape({ stroke: (e.target as HTMLInputElement).value })}
-					/>
-				</div>
-
-				<div class="space-y-2">
-					<Label for="strokeWidth">Stroke Width ({shape.strokeWidth || 2}px)</Label>
-					<Slider
-						type="single"
-						min={0}
-						max={20}
-						step={1}
-						value={[shape.strokeWidth || 2]}
-						onValueChange={(values: number[]) => updateShape({ strokeWidth: values[0] })}
-					/>
-				</div>
-
-				<!-- Opacity -->
-				<div class="space-y-2">
-					<Label for="opacity">Opacity ({Math.round((shape.opacity || 1) * 100)}%)</Label>
-					<Slider
-						type="single"
-						min={0}
-						max={100}
-						step={1}
-						value={[(shape.opacity || 1) * 100]}
-						onValueChange={(values: number[]) => updateShape({ opacity: values[0] / 100 })}
-					/>
-				</div>
-			</section>
-
-			<!-- Text-specific properties -->
-			{#if isText(shape)}
-				<Separator />
-				<section class="space-y-3">
-					<h3 class="text-sm font-semibold">Text</h3>
+				{#if rotation !== 'mixed'}
 					<div class="space-y-2">
-						<Label for="text">Content</Label>
-						<Input
-							id="text"
-							type="text"
-							value={shape.text}
-							onchange={(e: Event) => updateShape({ text: (e.target as HTMLInputElement).value })}
-						/>
-					</div>
-					<div class="space-y-2">
-						<Label for="fontSize">Font Size ({shape.fontSize}px)</Label>
+						<div class="flex justify-between items-center">
+							<Label class="text-xs">Rotation</Label>
+							<span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">{rotation ?? 0}°</span>
+						</div>
 						<Slider
-							type="single"
-							min={8}
-							max={144}
+							type="multiple"
+							value={[rotationValue]}
+							onchange={() => updateSelected('rotation', rotationValue)}
+							min={0}
+							max={360}
 							step={1}
-							value={[shape.fontSize]}
-							onValueChange={(values: number[]) => updateShape({ fontSize: values[0] })}
 						/>
 					</div>
-				</section>
+				{/if}
+			</div>
+
+			<!-- Fill Section -->
+			<div class="bg-gray-50 rounded-lg p-4">
+				<h3 class="font-semibold text-xs mb-2">Fill</h3>
+				{#if fill !== 'mixed'}
+					<ColorControl
+						label="Color"
+						value={fill as string | null}
+						onchange={(color: string | null) => updateSelected('fill', color ?? '')}
+						allowNone={true}
+					/>
+				{:else}
+					<div class="text-sm text-gray-500 py-2">Multiple colors</div>
+				{/if}
+			</div>
+
+			<!-- Stroke Section -->
+			<div class="bg-gray-50 rounded-lg p-4">
+				<h3 class="font-semibold text-xs mb-2">Stroke</h3>
+				{#if stroke !== 'mixed' || strokeWidth !== 'mixed'}
+					{#if stroke !== 'mixed'}
+						<ColorControl
+							label="Color"
+							value={stroke as string | null}
+							onchange={(color: string | null) => updateSelected('stroke', color ?? '')}
+							allowNone={true}
+						/>
+					{/if}
+
+					{#if strokeWidth !== 'mixed'}
+						<StrokeWidthControl
+							value={(strokeWidth as number) ?? 2}
+							onchange={(width) => updateSelected('strokeWidth', width)}
+						/>
+					{/if}
+				{:else}
+					<div class="text-sm text-gray-500 py-2">Mixed stroke properties</div>
+				{/if}
+			</div>
+
+			<!-- Effects Section -->
+			<div class="bg-gray-50 rounded-lg p-4">
+				<h3 class="font-semibold text-xs mb-2">Effects</h3>
+				{#if opacity !== 'mixed'}
+					<OpacityControl
+						value={(opacity as number) ?? 1}
+						onchange={(op) => updateSelected('opacity', op)}
+					/>
+				{/if}
+
+				{#if blendMode !== 'mixed'}
+					<BlendModeControl
+						value={(blendMode as BlendMode | undefined) ?? 'normal'}
+						onchange={(mode: string) => {
+							$selectedShapeIds.forEach((id) => {
+								shapeOperations.update(id, { blendMode: mode as BlendMode });
+							});
+						}}
+					/>
+				{/if}
+
+				{#if shadow !== 'mixed'}
+					<ShadowControl
+						value={shadow as
+							| { color: string; blur: number; offsetX: number; offsetY: number }
+							| undefined}
+						onchange={(s) => updateSelected('shadow', s)}
+					/>
+				{/if}
+			</div>
+
+			<!-- Shape-Specific Controls -->
+			{#if selectedShapes.length === 1 && firstShape.type === 'text'}
+				<div class="bg-gray-50 rounded-lg p-4">
+					<h3 class="font-semibold text-xs mb-2">Text</h3>
+					<div class="space-y-3">
+						<div class="space-y-1">
+							<Label class="text-xs" for="font-family">Font Family</Label>
+							<select
+								id="font-family"
+								value={('fontFamily' in firstShape ? (firstShape.fontFamily as string) : 'Arial') ||
+									'Arial'}
+								onchange={(e) => {
+									updateSelected(
+										'fontFamily' as unknown as keyof Shape,
+										e.currentTarget.value as unknown as Shape[keyof Shape]
+									);
+								}}
+								class="w-full px-2 py-1 border rounded text-sm bg-white"
+							>
+								<option value="Arial">Arial</option>
+								<option value="Times New Roman">Times New Roman</option>
+								<option value="Courier New">Courier New</option>
+								<option value="Georgia">Georgia</option>
+								<option value="Verdana">Verdana</option>
+							</select>
+						</div>
+
+						<div class="space-y-2">
+							<div class="flex justify-between items-center">
+								<Label class="text-xs">Font Size</Label>
+								<span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
+									{fontSizeValue}px
+								</span>
+							</div>
+							<Slider
+								type="multiple"
+								value={[fontSizeValue]}
+								onchange={() => {
+									updateSelected(
+										'fontSize' as unknown as keyof Shape,
+										fontSizeValue as unknown as Shape[keyof Shape]
+									);
+								}}
+								min={8}
+								max={144}
+								step={1}
+							/>
+						</div>
+
+						<div class="space-y-1">
+							<Label class="text-xs" for="text-align">Alignment</Label>
+							<select
+								id="text-align"
+								value={('align' in firstShape ? (firstShape.align as string) : 'left') || 'left'}
+								onchange={(e) => {
+									updateSelected(
+										'align' as unknown as keyof Shape,
+										e.currentTarget.value as unknown as Shape[keyof Shape]
+									);
+								}}
+								class="w-full px-2 py-1 border rounded text-sm bg-white"
+							>
+								<option value="left">Left</option>
+								<option value="center">Center</option>
+								<option value="right">Right</option>
+							</select>
+						</div>
+					</div>
+				</div>
 			{/if}
 		</div>
 	</div>

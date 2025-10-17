@@ -54,30 +54,34 @@ This PRD defines requirements for a collaborative canvas application MVP that en
 ## Technology Stack
 
 ### Frontend & Runtime
+
 - **Framework:** SvelteKit 2.0+ with Svelte 5
 - **Runtime:** Bun 1.1+ (package manager and build tool)
 - **Canvas Rendering:** Konva.js 10.0+ with svelte-konva wrapper
 - **State Management:** Svelte stores + Yjs reactive bindings
 
 ### Real-Time Collaboration
+
 - **CRDT Engine:** Yjs (conflict-free replicated data types)
 - **Transport Layer:** PartyKit with Y-PartyKit Provider
 - **WebSocket Infrastructure:** PartyKit Durable Objects on Cloudflare Workers
 - **Cursor Broadcasting:** PartyKit Awareness API (separate from document sync)
 
 ### Backend Services
+
 - **Authentication:** Auth0 (Google, Facebook, Email:Password)
 - **Persistence:** Cloudflare Durable Objects (automatic with `persist: true`)
 - **Deployment:** Railway (native Bun support, WebSocket-friendly)
 
 ### Key Dependencies
+
 ```json
 {
-  "svelte-konva": "^1.0.0",
-  "konva": "^10.0.0",
-  "yjs": "^13.6.0",
-  "y-partykit": "^0.0.20",
-  "jose": "^5.0.0"
+	"svelte-konva": "^1.0.0",
+	"konva": "^10.0.0",
+	"yjs": "^13.6.0",
+	"y-partykit": "^0.0.20",
+	"jose": "^5.0.0"
 }
 ```
 
@@ -120,6 +124,7 @@ This PRD defines requirements for a collaborative canvas application MVP that en
 ### Component Responsibilities
 
 **Client (SvelteKit + Konva + Yjs):**
+
 - Render canvas objects at 60 FPS with viewport culling
 - Handle user input (mouse/keyboard) and update local Yjs document
 - Listen to Yjs changes and update Konva layer reactively
@@ -127,6 +132,7 @@ This PRD defines requirements for a collaborative canvas application MVP that en
 - Manage authentication state and session tokens
 
 **PartyKit Room (Cloudflare Worker):**
+
 - Maintain canonical CRDT state in Durable Object storage for single global room ("main")
 - Broadcast Yjs updates to all connected clients (sub-50ms)
 - Handle client connections, disconnections, and reconnections
@@ -134,6 +140,7 @@ This PRD defines requirements for a collaborative canvas application MVP that en
 - Automatic state persistence via Durable Objects
 
 **Auth0 (Authentication):**
+
 - Authenticate users via Google, Facebook or email (password) with Universal Login
 - Issue JWT tokens for session management
 - No database needed - PartyKit Durable Objects handles state persistence automatically
@@ -141,17 +148,20 @@ This PRD defines requirements for a collaborative canvas application MVP that en
 ### State Management Strategy
 
 **Local State (Svelte Stores):**
+
 - Viewport position, zoom level
 - Selected object IDs
 - Tool selection (create, move, select)
 - UI panel visibility
 
 **Shared State (Yjs Document):**
+
 - `objects` Y.Map: `{ [rectId]: { x, y, width, height, fill, ... } }`
 - `cursors` Y.Map: `{ [userId]: { x, y, name, color } }` (ephemeral)
 - `metadata` Y.Map: `{ documentName, createdBy, createdAt }`
 
 **Persisted State:**
+
 - User accounts and sessions (Auth0)
 - Yjs CRDT state (PartyKit Durable Objects - automatic with `persist: true`)
 
@@ -162,60 +172,63 @@ This PRD defines requirements for a collaborative canvas application MVP that en
 ### Canvas Object Model
 
 **Rectangle Schema:**
+
 ```typescript
 interface Rectangle {
-  id: string;                 // UUID v4
-  type: 'rectangle';
-  x: number;                  // Position in canvas coordinates
-  y: number;
-  width: number;
-  height: number;
-  fill: string;               // Hex color (e.g., '#3b82f6')
-  stroke: string;             // Border color
-  strokeWidth: number;        // Border width in pixels
-  rotation: number;           // Degrees (0-360)
-  opacity: number;            // 0-1
-  draggable: boolean;         // Can be moved by users
-  version: number;            // Monotonically increasing
-  versionNonce: number;       // Random 0-1 for tie-breaking
-  isDeleted: boolean;         // Tombstone for CRDT deletion
-  createdBy: string;          // User ID
-  createdAt: number;          // Unix timestamp (ms)
-  modifiedAt: number;         // Unix timestamp (ms)
+	id: string; // UUID v4
+	type: 'rectangle';
+	x: number; // Position in canvas coordinates
+	y: number;
+	width: number;
+	height: number;
+	fill: string; // Hex color (e.g., '#3b82f6')
+	stroke: string; // Border color
+	strokeWidth: number; // Border width in pixels
+	rotation: number; // Degrees (0-360)
+	opacity: number; // 0-1
+	draggable: boolean; // Can be moved by users
+	version: number; // Monotonically increasing
+	versionNonce: number; // Random 0-1 for tie-breaking
+	isDeleted: boolean; // Tombstone for CRDT deletion
+	createdBy: string; // User ID
+	createdAt: number; // Unix timestamp (ms)
+	modifiedAt: number; // Unix timestamp (ms)
 }
 ```
 
 **Default Values:**
+
 ```typescript
 const DEFAULT_RECTANGLE: Partial<Rectangle> = {
-  width: 100,
-  height: 100,
-  fill: '#3b82f6',
-  stroke: '#1e40af',
-  strokeWidth: 2,
-  rotation: 0,
-  opacity: 1,
-  draggable: true,
-  version: 0,
-  versionNonce: Math.random(),
-  isDeleted: false
+	width: 100,
+	height: 100,
+	fill: '#3b82f6',
+	stroke: '#1e40af',
+	strokeWidth: 2,
+	rotation: 0,
+	opacity: 1,
+	draggable: true,
+	version: 0,
+	versionNonce: Math.random(),
+	isDeleted: false
 };
 ```
 
 ### Performance Requirements
 
-| Metric | Target | Measurement Method |
-|--------|--------|-------------------|
-| **Frame Rate** | 60 FPS sustained | Chrome DevTools Performance profiler |
-| **Object Sync Latency** | <100ms | Timestamp diff between local update and remote render |
-| **Cursor Sync Latency** | <50ms | Timestamp diff between mousemove and remote cursor update |
-| **Concurrent Users** | 5+ simultaneous | Test with 5 browser windows, verify no degradation |
-| **Initial Load Time** | <2 seconds | Time to first canvas render |
-| **Reconnection Recovery** | <3 seconds | Time from disconnect to full state sync |
+| Metric                    | Target           | Measurement Method                                        |
+| ------------------------- | ---------------- | --------------------------------------------------------- |
+| **Frame Rate**            | 60 FPS sustained | Chrome DevTools Performance profiler                      |
+| **Object Sync Latency**   | <100ms           | Timestamp diff between local update and remote render     |
+| **Cursor Sync Latency**   | <50ms            | Timestamp diff between mousemove and remote cursor update |
+| **Concurrent Users**      | 5+ simultaneous  | Test with 5 browser windows, verify no degradation        |
+| **Initial Load Time**     | <2 seconds       | Time to first canvas render                               |
+| **Reconnection Recovery** | <3 seconds       | Time from disconnect to full state sync                   |
 
 ### Real-Time Synchronization Requirements
 
 **Yjs Document Structure:**
+
 ```typescript
 // Initialize shared document
 const ydoc = new Y.Doc();
@@ -225,14 +238,15 @@ const metadataMap = ydoc.getMap('metadata');
 
 // Connect to PartyKit (single global room)
 const provider = new YPartyKitProvider(
-  'canvas.username.partykit.dev',
-  'main',  // Hardcoded global room ID
-  ydoc,
-  { connect: true, awareness: true }
+	'canvas.username.partykit.dev',
+	'main', // Hardcoded global room ID
+	ydoc,
+	{ connect: true, awareness: true }
 );
 ```
 
 **Update Flow:**
+
 1. User drags rectangle → Konva fires `dragend` event
 2. Update local Yjs map: `objectsMap.set(rectId, updatedRect)`
 3. Yjs generates binary update (typically 20-50 bytes)
@@ -242,11 +256,13 @@ const provider = new YPartyKitProvider(
 7. Svelte reactivity triggers Konva layer re-render
 
 **Conflict Resolution:**
+
 - Automatic via Yjs CRDT (Last Write Wins for scalar values)
 - Version + versionNonce for application-level conflict detection
 - Tombstones (isDeleted flag) for deletion consistency
 
 **Cursor Broadcasting:**
+
 - Separate from document sync (uses PartyKit Awareness API)
 - Throttled to 50ms intervals (20 updates/second max)
 - Ephemeral (not persisted, cleared on disconnect)
@@ -254,6 +270,7 @@ const provider = new YPartyKitProvider(
 ### Persistence Requirements
 
 **Automatic Persistence via PartyKit Durable Objects:**
+
 - **Configuration:** `persist: true` in Y-PartyKit onConnect options
 - **Storage:** Cloudflare Durable Objects automatically persist Yjs state
 - **Durability:** State survives indefinitely, no time limit
@@ -261,6 +278,7 @@ const provider = new YPartyKitProvider(
 - **No external database needed:** Durable Objects handle all persistence
 
 **Recovery Scenarios:**
+
 - **All users disconnect:** State persists in Durable Object (indefinitely)
 - **Server restart:** Durable Object automatically loads persisted state
 - **User refresh:** Fetch full Yjs state from active PartyKit room
@@ -274,30 +292,31 @@ const provider = new YPartyKitProvider(
 
 ```typescript
 interface CanvasAPI {
-  // Object operations
-  createRectangle(props: Partial<Rectangle>): string; // Returns ID
-  updateRectangle(id: string, changes: Partial<Rectangle>): void;
-  deleteRectangle(id: string): void;
-  
-  // Viewport
-  setViewport(x: number, y: number, zoom: number): void;
-  panBy(dx: number, dy: number): void;
-  zoomTo(zoom: number, centerX?: number, centerY?: number): void;
-  fitToScreen(): void;
-  
-  // Query
-  getAllRectangles(): Rectangle[];
-  getRectangleById(id: string): Rectangle | null;
-  
-  // State
-  getConnectionStatus(): 'connected' | 'connecting' | 'disconnected';
-  getCollaborators(): Array<{ id: string; name: string; color: string }>;
+	// Object operations
+	createRectangle(props: Partial<Rectangle>): string; // Returns ID
+	updateRectangle(id: string, changes: Partial<Rectangle>): void;
+	deleteRectangle(id: string): void;
+
+	// Viewport
+	setViewport(x: number, y: number, zoom: number): void;
+	panBy(dx: number, dy: number): void;
+	zoomTo(zoom: number, centerX?: number, centerY?: number): void;
+	fitToScreen(): void;
+
+	// Query
+	getAllRectangles(): Rectangle[];
+	getRectangleById(id: string): Rectangle | null;
+
+	// State
+	getConnectionStatus(): 'connected' | 'connecting' | 'disconnected';
+	getCollaborators(): Array<{ id: string; name: string; color: string }>;
 }
 ```
 
 ### REST API Endpoints
 
 **Authentication** (handled by Auth0):
+
 ```
 GET  /auth/login      - Redirect to Auth0 Universal Login
 GET  /auth/callback   - Handle Auth0 callback and set JWT session
@@ -309,25 +328,26 @@ POST /auth/signout    - Clear session and redirect to Auth0 logout
 ### PartyKit Room API
 
 **Server Implementation:**
+
 ```typescript
 // partykit/server.ts
-import type * as Party from "partykit/server";
-import { onConnect } from "y-partykit";
+import type * as Party from 'partykit/server';
+import { onConnect } from 'y-partykit';
 
 export default class CanvasRoom implements Party.Server {
-  constructor(readonly room: Party.Room) {}
-  
-  onConnect(conn: Party.Connection) {
-    return onConnect(conn, this.room, {
-      persist: true // Automatic persistence to Durable Objects
-    });
-  }
-  
-  static async onBeforeConnect(req: Party.Request) {
-    // For MVP: Allow all connections
-    // Token validation can be added later if needed
-    return req;
-  }
+	constructor(readonly room: Party.Room) {}
+
+	onConnect(conn: Party.Connection) {
+		return onConnect(conn, this.room, {
+			persist: true // Automatic persistence to Durable Objects
+		});
+	}
+
+	static async onBeforeConnect(req: Party.Request) {
+		// For MVP: Allow all connections
+		// Token validation can be added later if needed
+		return req;
+	}
 }
 ```
 
@@ -340,8 +360,9 @@ export default class CanvasRoom implements Party.Server {
 Auth0 Universal Login manages user authentication with email (password + magic link).
 
 **Email Authentication Configuration:**
+
 - Enabled Connections: Email/Password (Database)
-- Allowed Callback URLs: 
+- Allowed Callback URLs:
   - Development: `http://localhost:5173/auth/callback`
   - Production: `https://your-app.railway.app/auth/callback`
 - Allowed Logout URLs:
@@ -350,6 +371,7 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 - JWT Configuration: RS256 signing, standard claims (sub, email, name, picture)
 
 **No Database Required:**
+
 - PartyKit Durable Objects handles all state persistence
 - Auth0 manages user accounts and sessions
 - JWT tokens stored in secure HTTP-only cookies
@@ -359,9 +381,11 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 ## Development Phases
 
 ### Phase 0: Project Setup (4 hours)
+
 **Goal:** Running dev environment with all dependencies
 
 **Tasks:**
+
 - Initialize SvelteKit with Bun: `bunx sv create collab-canvas`
 - Install dependencies: `bun add svelte-konva konva yjs y-partykit jose`
 - Configure Railway project and link GitHub repo
@@ -370,6 +394,7 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 - Set up environment variables
 
 **Deliverables:**
+
 - `bun run dev` starts local server
 - Railway deployment pipeline active
 - Auth0 application configured
@@ -377,9 +402,11 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 ---
 
 ### Phase 1: Basic Canvas (6 hours)
+
 **Goal:** Static canvas with rectangles (no multiplayer)
 
 **Tasks:**
+
 - Implement Konva Stage and Layer components
 - Create Rectangle component with drag handlers
 - Add viewport pan (drag background) and zoom (wheel)
@@ -388,6 +415,7 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 - Implement viewport culling with QuadTree
 
 **Acceptance Criteria:**
+
 - ✅ Canvas fills viewport, supports pan and zoom
 - ✅ Can create rectangles by clicking "Create" then clicking canvas
 - ✅ Can drag rectangles around canvas
@@ -397,9 +425,11 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 ---
 
 ### Phase 2: Authentication (4 hours)
+
 **Goal:** Users can sign in with Email
 
 **Tasks:**
+
 - Configure Auth0 Email Authentication (Password + Passwordless Email)
 - Implement `hooks.server.ts` with JWT verification using jose
 - Create sign-in page that redirects to Auth0 Universal Login
@@ -408,6 +438,7 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 - Add sign-out functionality
 
 **Acceptance Criteria:**
+
 - ✅ Users can sign up with email/password via Auth0
 - ✅ Users can sign in with email/password
 - ✅ Users can sign in with magic link (Passwordless Email)
@@ -418,9 +449,11 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 ---
 
 ### Phase 3: Real-Time Sync (12 hours)
+
 **Goal:** Multiple users see each other's changes
 
 **Tasks:**
+
 - Initialize Yjs document with `objects` Y.Map
 - Connect YPartyKitProvider to room (document ID from URL)
 - Bind Konva rectangles to Yjs map (observer pattern)
@@ -430,6 +463,7 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 - Test with 2+ browser windows
 
 **Acceptance Criteria:**
+
 - ✅ Creating rectangle in Window A appears in Window B within 100ms
 - ✅ Dragging rectangle syncs smoothly across all windows
 - ✅ Deleting rectangle removes from all clients
@@ -439,9 +473,11 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 ---
 
 ### Phase 4: Multiplayer Cursors (4 hours)
+
 **Goal:** See collaborators' cursor positions in real-time
 
 **Tasks:**
+
 - Implement cursor position broadcasting via PartyKit Awareness
 - Throttle cursor updates to 50ms intervals
 - Render remote cursors on separate Konva layer
@@ -449,6 +485,7 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 - Implement cursor interpolation for smooth movement
 
 **Acceptance Criteria:**
+
 - ✅ Remote cursors visible within 50ms of movement
 - ✅ Each user has distinct cursor color
 - ✅ Name labels display above cursors
@@ -457,17 +494,20 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 ---
 
 ### ~~Phase 5: Persistence~~ (Not Needed - 0 hours)
+
 **Goal:** Canvas state survives server restarts
 
 **Status:** ✅ COMPLETE - No work needed
 
 **PartyKit Durable Objects provides automatic persistence:**
+
 - `persist: true` in Y-PartyKit configuration handles everything
 - No Supabase Storage integration needed
 - No snapshot endpoints needed
 - No manual serialization/deserialization needed
 
 **Acceptance Criteria:**
+
 - ✅ State persists automatically with Durable Objects
 - ✅ Restarting PartyKit room recovers state automatically
 - ✅ All users disconnect and reconnect: canvas state preserved
@@ -476,9 +516,11 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 ---
 
 ### Phase 5: Object Manipulation (6 hours)
+
 **Goal:** Select, resize, and delete rectangles
 
 **Tasks:**
+
 - Implement click selection (highlight selected rectangle)
 - Add Konva Transformer for resize handles
 - Implement Delete key handler
@@ -486,6 +528,7 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 - Update Yjs map on all property changes
 
 **Acceptance Criteria:**
+
 - ✅ Clicking rectangle selects it (shows resize handles)
 - ✅ Can resize with corner handles
 - ✅ Delete key removes selected rectangle
@@ -495,9 +538,11 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 ---
 
 ### Phase 6: Polish and Deployment (4 hours)
+
 **Goal:** MVP deployed and production-ready
 
 **Tasks:**
+
 - Add loading states (canvas loading, connecting)
 - Implement error handling (connection failed, auth error)
 - Add keyboard shortcuts (Esc to deselect, Delete)
@@ -507,6 +552,7 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 - Load testing with 5+ concurrent users
 
 **Acceptance Criteria:**
+
 - ✅ Application accessible at public URL
 - ✅ No console errors in production
 - ✅ 5 users can collaborate without performance issues
@@ -518,6 +564,7 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 ## MVP Acceptance Criteria Summary
 
 ### Functional Requirements
+
 - ✅ Users can authenticate with Email/Password or Magic Link
 - ✅ Users can create rectangles on canvas
 - ✅ Users can drag rectangles to move them
@@ -530,6 +577,7 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 - ✅ Application is publicly accessible
 
 ### Performance Requirements
+
 - ✅ 60 FPS rendering with 500+ rectangles
 - ✅ <100ms object synchronization latency
 - ✅ <50ms cursor synchronization latency
@@ -537,6 +585,7 @@ Auth0 Universal Login manages user authentication with email (password + magic l
 - ✅ 5+ concurrent users without degradation
 
 ### Quality Requirements
+
 - ✅ No data loss on disconnect/reconnect
 - ✅ Conflict-free concurrent editing (CRDT)
 - ✅ Secure authentication (OAuth + session management)
@@ -587,6 +636,7 @@ bun run preview
 ## Testing Strategy
 
 ### Multi-User Testing Checklist
+
 - [ ] Open 2+ browser windows (or devices)
 - [ ] Sign in as different users in each window
 - [ ] Create rectangle in Window 1 → appears in Window 2
@@ -597,12 +647,14 @@ bun run preview
 - [ ] Close all windows → reopen → canvas restored
 
 ### Performance Testing
+
 - [ ] Monitor FPS in Chrome DevTools (target: 60 FPS)
 - [ ] Measure sync latency with console.time() (target: <100ms)
 - [ ] Test with 5+ concurrent users
 - [ ] Verify smooth pan/zoom at various zoom levels
 
 ### Edge Cases
+
 - [ ] Network disconnection → reconnects automatically
 - [x] PartyKit room restart → loads from Durable Objects automatically
 - [ ] Multiple users editing same rectangle → CRDT resolves conflict
@@ -613,6 +665,7 @@ bun run preview
 ## Success Metrics
 
 ### MVP Launch Criteria
+
 - Application deployed and publicly accessible
 - 5+ concurrent users tested without issues
 - All functional requirements met
@@ -620,6 +673,7 @@ bun run preview
 - Zero critical bugs
 
 ### Post-Launch Monitoring
+
 - **Performance:** Track FPS, sync latency, load times
 - **Reliability:** Monitor connection drops, error rates
 - **Usage:** Active users, session duration, rectangles created

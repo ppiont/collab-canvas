@@ -15,36 +15,35 @@ export const clipboard = writable<Shape[]>([]);
  * Clipboard operations
  */
 export const clipboardOperations = {
-    /**
-     * Copy shapes to clipboard
-     */
-    copy: (shapes: Shape[]) => {
-        if (shapes.length === 0) return;
+	/**
+	 * Copy shapes to clipboard
+	 */
+	copy: (shapes: Shape[]) => {
+		if (shapes.length === 0) return;
 
-        // Deep copy to prevent reference issues
-        const copiedShapes = shapes.map(shape => ({ ...shape }));
-        clipboard.set(copiedShapes);
-    },
+		// Deep copy to prevent reference issues
+		const copiedShapes = shapes.map((shape) => ({ ...shape }));
+		clipboard.set(copiedShapes);
+	},
 
-    /**
-     * Check if clipboard has content
-     */
-    isEmpty: (): boolean => {
-        return get(clipboard).length === 0;
-    },
+	/**
+	 * Check if clipboard has content
+	 */
+	isEmpty: (): boolean => {
+		return get(clipboard).length === 0;
+	},
 
-    /**
-     * Clear clipboard
-     */
-    clear: () => {
-        clipboard.set([]);
-    },
+	/**
+	 * Clear clipboard
+	 */
+	clear: () => {
+		clipboard.set([]);
+	},
 
-    /**
-     * Get clipboard contents
-     */
-    getContents: (): Shape[] => {
-        return get(clipboard);
-    }
+	/**
+	 * Get clipboard contents
+	 */
+	getContents: (): Shape[] => {
+		return get(clipboard);
+	}
 };
-

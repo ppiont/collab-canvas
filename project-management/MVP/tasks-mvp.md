@@ -1,6 +1,7 @@
 # CollabCanvas MVP - Task Checklist
 
 ## Key Decisions
+
 - **Single global room:** Everyone uses `/canvas` (no room IDs, no document management)
 - **Shape type:** Rectangle only
 - **Authentication:** Email Authentication via Auth0
@@ -8,6 +9,7 @@
 - **Deployment:** Railway + PartyKit on Cloudflare
 
 ## MVP Core Requirements (8 Items)
+
 - [ ] Basic canvas with pan/zoom
 - [ ] At least one shape type (rectangle)
 - [ ] Ability to create objects
@@ -20,10 +22,13 @@
 ---
 
 ## Phase 0: Foundation
+
 **Goal:** Infrastructure ready for development
 
 ### Task 0.1: Project Initialization & Deployment Pipeline
+
 **Priority:** CRITICAL - Required for "deployed and publicly accessible"
+
 - [x] Initialize SvelteKit with Bun: `bunx sv create collab-canvas`
 - [x] Configure svelte-adapter-bun
 - [x] Create Railway project and link GitHub
@@ -36,7 +41,9 @@
 ---
 
 ### Task 0.2: Install Core Dependencies
+
 **Priority:** CRITICAL - Foundation for all features
+
 - [x] `bun add svelte-konva konva yjs y-partykit @supabase/supabase-js @supabase/ssr`
 - [x] ~~`bun add -d @types/konva`~~ (Not needed - Konva has built-in types)
 - [x] Verify Railway build succeeds with dependencies
@@ -47,7 +54,9 @@
 ---
 
 ### Task 0.3: Auth0 Application Setup
+
 **Priority:** CRITICAL - Required for authentication
+
 - [x] Create Auth0 application
 - [x] Enable Email Authentication (Password + Passwordless Email)
 - [x] Add allowed callback URLs (localhost + Railway)
@@ -63,7 +72,9 @@
 ---
 
 ### Task 0.4: PartyKit Room Deployment
+
 **Priority:** CRITICAL - Required for real-time sync
+
 - [x] Create partykit/ directory
 - [x] Implement server.ts with Y-PartyKit (validated against official docs)
 - [x] Add auth validation in onBeforeConnect (static method)
@@ -77,10 +88,13 @@
 ---
 
 ## Phase 1: Basic Canvas
+
 **Goal:** Static canvas with shapes
 
 ### Task 1.1: Static Canvas with Konva
+
 **Priority:** CRITICAL - MVP Req: "Basic canvas"
+
 - [x] Create routes/canvas/+page.svelte
 - [x] Import Stage and Layer from svelte-konva
 - [x] Canvas fills viewport (100vw, 100vh)
@@ -93,7 +107,9 @@
 ---
 
 ### Task 1.2: Static Rectangles
+
 **Priority:** CRITICAL - MVP Req: "At least one shape type"
+
 - [x] Add Rect component from svelte-konva
 - [x] Create array of 3 sample rectangles
 - [x] Render on Layer with colors (blue, pink, green)
@@ -104,7 +120,9 @@
 ---
 
 ### Task 1.3: Pan and Zoom
+
 **Priority:** CRITICAL - MVP Req: "pan/zoom"
+
 - [x] Make Stage draggable (pan)
 - [x] Add wheel event handler (zoom)
 - [x] Implement pointer-relative zoom (zooms toward cursor)
@@ -117,12 +135,15 @@
 ---
 
 ## Phase 2: Authentication & User Profile
+
 **Goal:** Users can sign in and have collaborative identity (name + color)
 
 **Note:** Auth infrastructure (hooks, sign-in page, protected routes) completed in Phase 0, Task 0.3
 
 ### Task 2.1: User Profile & Canvas Route Setup
+
 **Priority:** CRITICAL - MVP Req: "users have names for multiplayer"
+
 - [x] Create routes/canvas/+page.server.ts to load session
 - [x] Create lib/user-utils.ts with helper functions:
   - [x] `getUserDisplayName(user)` - extract name from email or metadata
@@ -137,10 +158,13 @@
 ---
 
 ## Phase 3: Local Interaction
+
 **Goal:** Create and move rectangles (local only)
 
 ### Task 3.1: Create Rectangle Tool
+
 **Priority:** CRITICAL - MVP Req: "Ability to create objects"
+
 - [x] Create Toolbar component
 - [x] Add "Create Rectangle" button
 - [x] Click canvas → create rectangle at pointer
@@ -152,7 +176,9 @@
 ---
 
 ### Task 3.2: Drag Rectangles
+
 **Priority:** CRITICAL - MVP Req: "Ability to move objects"
+
 - [x] Add draggable={true} to Rect
 - [x] Handle dragend event
 - [x] Update rectangle position in store
@@ -163,10 +189,13 @@
 ---
 
 ## Phase 4: Real-Time Sync
+
 **Goal:** Multiple users see changes in real-time
 
 ### Task 4.1: Yjs Document Initialization
+
 **Priority:** CRITICAL - MVP Req: "Real-time sync"
+
 - [x] Create lib/collaboration.ts
 - [x] Initialize Y.Doc and objectsMap
 - [x] Bind Svelte store to Yjs Y.Map
@@ -178,7 +207,9 @@
 ---
 
 ### Task 4.2: Connect to PartyKit
+
 **Priority:** CRITICAL - MVP Req: "Real-time sync"
+
 - [x] Create YPartyKitProvider with hardcoded room ID ("main")
 - [x] Pass Auth0 JWT token as query param
 - [x] Add connection status indicator (green/red)
@@ -190,7 +221,9 @@
 ---
 
 ### Task 4.3: Real-Time Rectangle Sync
+
 **Priority:** CRITICAL - MVP Req: "Real-time sync between 2+ users"
+
 - [x] Yjs updates broadcast automatically via PartyKit
 - [x] Test with 2 browser windows
 - [x] Add subtle visual feedback for remote updates
@@ -202,10 +235,13 @@
 ---
 
 ## Phase 5: Multiplayer Cursors
+
 **Goal:** See collaborators' cursors
 
 ### Task 5.1: Cursor Broadcasting
+
 **Priority:** CRITICAL - MVP Req: "Multiplayer cursors"
+
 - [x] Add mousemove listener to Stage
 - [x] Throttle to 50ms intervals
 - [x] Use provider.awareness.setLocalStateField('cursor', {x, y})
@@ -217,7 +253,9 @@
 ---
 
 ### Task 5.2: Render Remote Cursors
+
 **Priority:** CRITICAL - MVP Req: "Multiplayer cursors with name labels"
+
 - [x] Create Cursor rendering logic (Konva shapes)
 - [x] Listen to awareness.on('change')
 - [x] Render cursor at remote position
@@ -230,10 +268,13 @@
 ---
 
 ## Phase 6: Presence Awareness
+
 **Goal:** Show who's online
 
 ### Task 6.1: Online Users List
+
 **Priority:** CRITICAL - MVP Req: "Presence awareness (who's online)"
+
 - [x] Create Sidebar component
 - [x] Extract users from provider.awareness.getStates()
 - [x] Display list: name, colored indicator
@@ -246,18 +287,22 @@
 ---
 
 ## Phase 7: Persistence
+
 **Goal:** State survives server restarts
 
 ### ✅ PHASE 7 COMPLETE - No Additional Work Needed
 
 **PartyKit Durable Objects provides automatic persistence:**
+
 - `persist: true` in Y-PartyKit configuration
 - State automatically saved to Cloudflare Durable Objects storage
 - Survives server restarts, disconnects, and room hibernation
 - No external backup layer needed for MVP
 
 ### Task 7.1: ~~Save Snapshots to Storage~~ (UNNECESSARY)
+
 **Status:** NOT NEEDED - Durable Objects handles persistence automatically
+
 - ~~Create snapshot save endpoints~~
 - ~~PartyKit calls endpoint every 60s~~
 - ~~Save binary snapshot to storage~~
@@ -267,7 +312,9 @@
 ---
 
 ### Task 7.2: ~~Load Snapshots on Room Start~~ (UNNECESSARY)
+
 **Status:** NOT NEEDED - Durable Objects loads state automatically
+
 - ~~PartyKit onConnect: check if state empty~~
 - ~~Fetch snapshot from storage~~
 - ~~Load into Yjs document~~
@@ -276,11 +323,10 @@
 
 **Deployment:** `bunx partykit deploy --domain collab-canvas.piontek0.workers.dev`
 
-
-
 ## MVP Completion Checklist
 
 ### All Core Requirements Met:
+
 - [x] Phase 0: Deployed ✓
 - [x] Phase 1: Canvas with pan/zoom ✓
 - [x] Phase 1: Shape type (rectangle) ✓
@@ -293,6 +339,7 @@
 - [x] Phase 7: Persistence layer ✓ (PartyKit Durable Objects)
 
 ### Final MVP Test
+
 - [x] Open 2 browser windows
 - [x] Sign in as different users in each
 - [x] Create rectangles → verify sync <100ms
@@ -331,6 +378,7 @@
 **Phase 7 External backup layer (2 tasks):** Not needed - PartyKit Durable Objects provides automatic persistence with `persist: true`.
 
 **15 Completed Tasks:**
+
 - Phase 0: 0.1, 0.2, 0.3, 0.4 (4 tasks) ✅
 - Phase 1: 1.1, 1.2, 1.3 (3 tasks) ✅
 - Phase 2: 2.1 (1 task) ✅
