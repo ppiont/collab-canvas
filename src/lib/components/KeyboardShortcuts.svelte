@@ -102,15 +102,19 @@
 					<h3 class="font-semibold text-sm text-foreground/80">{category.name}</h3>
 					<div class="space-y-1">
 						{#each category.shortcuts as shortcut (shortcut.action)}
-							<div class="flex items-center justify-between px-2 py-1.5 rounded transition-colors hover:bg-accent/50">
+							<div
+								class="flex items-center justify-between px-2 py-1.5 rounded transition-colors hover:bg-accent/50"
+							>
 								<span class="text-sm text-muted-foreground">
 									{shortcut.action}
 								</span>
-								<kbd class={cn(
-									'px-2 py-0.5 text-xs font-mono font-semibold',
-									'bg-muted border border-border rounded',
-									'text-foreground/90'
-								)}>
+								<kbd
+									class={cn(
+										'px-2 py-0.5 text-xs font-mono font-semibold',
+										'bg-muted border border-border rounded',
+										'text-foreground/90'
+									)}
+								>
 									{shortcut.keys}
 								</kbd>
 							</div>
@@ -124,7 +128,7 @@
 
 <style>
 	:global(kbd) {
-		font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo,
-			monospace;
+		font-family:
+			ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
 	}
 </style>
