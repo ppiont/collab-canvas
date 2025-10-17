@@ -17,11 +17,14 @@
 		rotationValue = Math.round(value);
 	});
 
-	// Handle slider changes
+	// Handle slider changes - call onchange immediately with new value
 	function handleSliderChange() {
-		const rounded = Math.round(rotationValue);
-		rotationValue = rounded;
-		onchange?.(rounded);
+		// Ensure value is within bounds
+		const constrained = Math.max(-180, Math.min(180, rotationValue));
+		rotationValue = constrained;
+		
+		// Call callback immediately with the new value
+		onchange?.(constrained);
 	}
 </script>
 
