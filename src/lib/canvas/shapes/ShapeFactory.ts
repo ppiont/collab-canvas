@@ -84,6 +84,8 @@ export class ShapeFactory {
 					text: props.text ?? 'Text',
 					fontSize: props.fontSize ?? DEFAULT_SHAPE_DIMENSIONS.text.fontSize,
 					fontFamily: props.fontFamily ?? DEFAULT_SHAPE_DIMENSIONS.text.fontFamily,
+					// Use the provided fill color (user's color), default to black if not provided
+					fill: props.fill ?? '#000000',
 					align: 'left'
 				} as TextShape;
 			}

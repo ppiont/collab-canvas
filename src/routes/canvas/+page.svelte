@@ -24,6 +24,7 @@
 	import { activeTool, isCreateToolActive } from '$lib/stores/tool';
 	import { clipboardOperations } from '$lib/stores/clipboard';
 	import { initializeUndoManager, history } from '$lib/stores/history';
+	import { darkenColor } from '$lib/user-utils';
 
 	let { data } = $props();
 
@@ -64,8 +65,8 @@
 				{
 					x,
 					y,
-					fill: '#3b82f6',
-					stroke: '#1e3a8a',
+					fill: data.userProfile.color, // Use user's color instead of hardcoded blue
+					stroke: darkenColor(data.userProfile.color, 20), // Use a darker version of the user's color for the stroke outline
 					strokeWidth: 2,
 					zIndex: maxZIndex + 1
 				},

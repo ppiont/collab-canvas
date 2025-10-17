@@ -115,7 +115,11 @@
 				console.log('[AI] Executing', data.toolsToExecute.length, 'tools:', data.toolsToExecute);
 
 				// Execute tools in parallel for faster performance
-				await Promise.all(data.toolsToExecute.map((tool: { name: string; params: Record<string, unknown> }) => executeAITool(tool.name, tool.params)));
+				await Promise.all(
+					data.toolsToExecute.map((tool: { name: string; params: Record<string, unknown> }) =>
+						executeAITool(tool.name, tool.params)
+					)
+				);
 
 				console.log('[AI] All tools executed');
 			} else {

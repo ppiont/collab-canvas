@@ -143,7 +143,7 @@ export class ShapeRenderer {
 			if (shapes.length > 100 && this.lastCullingStats.cullingRatio > 0.3) {
 				console.log(
 					`[Viewport Culling] Rendering ${shapesToRender.length}/${shapes.length} shapes ` +
-						`(${Math.round(this.lastCullingStats.cullingRatio * 100)}% culled)`
+					`(${Math.round(this.lastCullingStats.cullingRatio * 100)}% culled)`
 				);
 			}
 		}
@@ -181,6 +181,9 @@ export class ShapeRenderer {
 				// Sync Konva node properties from Yjs shape data
 				this.updateKonvaNodeProperties(existingNode, shape);
 				this.applySelectionStyling(existingNode, isSelected, shape);
+				// CRITICAL: Ensure node is visible after update
+				// (fixes text disappearing after editing - node was hidden but never shown again)
+				existingNode.show();
 				return;
 			}
 
@@ -234,9 +237,15 @@ export class ShapeRenderer {
 		node.rotation(shape.rotation || 0);
 
 		const konvaShape = node as Konva.Shape;
-		konvaShape.fill(shape.fill);
-		konvaShape.stroke(shape.stroke);
-		konvaShape.strokeWidth(shape.strokeWidth);
+		konvaShape.fill(shape.fill || (shape.type === 'text' ? '#000000' : undefined));
+
+		// CRITICAL: Never apply stroke to text shapes
+		// Konva.Text doesn't support stroke rendering properly - it creates visual artifacts
+		if (shape.type !== 'text') {
+			konvaShape.stroke(shape.stroke);
+			konvaShape.strokeWidth(shape.strokeWidth);
+		}
+
 		konvaShape.opacity(shape.opacity || 1);
 
 		// Update shape-specific properties based on type
@@ -293,8 +302,11 @@ export class ShapeRenderer {
 
 		if (isSelected) {
 			// Apply selection outline matching transformer border
-			konvaShape.stroke('#667eea'); // Same color as transformer
-			konvaShape.strokeWidth(2);
+			// EXCEPTION: Text shapes should never have stroke - Konva.Text doesn't render it properly
+			if (shapeData.type !== 'text') {
+				konvaShape.stroke('#667eea'); // Same color as transformer
+				konvaShape.strokeWidth(2);
+			}
 			konvaShape.dash([]); // Solid line
 			// No shadow - just clean outline
 			konvaShape.shadowColor('');
@@ -302,8 +314,11 @@ export class ShapeRenderer {
 			konvaShape.shadowOpacity(0);
 		} else {
 			// Restore original values from shape data
-			konvaShape.stroke(shapeData.stroke);
-			konvaShape.strokeWidth(shapeData.strokeWidth);
+			// EXCEPTION: Text shapes should never have stroke
+			if (shapeData.type !== 'text') {
+				konvaShape.stroke(shapeData.stroke);
+				konvaShape.strokeWidth(shapeData.strokeWidth);
+			}
 			konvaShape.dash([]);
 			konvaShape.shadowColor('');
 			konvaShape.shadowBlur(0);
@@ -398,24 +413,40 @@ export class ShapeRenderer {
 				});
 			}
 
-			case 'star':
+			case 'star': {
+				const starShape = shape as Extract<Shape, { type: 'star' }>;
 				return new Konva.Star({
 					...baseConfig,
-					numPoints: shape.numPoints,
-					innerRadius: shape.innerRadius,
-					outerRadius: shape.outerRadius
+					numPoints: starShape.numPoints,
+					innerRadius: starShape.innerRadius,
+					outerRadius: starShape.outerRadius
 				});
+			}
 
 			case 'text':
+				// Text shapes need special config: exclude stroke properties entirely
+				// Konva.Text doesn't support stroke rendering properly - it creates artifacts
 				return new Konva.Text({
-					...baseConfig,
+					// Common properties that text supports
+					id: shape.id,
+					name: 'shape',
+					x: shape.x,
+					y: shape.y,
+					rotation: shape.rotation || 0,
+					opacity: isDraggedByOther ? 0.5 : shape.opacity || 1,
+					fill: shape.fill || '#000000',
+					shadowColor: isDraggedByOther ? '#667eea' : '',
+					shadowBlur: isDraggedByOther ? 8 : 0,
+					shadowOpacity: isDraggedByOther ? 0.6 : 0,
+					draggable: (('draggable' in shape ? shape.draggable : true) ?? true) && !isDraggedByOther,
+					// Text-specific properties
 					text: shape.text,
 					fontSize: shape.fontSize,
 					fontFamily: shape.fontFamily || SHAPES.DEFAULT_FONT_FAMILY,
 					fontStyle: shape.fontStyle,
-					align: shape.align || 'left',
-					fill: shape.fill || '#000000',
-					stroke: undefined // Text typically doesn't have stroke
+					align: shape.align || 'left'
+					// NOTE: Intentionally NOT including stroke or strokeWidth
+					// Konva.Text stroke rendering creates visual artifacts
 				});
 
 			case 'image':
