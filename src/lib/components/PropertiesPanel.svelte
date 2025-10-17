@@ -7,6 +7,7 @@
 	import OpacityControl from './controls/OpacityControl.svelte';
 	import BlendModeControl from './controls/BlendModeControl.svelte';
 	import ShadowControl from './controls/ShadowControl.svelte';
+	import RotationControl from './controls/RotationControl.svelte';
 	import { Input } from './ui/input';
 	import { Label } from './ui/label';
 	import { Slider } from './ui/slider';
@@ -52,13 +53,9 @@
 		})()
 	);
 
-	let rotationValue = $state(0);
 	let fontSizeValue = $state(16);
 
 	$effect(() => {
-		if (rotation !== 'mixed') {
-			rotationValue = (rotation as number) ?? 0;
-		}
 		if (firstShape && firstShape.type === 'text' && 'fontSize' in firstShape) {
 			fontSizeValue = (firstShape as { fontSize: number }).fontSize || 16;
 		}
@@ -130,20 +127,10 @@
 
 				<!-- Rotation -->
 				{#if rotation !== 'mixed'}
-					<div class="space-y-2">
-						<div class="flex justify-between items-center">
-							<Label class="text-xs">Rotation</Label>
-							<span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">{rotation ?? 0}°</span>
-						</div>
-						<Slider
-							type="multiple"
-							value={[rotationValue]}
-							onchange={() => updateSelected('rotation', rotationValue)}
-							min={0}
-							max={360}
-							step={1}
-						/>
-					</div>
+					<RotationControl
+						value={rotation as number}
+						onchange={(value) => updateSelected('rotation', value)}
+					/>
 				{/if}
 			</div>
 
