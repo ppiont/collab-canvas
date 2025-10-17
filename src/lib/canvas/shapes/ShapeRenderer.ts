@@ -611,9 +611,6 @@ export class ShapeRenderer {
 			konvaShape.shadowOpacity(0.3);
 			this.stage.container().style.cursor = 'grabbing';
 
-			// Move to top locally
-			konvaShape.moveToTop();
-
 			// Broadcast cursor
 			this.callbacks!.onBroadcastCursor();
 
