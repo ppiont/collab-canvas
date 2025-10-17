@@ -620,10 +620,9 @@ export class ShapeRenderer {
 			// Track local drag
 			this.locallyDraggingId = shapeId;
 
-			// Update with highest zIndex
+			// Update drag state (but don't change zIndex)
 			this.callbacks!.onShapeUpdate(shapeId, {
-				draggedBy: this.localUserId || undefined,
-				zIndex: this.callbacks!.getMaxZIndex() + 1
+				draggedBy: this.localUserId || undefined
 			});
 		});
 
