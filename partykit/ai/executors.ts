@@ -36,43 +36,17 @@ export async function executeTool(
 	ydoc: Y.Doc
 ): Promise<ToolExecutionResult> {
 	const shapesMap = ydoc.getMap<ShapeData>('shapes');
+	const metadata = ydoc.getMap('metadata');
+
+	// Initialize or get the current z-index counter
+	let zIndexCounter = (metadata.get('nextZIndex') as number) || 0;
+	const getNextZIndex = (): number => {
+		zIndexCounter++;
+		metadata.set('nextZIndex', zIndexCounter);
+		return zIndexCounter;
+	};
 
 	try {
-		// Helper: Get the maximum zIndex of all existing shapes (for placing new shapes at front)
-		const getMaxZIndex = (): number => {
-			let maxZ = 0;
-			shapesMap.forEach((shape) => {
-				const z = (shape.zIndex as number) || 0;
-				if (z > maxZ) maxZ = z;
-			});
-			return maxZ;
-		};
-
-		// Helper: Compact zIndex when it gets too large to prevent unbounded growth
-		// Reorders all shapes to use 0, 1, 2, ... N-1 based on current visual order
-		const compactZIndexIfNeeded = (): void => {
-			const maxZ = getMaxZIndex();
-			const COMPACTION_THRESHOLD = 10000; // Compact when max zIndex exceeds this
-
-			if (maxZ > COMPACTION_THRESHOLD) {
-				// Sort all shapes by current zIndex
-				const allShapes: Array<[string, ShapeData]> = [];
-				shapesMap.forEach((shape, id) => {
-					allShapes.push([id, shape]);
-				});
-				allShapes.sort((a, b) => ((a[1].zIndex as number) || 0) - ((b[1].zIndex as number) || 0));
-
-				// Reassign zIndex from 0 to N-1 maintaining visual order
-				allShapes.forEach(([id, shape], index) => {
-					shapesMap.set(id, {
-						...shape,
-						zIndex: index,
-						modifiedAt: Date.now()
-					});
-				});
-			}
-		};
-
 		switch (toolName) {
 			// ═══════════════════════════════════════════════════════
 			// CREATION TOOLS
@@ -91,7 +65,7 @@ export async function executeTool(
 					strokeWidth: 2,
 					opacity: 1,
 					rotation: 0,
-					zIndex: getMaxZIndex() + 1,
+					zIndex: getNextZIndex(),
 					createdBy: 'ai',
 					createdAt: Date.now(),
 					draggable: true
@@ -112,7 +86,7 @@ export async function executeTool(
 					strokeWidth: 2,
 					opacity: 1,
 					rotation: 0,
-					zIndex: getMaxZIndex() + 1,
+					zIndex: getNextZIndex(),
 					createdBy: 'ai',
 					createdAt: Date.now()
 				};
@@ -131,7 +105,7 @@ export async function executeTool(
 					strokeWidth: (params.strokeWidth as number) || 2,
 					opacity: 1,
 					rotation: 0,
-					zIndex: getMaxZIndex() + 1,
+					zIndex: getNextZIndex(),
 					createdBy: 'ai',
 					createdAt: Date.now()
 				};
@@ -152,7 +126,7 @@ export async function executeTool(
 					align: 'left',
 					opacity: 1,
 					rotation: 0,
-					zIndex: getMaxZIndex() + 1,
+					zIndex: getNextZIndex(),
 					createdBy: 'ai',
 					createdAt: Date.now()
 				};
@@ -173,7 +147,7 @@ export async function executeTool(
 					strokeWidth: 2,
 					opacity: 1,
 					rotation: 0,
-					zIndex: getMaxZIndex() + 1,
+					zIndex: getNextZIndex(),
 					createdBy: 'ai',
 					createdAt: Date.now()
 				};
@@ -195,7 +169,7 @@ export async function executeTool(
 					strokeWidth: 2,
 					opacity: 1,
 					rotation: 0,
-					zIndex: getMaxZIndex() + 1,
+					zIndex: getNextZIndex(),
 					createdBy: 'ai',
 					createdAt: Date.now()
 				};
@@ -216,7 +190,7 @@ export async function executeTool(
 					strokeWidth: 2,
 					opacity: 1,
 					rotation: 0,
-					zIndex: getMaxZIndex() + 1,
+					zIndex: getNextZIndex(),
 					createdBy: 'ai',
 					createdAt: Date.now()
 				};
@@ -314,7 +288,7 @@ export async function executeTool(
 					id: crypto.randomUUID(),
 					x: (shape.x as number) + ((params.offsetX as number) || 20),
 					y: (shape.y as number) + ((params.offsetY as number) || 20),
-					zIndex: getMaxZIndex() + 1,
+					zIndex: getNextZIndex(),
 					createdBy: 'ai',
 					createdAt: Date.now()
 				};
@@ -332,27 +306,18 @@ export async function executeTool(
 					return { success: false, error: 'No shape IDs provided' };
 				}
 
-				// Get all shapes and find max zIndex
-				const allShapes: ShapeData[] = [];
-				shapesMap.forEach((shape) => {
-					allShapes.push(shape);
-				});
-
-				const maxZ = Math.max(...allShapes.map((s) => (s.zIndex as number) || 0), 0);
-
-				// Update all specified shapes
+				const frontZ = getNextZIndex();
 				shapeIds.forEach((id: string) => {
 					const shape = shapesMap.get(id);
 					if (shape) {
 						shapesMap.set(id, {
 							...shape,
-							zIndex: maxZ + 1,
+							zIndex: frontZ,
 							modifiedAt: Date.now()
 						});
 					}
 				});
 
-				compactZIndexIfNeeded();
 				return { success: true };
 			}
 
@@ -362,27 +327,22 @@ export async function executeTool(
 					return { success: false, error: 'No shape IDs provided' };
 				}
 
-				// Get all shapes and find min zIndex
-				const allShapes: ShapeData[] = [];
-				shapesMap.forEach((shape) => {
-					allShapes.push(shape);
-				});
+				// Send to back by using negative counter
+				zIndexCounter--;
+				metadata.set('nextZIndex', zIndexCounter);
+				const backZ = zIndexCounter;
 
-				const minZ = Math.min(...allShapes.map((s) => (s.zIndex as number) || 0), 0);
-
-				// Update all specified shapes
 				shapeIds.forEach((id: string) => {
 					const shape = shapesMap.get(id);
 					if (shape) {
 						shapesMap.set(id, {
 							...shape,
-							zIndex: minZ - 1,
+							zIndex: backZ,
 							modifiedAt: Date.now()
 						});
 					}
 				});
 
-				compactZIndexIfNeeded();
 				return { success: true };
 			}
 
