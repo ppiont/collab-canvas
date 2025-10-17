@@ -22,7 +22,8 @@ export const redoStackSize = writable(0);
 /**
  * Initialize undo manager
  */
-export function initializeUndoManager(shapesMap: Y.Map<Record<string, unknown>>) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function initializeUndoManager(shapesMap: Y.Map<any>) {
 	console.log('[History] Initializing UndoManager with clientID:', ydoc.clientID);
 
 	undoManager = new UndoManager(shapesMap, {
