@@ -86,10 +86,12 @@
 					</div>
 
 					<Popover>
-						<PopoverTrigger asChild>
-							<Button variant="outline" size="sm" class="w-8 h-8 p-0">
-								<ChevronDown class="w-4 h-4" />
-							</Button>
+						<PopoverTrigger>
+							{#snippet child({ props })}
+								<Button {...props} variant="outline" size="sm" class="w-8 h-8 p-0">
+									<ChevronDown class="w-4 h-4" />
+								</Button>
+							{/snippet}
 						</PopoverTrigger>
 						<PopoverContent class="w-80 p-0">
 							<ColorPicker
