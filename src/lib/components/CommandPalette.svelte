@@ -13,6 +13,7 @@
 	import { PUBLIC_PARTYKIT_HOST } from '$env/static/public';
 	import { ShapeFactory } from '$lib/canvas/shapes/ShapeFactory';
 	import { shapeOperations } from '$lib/stores/shapes';
+	import { getShapesForLayout, getShapeWidth, getShapeHeight } from '$lib/utils/layout-helpers';
 
 	import type { CanvasViewport } from '$lib/types/canvas';
 
@@ -225,9 +226,7 @@
 		// Layout tools
 		else if (toolName === 'arrangeHorizontal') {
 			console.log('[Layout] arrangeHorizontal - IDs:', params.shapeIds);
-			const shapes = (params.shapeIds as string[])
-				.map((id: string) => shapeOperations.get(id))
-				.filter((s: unknown): s is ReturnType<typeof shapeOperations.get> => s !== undefined);
+			const shapes = getShapesForLayout(params.shapeIds as string[]);
 
 			console.log('[Layout] Found', shapes.length, 'shapes:', shapes);
 
@@ -243,11 +242,7 @@
 			console.log('[Layout] Starting at X:', currentX, 'Y:', y, 'Spacing:', spacing);
 
 			shapes.forEach((shape) => {
-				const width =
-					(shape.width as number) ||
-					((shape.radius as number) ? (shape.radius as number) * 2 : 0) ||
-					((shape.outerRadius as number) ? (shape.outerRadius as number) * 2 : 0) ||
-					100;
+				const width = getShapeWidth(shape);
 				console.log(
 					'[Layout] Shape',
 					shapes.indexOf(shape),
@@ -266,9 +261,7 @@
 
 			console.log('[Layout] arrangeHorizontal complete');
 		} else if (toolName === 'arrangeVertical') {
-			const shapes = (params.shapeIds as string[])
-				.map((id: string) => shapeOperations.get(id))
-				.filter((s: unknown): s is ReturnType<typeof shapeOperations.get> => s !== undefined);
+			const shapes = getShapesForLayout(params.shapeIds as string[]);
 
 			if (shapes.length === 0) return;
 
@@ -277,18 +270,12 @@
 			let currentY = (params.startY as number) || 100;
 
 			shapes.forEach((shape) => {
-				const height =
-					(shape.height as number) ||
-					((shape.radius as number) ? (shape.radius as number) * 2 : 0) ||
-					((shape.outerRadius as number) ? (shape.outerRadius as number) * 2 : 0) ||
-					100;
+				const height = getShapeHeight(shape);
 				shapeOperations.update(shape.id, { x, y: currentY });
 				currentY += height + spacing;
 			});
 		} else if (toolName === 'arrangeGrid') {
-			const shapes = (params.shapeIds as string[])
-				.map((id: string) => shapeOperations.get(id))
-				.filter((s: unknown): s is ReturnType<typeof shapeOperations.get> => s !== undefined);
+			const shapes = getShapesForLayout(params.shapeIds as string[]);
 
 			if (shapes.length === 0) return;
 
@@ -307,14 +294,12 @@
 				});
 			});
 		} else if (toolName === 'distributeEvenly') {
-			const shapes = (params.shapeIds as string[])
-				.map((id: string) => shapeOperations.get(id))
-				.filter((s: unknown): s is ReturnType<typeof shapeOperations.get> => s !== undefined);
+			const shapes = getShapesForLayout(params.shapeIds as string[]);
 
 			if (shapes.length < 2) return;
 
 			if (params.direction === 'horizontal') {
-				const xs = shapes.map((s: ReturnType<typeof shapeOperations.get>) => s.x);
+				const xs = shapes.map((s) => s.x as number);
 				const minX = Math.min(...xs);
 				const maxX = Math.max(...xs);
 				const spacing = (maxX - minX) / (shapes.length - 1);
@@ -323,7 +308,7 @@
 					shapeOperations.update(shape.id, { x: minX + i * spacing });
 				});
 			} else {
-				const ys = shapes.map((s: ReturnType<typeof shapeOperations.get>) => s.y);
+				const ys = shapes.map((s) => s.y as number);
 				const minY = Math.min(...ys);
 				const maxY = Math.max(...ys);
 				const spacing = (maxY - minY) / (shapes.length - 1);
@@ -333,50 +318,44 @@
 				});
 			}
 		} else if (toolName === 'alignShapes') {
-			const shapes = (params.shapeIds as string[])
-				.map((id: string) => shapeOperations.get(id))
-				.filter((s: unknown): s is ReturnType<typeof shapeOperations.get> => s !== undefined);
+			const shapes = getShapesForLayout(params.shapeIds as string[]);
 
 			if (shapes.length === 0) return;
 
 			const alignment = params.alignment;
-			const positions = shapes.map((s: ReturnType<typeof shapeOperations.get>) => ({
-				x: s.x,
-				y: s.y
+			const positions = shapes.map((s) => ({
+				x: s.x as number,
+				y: s.y as number
 			}));
 
 			switch (alignment) {
 				case 'left': {
-					const minX = Math.min(...positions.map((p: { x: number; y: number }) => p.x));
+					const minX = Math.min(...positions.map((p) => p.x));
 					shapes.forEach((shape) => shapeOperations.update(shape.id, { x: minX }));
 					break;
 				}
 				case 'right': {
-					const maxX = Math.max(...positions.map((p: { x: number; y: number }) => p.x));
+					const maxX = Math.max(...positions.map((p) => p.x));
 					shapes.forEach((shape) => shapeOperations.update(shape.id, { x: maxX }));
 					break;
 				}
 				case 'center': {
-					const avgX =
-						positions.reduce((sum: number, p: { x: number; y: number }) => sum + p.x, 0) /
-						positions.length;
+					const avgX = positions.reduce((sum: number, p) => sum + p.x, 0) / positions.length;
 					shapes.forEach((shape) => shapeOperations.update(shape.id, { x: avgX }));
 					break;
 				}
 				case 'top': {
-					const minY = Math.min(...positions.map((p: { x: number; y: number }) => p.y));
+					const minY = Math.min(...positions.map((p) => p.y));
 					shapes.forEach((shape) => shapeOperations.update(shape.id, { y: minY }));
 					break;
 				}
 				case 'bottom': {
-					const maxY = Math.max(...positions.map((p: { x: number; y: number }) => p.y));
+					const maxY = Math.max(...positions.map((p) => p.y));
 					shapes.forEach((shape) => shapeOperations.update(shape.id, { y: maxY }));
 					break;
 				}
 				case 'middle': {
-					const avgY =
-						positions.reduce((sum: number, p: { x: number; y: number }) => sum + p.y, 0) /
-						positions.length;
+					const avgY = positions.reduce((sum: number, p) => sum + p.y, 0) / positions.length;
 					shapes.forEach((shape) => shapeOperations.update(shape.id, { y: avgY }));
 					break;
 				}
