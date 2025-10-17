@@ -50,6 +50,7 @@ export interface RectangleShape extends BaseShape {
 	type: 'rectangle';
 	width: number;
 	height: number;
+	cornerRadius?: number; // rounded corners
 	draggable?: boolean; // MVP compatibility
 }
 
@@ -81,8 +82,11 @@ export interface TextShape extends BaseShape {
 	text: string;
 	fontSize: number;
 	fontFamily: string;
-	fontStyle?: 'normal' | 'bold' | 'italic';
-	fontWeight?: number;
+	fontStyle?: 'normal' | 'italic';
+	fontWeight?: 'normal' | 'bold' | number;
+	textDecoration?: 'none' | 'underline' | 'line-through' | 'overline';
+	lineHeight?: number;
+	padding?: number;
 	align?: 'left' | 'center' | 'right';
 	width?: number; // text box width
 }
