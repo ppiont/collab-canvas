@@ -269,22 +269,27 @@ export class SelectionManager {
 			// Force transformer to recalculate to get accurate box
 			this.transformer.forceUpdate();
 
-			// Get bounding box - this returns dimensions scaled by stage zoom
-			const box = this.transformer.getClientRect();
-
-			// Calculate actual canvas dimensions (not scaled by stage zoom)
-			const stageScale = this.stage.scaleX();
-			const width = Math.round(box.width / stageScale);
-			const height = Math.round(box.height / stageScale);
-
-			// Update text
-			const text = this.sizeLabel.findOne('Text') as Konva.Text;
-			if (text) {
-				text.text(`${width} × ${height}`);
+			// Get the selected node
+			const nodes = this.transformer.nodes();
+			if (nodes.length === 0) {
+				this.sizeLabel.visible(false);
+				return;
 			}
 
-			// Position below the transformer box (in canvas coordinates)
-			// The box is already in canvas coordinates, so we can use it directly
+			const node = nodes[0];
+			const nodeWidth = Math.round(node.width() * node.scaleX());
+			const nodeHeight = Math.round(node.height() * node.scaleY());
+
+			// Update text with actual dimensions
+			const text = this.sizeLabel.findOne('Text') as Konva.Text;
+			if (text) {
+				text.text(`${nodeWidth} × ${nodeHeight}`);
+			}
+
+			// Get the bounding box relative to the layer (this handles all transformations correctly)
+			const box = node.getClientRect({ relativeTo: this.layer });
+
+			// Position below the shape
 			this.sizeLabel.position({
 				x: box.x + box.width / 2,
 				y: box.y + box.height + 12
