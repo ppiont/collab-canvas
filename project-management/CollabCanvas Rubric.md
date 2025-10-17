@@ -12,7 +12,7 @@
 
 **Excellent (11-12 points)**
 
-- Sub-100ms object sync
+- Sub-100ms object sync :checkmark:
 - Sub-50ms cursor sync
 - Zero visible lag during rapid multi-user edits
 

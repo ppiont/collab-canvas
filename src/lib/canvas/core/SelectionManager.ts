@@ -285,10 +285,9 @@ export class SelectionManager {
 
 			// Position below the transformer box (in canvas coordinates)
 			// The box is already in canvas coordinates, so we can use it directly
-			const scale = this.stage.scaleX();
 			this.sizeLabel.position({
-				x: box.x / scale + box.width / scale / 2,
-				y: box.y / scale + box.height / scale + 12
+				x: box.x + box.width / 2,
+				y: box.y + box.height + 12
 			});
 
 			this.sizeLabel.visible(true);

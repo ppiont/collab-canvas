@@ -94,10 +94,7 @@
 							{/snippet}
 						</PopoverTrigger>
 						<PopoverContent class="w-80 p-0">
-							<ColorPicker
-								value={shadowValue.color}
-								onchange={(c) => updateShadow({ color: c })}
-							/>
+							<ColorPicker value={shadowValue.color} onchange={(c) => updateShadow({ color: c })} />
 						</PopoverContent>
 					</Popover>
 				</div>
@@ -153,7 +150,7 @@
 
 			<!-- Presets -->
 			<div class="pt-2 border-t">
-				<label class="text-sm text-gray-600 mb-2 block">Presets</label>
+				<div class="text-sm text-gray-600 mb-2">Presets</div>
 				<div class="flex gap-2 flex-wrap">
 					{#each presets as preset (preset.name)}
 						<Button variant="outline" size="sm" onclick={() => applyPreset(preset)} class="text-xs">
