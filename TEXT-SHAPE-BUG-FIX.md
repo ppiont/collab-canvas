@@ -3,6 +3,7 @@
 ## Bug Description
 
 When a text shape was created and then edited:
+
 1. ✅ Create text shape displays "text" correctly (visible)
 2. ✅ Double-click to enter edit mode works (textarea appears)
 3. ✅ Editing text content works
@@ -14,9 +15,11 @@ When a text shape was created and then edited:
 ## Root Cause Analysis
 
 ### Issue 1: Missing Default Fill Color in Shape Factory
+
 **File:** `src/lib/canvas/shapes/ShapeFactory.ts:79-88`
 
 The `TextShape` was created without a `fill` property:
+
 ```typescript
 case 'text': {
     const props = baseProps as Partial<TextShape>;
@@ -33,36 +36,41 @@ case 'text': {
 ```
 
 ### Issue 2: Missing Fallback in Konva Update Logic
+
 **File:** `src/lib/canvas/shapes/ShapeRenderer.ts:230-285`
 
 When creating a Konva text node (line 417), the code correctly applies a fallback:
+
 ```typescript
 fill: shape.fill || '#000000',  // ✅ Fallback to black
 ```
 
 **BUT** when updating an existing Konva node after editing (line 237):
+
 ```typescript
-konvaShape.fill(shape.fill);  // ❌ NO FALLBACK! Sets to undefined
+konvaShape.fill(shape.fill); // ❌ NO FALLBACK! Sets to undefined
 ```
 
 ### Issue 3: **CRITICAL** - Node Not Shown After Update
+
 **File:** `src/lib/canvas/shapes/ShapeRenderer.ts:180-185`
 
 This is the **primary cause** of the persistent disappearing text bug!
 
 When the text node is updated after editing:
+
 ```typescript
 if (existingNode && !isLocallyDragging) {
-    this.updateKonvaNodeProperties(existingNode, shape);
-    this.applySelectionStyling(existingNode, isSelected, shape);
-    // ❌ MISSING: existingNode.show()
-    return;
+	this.updateKonvaNodeProperties(existingNode, shape);
+	this.applySelectionStyling(existingNode, isSelected, shape);
+	// ❌ MISSING: existingNode.show()
+	return;
 }
 ```
 
 ### Complete Flow of the Bug
 
-1. Text shape created via `ShapeFactory.create()` 
+1. Text shape created via `ShapeFactory.create()`
 2. Konva text node created and rendered (visible) ✅
 3. User double-clicks text
 4. `enableTextEditing()` calls: **`textNode.hide()`** (line 554) - node becomes hidden
@@ -80,6 +88,7 @@ if (existingNode && !isLocallyDragging) {
 ## Solution
 
 ### Fix 1: Add Default Fill to Text Shapes in ShapeFactory
+
 **File:** `src/lib/canvas/shapes/ShapeFactory.ts`
 
 ```typescript
@@ -98,6 +107,7 @@ case 'text': {
 ```
 
 ### Fix 2: Add Fallback Logic in Konva Update
+
 **File:** `src/lib/canvas/shapes/ShapeRenderer.ts:237`
 
 ```typescript
@@ -107,17 +117,18 @@ konvaShape.fill(shape.fill || (shape.type === 'text' ? '#000000' : undefined));
 ```
 
 ### Fix 3: **CRITICAL** - Show Node After Update
+
 **File:** `src/lib/canvas/shapes/ShapeRenderer.ts:182-184`
 
 ```typescript
 if (existingNode && !isLocallyDragging) {
-    // Sync Konva node properties from Yjs shape data
-    this.updateKonvaNodeProperties(existingNode, shape);
-    this.applySelectionStyling(existingNode, isSelected, shape);
-    // CRITICAL: Ensure node is visible after update
-    // (fixes text disappearing after editing - node was hidden but never shown again)
-    existingNode.show();  // ✅ ADD THIS LINE
-    return;
+	// Sync Konva node properties from Yjs shape data
+	this.updateKonvaNodeProperties(existingNode, shape);
+	this.applySelectionStyling(existingNode, isSelected, shape);
+	// CRITICAL: Ensure node is visible after update
+	// (fixes text disappearing after editing - node was hidden but never shown again)
+	existingNode.show(); // ✅ ADD THIS LINE
+	return;
 }
 ```
 
@@ -132,6 +143,7 @@ if (existingNode && !isLocallyDragging) {
 ## Testing the Fix
 
 ### Test Case 1: Create and Edit Text (PRIMARY TEST)
+
 ```
 1. Click "T" tool to select text tool
 2. Click on canvas to create text
@@ -146,6 +158,7 @@ if (existingNode && !isLocallyDragging) {
 ```
 
 ### Test Case 2: Edit Multiple Times
+
 ```
 1. Create text "First"
 2. Edit to "Second" → ✅ Should appear
@@ -155,6 +168,7 @@ if (existingNode && !isLocallyDragging) {
 ```
 
 ### Test Case 3: Undo/Redo with Text
+
 ```
 1. Create text shape "Original"
 2. Edit to "Edited"
@@ -166,6 +180,7 @@ if (existingNode && !isLocallyDragging) {
 ```
 
 ### Test Case 4: Browser Refresh
+
 ```
 1. Create text "Test"
 2. Edit to "Updated"
@@ -175,6 +190,7 @@ if (existingNode && !isLocallyDragging) {
 ```
 
 ## Files Modified
+
 - `src/lib/canvas/shapes/ShapeFactory.ts` - Add default fill to text shapes (FIXED)
 - `src/lib/canvas/shapes/ShapeRenderer.ts` - Two fixes:
   1. Add fill fallback in `updateKonvaNodeProperties()` (FIXED)
@@ -183,6 +199,7 @@ if (existingNode && !isLocallyDragging) {
 - `src/lib/types/shapes.ts` - No changes needed
 
 ## Related Code
+
 - Text editing: `ShapeRenderer.ts:547-622` - `enableTextEditing()` method
 - Shape rendering: `ShapeRenderer.ts:130-224` - `render()` method
 - Shape properties update: `ShapeRenderer.ts:230-285` - `updateKonvaNodeProperties()` method

@@ -261,7 +261,7 @@ export async function executeTool(
 				}
 				shapesMap.set(params.shapeId as string, {
 					...shape,
-					rotation: ((params.degrees as number) % 360),
+					rotation: (params.degrees as number) % 360,
 					modifiedAt: Date.now()
 				});
 				return { success: true };
@@ -326,7 +326,7 @@ export async function executeTool(
 				const y = (params.startY as number) || (shapes[0].y as number);
 
 				shapes.forEach((shape: ShapeData) => {
-					const width = (shape.width as number) || ((shape.radius as number) * 2) || 100;
+					const width = (shape.width as number) || (shape.radius as number) * 2 || 100;
 					shapesMap.set(shape.id, {
 						...shape,
 						x: currentX,
@@ -353,7 +353,7 @@ export async function executeTool(
 				let currentY = (params.startY as number) || 100;
 
 				shapes.forEach((shape: ShapeData) => {
-					const height = (shape.height as number) || ((shape.radius as number) * 2) || 100;
+					const height = (shape.height as number) || (shape.radius as number) * 2 || 100;
 					shapesMap.set(shape.id, {
 						...shape,
 						x: x,
@@ -378,7 +378,7 @@ export async function executeTool(
 				const spacing = (params.spacing as number) || 20;
 				const startX = (params.startX as number) || 100;
 				const startY = (params.startY as number) || 100;
-				const cols = (params.columns as number);
+				const cols = params.columns as number;
 				const cellWidth = 150; // Approximate cell size
 				const cellHeight = 150;
 

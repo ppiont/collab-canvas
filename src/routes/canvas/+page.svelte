@@ -5,6 +5,7 @@
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import DebugOverlay from '$lib/components/DebugOverlay.svelte';
 	import Toast from '$lib/components/Toast.svelte';
+	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
 
 	// Import managers
 	import { CanvasEngine } from '$lib/canvas/core/CanvasEngine';
@@ -25,6 +26,7 @@
 	import { clipboardOperations } from '$lib/stores/clipboard';
 	import { initializeUndoManager, history } from '$lib/stores/history';
 	import { darkenColor } from '$lib/user-utils';
+	import { selectedShapeIds } from '$lib/stores/selection';
 
 	let { data } = $props();
 
@@ -429,6 +431,8 @@
 	<ConnectionStatus currentUserId={data.user.id} onUserClick={handleUserClick} />
 
 	<!-- Properties Panel -->
+	<PropertiesPanel selectedShapeIds={$selectedShapeIds} />
+
 	<!-- Command Palette -->
 	<CommandPalette bind:open={commandPaletteOpen} userId={data.user.id} viewport={$viewport} />
 

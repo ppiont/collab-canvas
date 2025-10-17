@@ -47,7 +47,7 @@ const USER_COLORS = [
 	'#7b68ee', // mediumslateblue
 	'#ffa07a', // lightsalmon
 	'#ffdead', // navajowhite
-	'#ffc0cb'  // pink
+	'#ffc0cb' // pink
 ];
 
 /**
@@ -113,9 +113,52 @@ export function darkenColor(hexColor: string, percent: number = 20): string {
 		b = Math.max(0, Math.floor(b * (1 - percent / 100)));
 
 		// Convert back to hex
-		return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+		return '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('');
 	} catch {
 		// Fallback to a safe default if color parsing fails
 		return '#333333';
 	}
+}
+
+/**
+ * Convert hex color to RGB object
+ * @param hex - Hex color code (with or without #)
+ * @returns Object with r, g, b values (0-255)
+ */
+export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+	try {
+		const cleanHex = hex.replace('#', '');
+		if (cleanHex.length !== 6) return null;
+
+		const r = parseInt(cleanHex.slice(0, 2), 16);
+		const g = parseInt(cleanHex.slice(2, 4), 16);
+		const b = parseInt(cleanHex.slice(4, 6), 16);
+
+		return { r, g, b };
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Convert RGB to hex color
+ * @param r - Red value (0-255)
+ * @param g - Green value (0-255)
+ * @param b - Blue value (0-255)
+ * @returns Hex color code with #
+ */
+export function rgbToHex(r: number, g: number, b: number): string {
+	const clamp = (n: number) => Math.max(0, Math.min(255, Math.floor(n)));
+	const toHex = (n: number) => clamp(n).toString(16).padStart(2, '0');
+	return '#' + toHex(r) + toHex(g) + toHex(b);
+}
+
+/**
+ * Validate hex color code
+ * @param hex - Hex color to validate
+ * @returns true if valid hex color
+ */
+export function isValidHex(hex: string): boolean {
+	const cleanHex = hex.replace('#', '');
+	return /^[0-9A-F]{6}$/i.test(cleanHex);
 }

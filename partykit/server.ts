@@ -16,7 +16,7 @@ import { AI_SYSTEM_PROMPT } from './ai/prompts';
 export default class YjsServer implements Party.Server {
 	private yjsDoc: Y.Doc | null = null;
 
-	constructor(public party: Party.Room) { }
+	constructor(public party: Party.Room) {}
 
 	/**
 	 * Called when a client connects via WebSocket

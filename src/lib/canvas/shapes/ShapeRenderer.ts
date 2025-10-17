@@ -143,7 +143,7 @@ export class ShapeRenderer {
 			if (shapes.length > 100 && this.lastCullingStats.cullingRatio > 0.3) {
 				console.log(
 					`[Viewport Culling] Rendering ${shapesToRender.length}/${shapes.length} shapes ` +
-					`(${Math.round(this.lastCullingStats.cullingRatio * 100)}% culled)`
+						`(${Math.round(this.lastCullingStats.cullingRatio * 100)}% culled)`
 				);
 			}
 		}
