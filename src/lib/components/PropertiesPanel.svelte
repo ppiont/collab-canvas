@@ -168,109 +168,187 @@
 				</div>
 			</section>
 
-		<!-- Text-specific properties -->
-		{#if isText(shape)}
-			<Separator />
-			<section class="space-y-3">
-				<h3 class="text-sm font-semibold">Text</h3>
-				<div class="space-y-2">
-					<Label for="text">Content</Label>
-					<Input
-						id="text"
-						type="text"
-						value={shape.text}
-						onchange={(e: Event) => updateShape({ text: (e.target as HTMLInputElement).value })}
-					/>
-				</div>
-				<div class="space-y-2">
-					<Label for="fontSize">Font Size ({shape.fontSize}px)</Label>
-					<Slider
-						type="single"
-						min={8}
-						max={144}
-						step={1}
-						value={[shape.fontSize]}
-						onValueChange={(values: number[]) => updateShape({ fontSize: values[0] })}
-					/>
-				</div>
-				
-				<!-- Font Family -->
-				<div class="space-y-2">
-					<Label for="fontFamily">Font</Label>
-					<select
-						id="fontFamily"
-						class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-						value={shape.fontFamily || 'system-ui'}
-						onchange={(e: Event) => updateShape({ fontFamily: (e.target as HTMLSelectElement).value })}
-					>
-						<option value="system-ui">System UI</option>
-						<option value="Arial">Arial</option>
-						<option value="Helvetica">Helvetica</option>
-						<option value="Times New Roman">Times New Roman</option>
-						<option value="Georgia">Georgia</option>
-						<option value="Courier New">Courier New</option>
-						<option value="monospace">Monospace</option>
-						<option value="serif">Serif</option>
-						<option value="sans-serif">Sans Serif</option>
-					</select>
-				</div>
-
-				<!-- Text Style (Bold/Italic) -->
-				<div class="space-y-2">
-					<Label>Style</Label>
-					<div class="flex gap-2">
-						<Button
-							variant={shape.fontStyle === 'bold' ? 'default' : 'outline'}
-							size="sm"
-							onclick={() => {
-								const newStyle = shape.fontStyle === 'bold' ? 'normal' : 'bold';
-								updateShape({ fontStyle: newStyle });
-							}}
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg>
-						</Button>
-						<Button
-							variant={shape.fontStyle === 'italic' ? 'default' : 'outline'}
-							size="sm"
-							onclick={() => {
-								const newStyle = shape.fontStyle === 'italic' ? 'normal' : 'italic';
-								updateShape({ fontStyle: newStyle });
-							}}
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/></svg>
-						</Button>
+			<!-- Text-specific properties -->
+			{#if isText(shape)}
+				<Separator />
+				<section class="space-y-3">
+					<h3 class="text-sm font-semibold">Text</h3>
+					<div class="space-y-2">
+						<Label for="text">Content</Label>
+						<Input
+							id="text"
+							type="text"
+							value={shape.text}
+							onchange={(e: Event) => updateShape({ text: (e.target as HTMLInputElement).value })}
+						/>
 					</div>
-				</div>
-
-				<!-- Text Alignment -->
-				<div class="space-y-2">
-					<Label>Alignment</Label>
-					<div class="flex gap-2">
-						<Button
-							variant={shape.align === 'left' ? 'default' : 'outline'}
-							size="sm"
-							onclick={() => updateShape({ align: 'left' })}
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg>
-						</Button>
-						<Button
-							variant={shape.align === 'center' ? 'default' : 'outline'}
-							size="sm"
-							onclick={() => updateShape({ align: 'center' })}
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="3" y1="6" y2="6"/><line x1="17" x2="7" y1="12" y2="12"/><line x1="19" x2="5" y1="18" y2="18"/></svg>
-						</Button>
-						<Button
-							variant={shape.align === 'right' ? 'default' : 'outline'}
-							size="sm"
-							onclick={() => updateShape({ align: 'right' })}
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="3" y1="6" y2="6"/><line x1="21" x2="9" y1="12" y2="12"/><line x1="21" x2="7" y1="18" y2="18"/></svg>
-						</Button>
+					<div class="space-y-2">
+						<Label for="fontSize">Font Size ({shape.fontSize}px)</Label>
+						<Slider
+							type="single"
+							min={8}
+							max={144}
+							step={1}
+							value={[shape.fontSize]}
+							onValueChange={(values: number[]) => updateShape({ fontSize: values[0] })}
+						/>
 					</div>
-				</div>
-			</section>
-		{/if}
+
+					<!-- Font Family -->
+					<div class="space-y-2">
+						<Label for="fontFamily">Font</Label>
+						<select
+							id="fontFamily"
+							class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+							value={shape.fontFamily || 'system-ui'}
+							onchange={(e: Event) =>
+								updateShape({ fontFamily: (e.target as HTMLSelectElement).value })}
+						>
+							<option value="system-ui">System UI</option>
+							<option value="Arial">Arial</option>
+							<option value="Helvetica">Helvetica</option>
+							<option value="Times New Roman">Times New Roman</option>
+							<option value="Georgia">Georgia</option>
+							<option value="Courier New">Courier New</option>
+							<option value="monospace">Monospace</option>
+							<option value="serif">Serif</option>
+							<option value="sans-serif">Sans Serif</option>
+						</select>
+					</div>
+
+					<!-- Text Style (Bold/Italic) -->
+					<div class="space-y-2">
+						<Label>Style</Label>
+						<div class="flex gap-2">
+							<Button
+								variant={shape.fontStyle === 'bold' ? 'default' : 'outline'}
+								size="sm"
+								onclick={() => {
+									const newStyle = shape.fontStyle === 'bold' ? 'normal' : 'bold';
+									updateShape({ fontStyle: newStyle });
+								}}
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="16"
+									height="16"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									><path
+										d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"
+									/></svg
+								>
+							</Button>
+							<Button
+								variant={shape.fontStyle === 'italic' ? 'default' : 'outline'}
+								size="sm"
+								onclick={() => {
+									const newStyle = shape.fontStyle === 'italic' ? 'normal' : 'italic';
+									updateShape({ fontStyle: newStyle });
+								}}
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="16"
+									height="16"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									><line x1="19" x2="10" y1="4" y2="4" /><line
+										x1="14"
+										x2="5"
+										y1="20"
+										y2="20"
+									/><line x1="15" x2="9" y1="4" y2="20" /></svg
+								>
+							</Button>
+						</div>
+					</div>
+
+					<!-- Text Alignment -->
+					<div class="space-y-2">
+						<Label>Alignment</Label>
+						<div class="flex gap-2">
+							<Button
+								variant={shape.align === 'left' ? 'default' : 'outline'}
+								size="sm"
+								onclick={() => updateShape({ align: 'left' })}
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="16"
+									height="16"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									><line x1="21" x2="3" y1="6" y2="6" /><line x1="15" x2="3" y1="12" y2="12" /><line
+										x1="17"
+										x2="3"
+										y1="18"
+										y2="18"
+									/></svg
+								>
+							</Button>
+							<Button
+								variant={shape.align === 'center' ? 'default' : 'outline'}
+								size="sm"
+								onclick={() => updateShape({ align: 'center' })}
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="16"
+									height="16"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									><line x1="21" x2="3" y1="6" y2="6" /><line x1="17" x2="7" y1="12" y2="12" /><line
+										x1="19"
+										x2="5"
+										y1="18"
+										y2="18"
+									/></svg
+								>
+							</Button>
+							<Button
+								variant={shape.align === 'right' ? 'default' : 'outline'}
+								size="sm"
+								onclick={() => updateShape({ align: 'right' })}
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="16"
+									height="16"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									><line x1="21" x2="3" y1="6" y2="6" /><line x1="21" x2="9" y1="12" y2="12" /><line
+										x1="21"
+										x2="7"
+										y1="18"
+										y2="18"
+									/></svg
+								>
+							</Button>
+						</div>
+					</div>
+				</section>
+			{/if}
 		</div>
 	</div>
 {/if}

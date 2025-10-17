@@ -1,7 +1,7 @@
 /**
  * Cursor Manager - Remote Cursor Rendering and Follow Mode
  * Extracted from canvas/+page.svelte (400+ lines)
- * 
+ *
  * Handles:
  * - Remote cursor rendering (full cursors + off-screen indicators)
  * - Cursor broadcasting via Yjs awareness
@@ -100,7 +100,7 @@ export class CursorManager {
     /**
      * Broadcast local cursor position (throttled)
      */
-    broadcastCursor(e: Konva.KonvaEventObject<MouseEvent>): void {
+    broadcastCursor(): void {
         if (!this.awareness) return;
 
         const now = Date.now();
@@ -167,7 +167,7 @@ export class CursorManager {
         let cursorY = 0;
         let found = false;
 
-        this.awareness.getStates().forEach((state: AwarenessState, clientId: number) => {
+        this.awareness.getStates().forEach((state: AwarenessState) => {
             if (state.user?.id === userId && state.cursor) {
                 cursorX = state.cursor.x;
                 cursorY = state.cursor.y;
@@ -377,12 +377,7 @@ export class CursorManager {
                         this.cursorNodes.delete(clientId);
                     }
 
-                    cursorGroup = this.createOffScreenIndicator(
-                        edgeX,
-                        edgeY,
-                        angle,
-                        user
-                    );
+                    cursorGroup = this.createOffScreenIndicator(edgeX, edgeY, angle, user);
 
                     cursorGroup.setAttr('type', 'indicator');
                     cursorGroup.setAttr('userId', user.id);

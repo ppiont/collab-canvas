@@ -40,7 +40,6 @@
 	let containerDiv: HTMLDivElement;
 	let isCreateMode = $derived($isCreateToolActive);
 	let maxZIndex = $state(0);
-	let selectedShapeId = $state<string | null>(null);
 	let commandPaletteOpen = $state(false);
 
 	// Toast notification state
@@ -50,7 +49,6 @@
 
 	// Derive reactive values from stores (modern Svelte 5 pattern)
 	let stageScale = $derived($viewport.scale);
-	let currentViewport = $derived($viewport);
 
 	// Helper function to create shapes based on active tool
 	function createShapeAtPosition(x: number, y: number): Shape | null {
@@ -159,8 +157,8 @@
 
 	// Broadcast cursor when viewport changes (modern Svelte 5 reactivity)
 	$effect(() => {
-		// Track viewport changes
-		const _ = $viewport;
+		// Track viewport changes to broadcast cursor
+		void $viewport;
 
 		// Broadcast cursor position when viewport changes
 		if (cursorManager) {
@@ -224,7 +222,7 @@
 		// Initialize selection manager
 		selectionManager = new SelectionManager(stage, layers.shapes);
 		selectionManager.setOnSelectionChange((selectedIds) => {
-			selectedShapeId = selectedIds.length > 0 ? selectedIds[0] : null;
+			// selectedShapeId = selectedIds.length > 0 ? selectedIds[0] : null; // Removed
 			// Update selection styling immediately
 			if (shapeRenderer) {
 				shapeRenderer.updateSelectionStyling(selectedIds, $shapes);

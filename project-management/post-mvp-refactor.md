@@ -122,137 +122,134 @@ src/
 
 /** Base properties all shapes share */
 export interface BaseShape {
-  id: string;
-  type: ShapeType;
-  x: number;
-  y: number;
-  zIndex: number;
-  opacity: number;              // 0-1 (new)
-  rotation: number;             // 0-360 (new)
-  fill?: string;
-  stroke?: string;
-  strokeWidth?: number;
-  blendMode?: BlendMode;        // new
-  shadow?: ShadowConfig;        // new
-  createdBy: string;
-  createdAt: number;
-  modifiedAt?: number;
-  draggedBy?: string;           // ephemeral
+	id: string;
+	type: ShapeType;
+	x: number;
+	y: number;
+	zIndex: number;
+	opacity: number; // 0-1 (new)
+	rotation: number; // 0-360 (new)
+	fill?: string;
+	stroke?: string;
+	strokeWidth?: number;
+	blendMode?: BlendMode; // new
+	shadow?: ShadowConfig; // new
+	createdBy: string;
+	createdAt: number;
+	modifiedAt?: number;
+	draggedBy?: string; // ephemeral
 }
 
-export type ShapeType = 
-  | 'rectangle' 
-  | 'circle' 
-  | 'ellipse' 
-  | 'line' 
-  | 'text' 
-  | 'polygon' 
-  | 'star' 
-  | 'image';
+export type ShapeType =
+	| 'rectangle'
+	| 'circle'
+	| 'ellipse'
+	| 'line'
+	| 'text'
+	| 'polygon'
+	| 'star'
+	| 'image';
 
-export type BlendMode = 
-  | 'normal' 
-  | 'multiply' 
-  | 'screen' 
-  | 'overlay' 
-  | 'darken' 
-  | 'lighten';
+export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten';
 
 export interface ShadowConfig {
-  color: string;
-  blur: number;
-  offsetX: number;
-  offsetY: number;
+	color: string;
+	blur: number;
+	offsetX: number;
+	offsetY: number;
 }
 
 /** Rectangle shape */
 export interface RectangleShape extends BaseShape {
-  type: 'rectangle';
-  width: number;
-  height: number;
+	type: 'rectangle';
+	width: number;
+	height: number;
 }
 
 /** Circle shape (new) */
 export interface CircleShape extends BaseShape {
-  type: 'circle';
-  radius: number;
+	type: 'circle';
+	radius: number;
 }
 
 /** Ellipse shape (new) */
 export interface EllipseShape extends BaseShape {
-  type: 'ellipse';
-  radiusX: number;
-  radiusY: number;
+	type: 'ellipse';
+	radiusX: number;
+	radiusY: number;
 }
 
 /** Line/polyline shape (new) */
 export interface LineShape extends BaseShape {
-  type: 'line';
-  points: number[];             // [x1, y1, x2, y2, ...]
-  lineCap?: 'butt' | 'round' | 'square';
-  lineJoin?: 'miter' | 'round' | 'bevel';
-  dash?: number[];              // [dash, gap]
+	type: 'line';
+	points: number[]; // [x1, y1, x2, y2, ...]
+	lineCap?: 'butt' | 'round' | 'square';
+	lineJoin?: 'miter' | 'round' | 'bevel';
+	dash?: number[]; // [dash, gap]
 }
 
 /** Text shape (new) */
 export interface TextShape extends BaseShape {
-  type: 'text';
-  text: string;
-  fontSize: number;
-  fontFamily: string;
-  fontStyle?: 'normal' | 'bold' | 'italic';
-  fontWeight?: number;
-  align?: 'left' | 'center' | 'right';
-  width?: number;               // text box width
+	type: 'text';
+	text: string;
+	fontSize: number;
+	fontFamily: string;
+	fontStyle?: 'normal' | 'bold' | 'italic';
+	fontWeight?: number;
+	align?: 'left' | 'center' | 'right';
+	width?: number; // text box width
 }
 
 /** Polygon shape (new) */
 export interface PolygonShape extends BaseShape {
-  type: 'polygon';
-  sides: number;                // 3-12
-  radius: number;
+	type: 'polygon';
+	sides: number; // 3-12
+	radius: number;
 }
 
 /** Star shape (new) */
 export interface StarShape extends BaseShape {
-  type: 'star';
-  numPoints: number;            // 5-12
-  innerRadius: number;
-  outerRadius: number;
+	type: 'star';
+	numPoints: number; // 5-12
+	innerRadius: number;
+	outerRadius: number;
 }
 
 /** Image shape (new) */
 export interface ImageShape extends BaseShape {
-  type: 'image';
-  width: number;
-  height: number;
-  imageUrl: string;             // R2 URL
+	type: 'image';
+	width: number;
+	height: number;
+	imageUrl: string; // R2 URL
 }
 
 /** Union type for all shapes */
-export type Shape = 
-  | RectangleShape 
-  | CircleShape 
-  | EllipseShape 
-  | LineShape 
-  | TextShape 
-  | PolygonShape 
-  | StarShape 
-  | ImageShape;
+export type Shape =
+	| RectangleShape
+	| CircleShape
+	| EllipseShape
+	| LineShape
+	| TextShape
+	| PolygonShape
+	| StarShape
+	| ImageShape;
 
 /** Type guards */
 export function isRectangle(shape: Shape): shape is RectangleShape {
-  return shape.type === 'rectangle';
+	return shape.type === 'rectangle';
 }
 // ... similar for all types
 
 /** Default values */
-export const DEFAULT_BASE_SHAPE: Omit<BaseShape, 'id' | 'type' | 'x' | 'y' | 'createdBy' | 'createdAt'> = {
-  zIndex: 0,
-  opacity: 1,
-  rotation: 0,
-  strokeWidth: 2,
-  blendMode: 'normal'
+export const DEFAULT_BASE_SHAPE: Omit<
+	BaseShape,
+	'id' | 'type' | 'x' | 'y' | 'createdBy' | 'createdAt'
+> = {
+	zIndex: 0,
+	opacity: 1,
+	rotation: 0,
+	strokeWidth: 2,
+	blendMode: 'normal'
 };
 ```
 
@@ -313,26 +310,26 @@ bunx shadcn-svelte@latest add scroll-area
 ```typescript
 // tailwind.config.ts
 export default {
-  theme: {
-    extend: {
-      colors: {
-        primary: {
-          DEFAULT: '#667eea',  // Current brand color
-          50: '#f5f7ff',
-          // ... full scale
-        },
-        canvas: {
-          bg: '#ffffff',
-          grid: '#e2e8f0',
-          selection: '#667eea'
-        }
-      },
-      fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif']
-      }
-    }
-  }
-}
+	theme: {
+		extend: {
+			colors: {
+				primary: {
+					DEFAULT: '#667eea', // Current brand color
+					50: '#f5f7ff'
+					// ... full scale
+				},
+				canvas: {
+					bg: '#ffffff',
+					grid: '#e2e8f0',
+					selection: '#667eea'
+				}
+			},
+			fontFamily: {
+				sans: ['Inter', 'system-ui', 'sans-serif']
+			}
+		}
+	}
+};
 ```
 
 **Refactor Components**:
@@ -349,8 +346,8 @@ With:
 ```svelte
 <!-- NEW: shadcn Button -->
 <Button variant={isCreateMode ? 'default' : 'outline'} size="sm">
-  <RectangleIcon class="w-4 h-4 mr-2" />
-  Create Rectangle
+	<RectangleIcon class="w-4 h-4 mr-2" />
+	Create Rectangle
 </Button>
 ```
 
@@ -384,7 +381,7 @@ import { writable, derived } from 'svelte/store';
 import type { Shape } from '$lib/types/shapes';
 import { shapesMap, ydoc } from '$lib/collaboration';
 
-/** 
+/**
  * Global shapes store (read-only, synced from Yjs)
  */
 export const shapes = writable<Shape[]>([]);
@@ -393,32 +390,32 @@ export const shapes = writable<Shape[]>([]);
  * Initialize Yjs observer
  */
 export function initializeShapesSync() {
-  shapesMap.observe(() => {
-    const allShapes = getAllShapes();
-    shapes.set(allShapes);
-  });
-  shapes.set(getAllShapes());
+	shapesMap.observe(() => {
+		const allShapes = getAllShapes();
+		shapes.set(allShapes);
+	});
+	shapes.set(getAllShapes());
 }
 
 /**
  * Shape operations (write to Yjs)
  */
 export const shapeOperations = {
-  add: (shape: Shape) => {
-    ydoc.transact(() => shapesMap.set(shape.id, shape));
-  },
-  update: (id: string, changes: Partial<Shape>) => {
-    const existing = shapesMap.get(id);
-    if (existing) {
-      ydoc.transact(() => shapesMap.set(id, { ...existing, ...changes }));
-    }
-  },
-  delete: (id: string) => {
-    ydoc.transact(() => shapesMap.delete(id));
-  },
-  clear: () => {
-    ydoc.transact(() => shapesMap.clear());
-  }
+	add: (shape: Shape) => {
+		ydoc.transact(() => shapesMap.set(shape.id, shape));
+	},
+	update: (id: string, changes: Partial<Shape>) => {
+		const existing = shapesMap.get(id);
+		if (existing) {
+			ydoc.transact(() => shapesMap.set(id, { ...existing, ...changes }));
+		}
+	},
+	delete: (id: string) => {
+		ydoc.transact(() => shapesMap.delete(id));
+	},
+	clear: () => {
+		ydoc.transact(() => shapesMap.clear());
+	}
 };
 
 // src/lib/stores/selection.ts
@@ -430,48 +427,58 @@ import { writable, derived } from 'svelte/store';
 export const selectedShapeIds = writable<Set<string>>(new Set());
 
 export const selection = {
-  select: (id: string) => selectedShapeIds.update(s => new Set([id])),
-  addToSelection: (id: string) => selectedShapeIds.update(s => new Set([...s, id])),
-  removeFromSelection: (id: string) => selectedShapeIds.update(s => {
-    const newSet = new Set(s);
-    newSet.delete(id);
-    return newSet;
-  }),
-  selectMultiple: (ids: string[]) => selectedShapeIds.set(new Set(ids)),
-  clear: () => selectedShapeIds.set(new Set()),
-  toggle: (id: string) => selectedShapeIds.update(s => {
-    const newSet = new Set(s);
-    if (newSet.has(id)) newSet.delete(id);
-    else newSet.add(id);
-    return newSet;
-  })
+	select: (id: string) => selectedShapeIds.update((s) => new Set([id])),
+	addToSelection: (id: string) => selectedShapeIds.update((s) => new Set([...s, id])),
+	removeFromSelection: (id: string) =>
+		selectedShapeIds.update((s) => {
+			const newSet = new Set(s);
+			newSet.delete(id);
+			return newSet;
+		}),
+	selectMultiple: (ids: string[]) => selectedShapeIds.set(new Set(ids)),
+	clear: () => selectedShapeIds.set(new Set()),
+	toggle: (id: string) =>
+		selectedShapeIds.update((s) => {
+			const newSet = new Set(s);
+			if (newSet.has(id)) newSet.delete(id);
+			else newSet.add(id);
+			return newSet;
+		})
 };
 
 /**
  * Get selected shapes (derived store)
  */
-export const selectedShapes = derived(
-  [shapes, selectedShapeIds],
-  ([$shapes, $selectedIds]) => $shapes.filter(s => $selectedIds.has(s.id))
+export const selectedShapes = derived([shapes, selectedShapeIds], ([$shapes, $selectedIds]) =>
+	$shapes.filter((s) => $selectedIds.has(s.id))
 );
 
 // src/lib/stores/canvas.ts
 import { writable } from 'svelte/store';
 
 export interface CanvasViewport {
-  x: number;
-  y: number;
-  scale: number;
+	x: number;
+	y: number;
+	scale: number;
 }
 
 export const viewport = writable<CanvasViewport>({
-  x: 0,
-  y: 0,
-  scale: 1
+	x: 0,
+	y: 0,
+	scale: 1
 });
 
 // src/lib/stores/tool.ts
-export type ToolType = 'select' | 'rectangle' | 'circle' | 'ellipse' | 'line' | 'text' | 'polygon' | 'star' | 'pan';
+export type ToolType =
+	| 'select'
+	| 'rectangle'
+	| 'circle'
+	| 'ellipse'
+	| 'line'
+	| 'text'
+	| 'polygon'
+	| 'star'
+	| 'pan';
 
 export const activeTool = writable<ToolType>('select');
 
@@ -480,14 +487,14 @@ import { UndoManager } from 'yjs';
 import { ydoc, shapesMap } from '$lib/collaboration';
 
 export const undoManager = new UndoManager(shapesMap, {
-  trackedOrigins: new Set([ydoc.clientID])
+	trackedOrigins: new Set([ydoc.clientID])
 });
 
 export const history = {
-  undo: () => undoManager.undo(),
-  redo: () => undoManager.redo(),
-  canUndo: () => undoManager.undoStack.length > 0,
-  canRedo: () => undoManager.redoStack.length > 0
+	undo: () => undoManager.undo(),
+	redo: () => undoManager.redo(),
+	canUndo: () => undoManager.undoStack.length > 0,
+	canRedo: () => undoManager.redoStack.length > 0
 };
 ```
 
@@ -517,175 +524,186 @@ export const history = {
 
 ```typescript
 // partykit/server.ts
-import type * as Party from "partykit/server";
-import { onConnect } from "y-partykit";
+import type * as Party from 'partykit/server';
+import { onConnect } from 'y-partykit';
 import OpenAI from 'openai';
 
 export default class CollabCanvasServer implements Party.Server {
-  constructor(public party: Party.Room) {}
-  
-  /**
-   * WebSocket connection for Yjs sync
-   */
-  onConnect(conn: Party.Connection) {
-    // Multi-room support: room ID = canvas ID
-    console.log(`Client connected to room: ${this.party.id}`);
-    
-    return onConnect(conn, this.party, {
-      persist: true
-    });
-  }
-  
-  /**
-   * HTTP endpoints for AI commands
-   */
-  async onRequest(req: Party.Request) {
-    const url = new URL(req.url);
-    
-    // Health check
-    if (url.pathname === '/') {
-      return new Response(JSON.stringify({
-        room: this.party.id,
-        connections: [...this.party.getConnections()].length
-      }), {
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-    
-    // AI command endpoint (new)
-    if (url.pathname === '/api/ai/command' && req.method === 'POST') {
-      return this.handleAICommand(req);
-    }
-    
-    return new Response('Not found', { status: 404 });
-  }
-  
-  /**
-   * Process AI command with OpenAI GPT-4
-   */
-  private async handleAICommand(req: Party.Request): Promise<Response> {
-    try {
-      const { command, userId } = await req.json();
-      
-      // Rate limiting check (stored in Durable Object state)
-      const isAllowed = await this.checkRateLimit(userId);
-      if (!isAllowed) {
-        return new Response(JSON.stringify({
-          error: 'Rate limit exceeded. Please wait.'
-        }), { status: 429 });
-      }
-      
-      // Get current canvas state
-      const canvasState = await this.getCanvasState();
-      
-      // Call OpenAI GPT-4 with function calling
-      const openai = new OpenAI({
-        apiKey: this.party.env.OPENAI_API_KEY
-      });
-      
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4-turbo',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a canvas manipulation assistant. Use the provided tools to create and modify shapes.'
-          },
-          {
-            role: 'user',
-            content: `Current canvas state: ${JSON.stringify(canvasState)}\n\nUser command: ${command}`
-          }
-        ],
-        tools: this.getAIToolSchema(),
-        tool_choice: 'auto'
-      });
-      
-      // Execute tool calls
-      const toolCalls = response.choices[0].message.tool_calls;
-      if (toolCalls) {
-        for (const toolCall of toolCalls) {
-          await this.executeAITool(toolCall);
-        }
-      }
-      
-      return new Response(JSON.stringify({
-        success: true,
-        message: response.choices[0].message.content
-      }));
-      
-    } catch (error) {
-      console.error('AI command error:', error);
-      return new Response(JSON.stringify({
-        error: 'Failed to process command'
-      }), { status: 500 });
-    }
-  }
-  
-  /**
-   * Get AI tool schema for function calling
-   */
-  private getAIToolSchema() {
-    // Return OpenAI function definitions for all shape operations
-    // See PRD-final.md section 2.3
-    return [
-      {
-        type: 'function',
-        function: {
-          name: 'createRectangle',
-          description: 'Create a rectangle on the canvas',
-          parameters: {
-            type: 'object',
-            properties: {
-              x: { type: 'number' },
-              y: { type: 'number' },
-              width: { type: 'number' },
-              height: { type: 'number' },
-              fill: { type: 'string' },
-              stroke: { type: 'string' }
-            },
-            required: ['x', 'y', 'width', 'height']
-          }
-        }
-      }
-      // ... 14 more tools (see PRD 2.3)
-    ];
-  }
-  
-  /**
-   * Execute AI tool by modifying Yjs document
-   */
-  private async executeAITool(toolCall: any) {
-    // Modify Yjs document directly in Durable Object
-    // Changes will auto-sync to all connected clients
-  }
-  
-  /**
-   * Rate limiting per user (10 commands/minute)
-   */
-  private async checkRateLimit(userId: string): Promise<boolean> {
-    // Store in Durable Object state
-    const key = `ratelimit:${userId}`;
-    const now = Date.now();
-    const window = 60000; // 1 minute
-    
-    const calls = await this.party.storage.get<number[]>(key) || [];
-    const recentCalls = calls.filter(t => now - t < window);
-    
-    if (recentCalls.length >= 10) {
-      return false;
-    }
-    
-    recentCalls.push(now);
-    await this.party.storage.put(key, recentCalls);
-    return true;
-  }
-  
-  /**
-   * Get current canvas state from Yjs document
-   */
-  private async getCanvasState() {
-    // Access Yjs document from Durable Object storage
-    // Return all shapes
-  }
+	constructor(public party: Party.Room) {}
+
+	/**
+	 * WebSocket connection for Yjs sync
+	 */
+	onConnect(conn: Party.Connection) {
+		// Multi-room support: room ID = canvas ID
+		console.log(`Client connected to room: ${this.party.id}`);
+
+		return onConnect(conn, this.party, {
+			persist: true
+		});
+	}
+
+	/**
+	 * HTTP endpoints for AI commands
+	 */
+	async onRequest(req: Party.Request) {
+		const url = new URL(req.url);
+
+		// Health check
+		if (url.pathname === '/') {
+			return new Response(
+				JSON.stringify({
+					room: this.party.id,
+					connections: [...this.party.getConnections()].length
+				}),
+				{
+					headers: { 'Content-Type': 'application/json' }
+				}
+			);
+		}
+
+		// AI command endpoint (new)
+		if (url.pathname === '/api/ai/command' && req.method === 'POST') {
+			return this.handleAICommand(req);
+		}
+
+		return new Response('Not found', { status: 404 });
+	}
+
+	/**
+	 * Process AI command with OpenAI GPT-4
+	 */
+	private async handleAICommand(req: Party.Request): Promise<Response> {
+		try {
+			const { command, userId } = await req.json();
+
+			// Rate limiting check (stored in Durable Object state)
+			const isAllowed = await this.checkRateLimit(userId);
+			if (!isAllowed) {
+				return new Response(
+					JSON.stringify({
+						error: 'Rate limit exceeded. Please wait.'
+					}),
+					{ status: 429 }
+				);
+			}
+
+			// Get current canvas state
+			const canvasState = await this.getCanvasState();
+
+			// Call OpenAI GPT-4 with function calling
+			const openai = new OpenAI({
+				apiKey: this.party.env.OPENAI_API_KEY
+			});
+
+			const response = await openai.chat.completions.create({
+				model: 'gpt-4-turbo',
+				messages: [
+					{
+						role: 'system',
+						content:
+							'You are a canvas manipulation assistant. Use the provided tools to create and modify shapes.'
+					},
+					{
+						role: 'user',
+						content: `Current canvas state: ${JSON.stringify(canvasState)}\n\nUser command: ${command}`
+					}
+				],
+				tools: this.getAIToolSchema(),
+				tool_choice: 'auto'
+			});
+
+			// Execute tool calls
+			const toolCalls = response.choices[0].message.tool_calls;
+			if (toolCalls) {
+				for (const toolCall of toolCalls) {
+					await this.executeAITool(toolCall);
+				}
+			}
+
+			return new Response(
+				JSON.stringify({
+					success: true,
+					message: response.choices[0].message.content
+				})
+			);
+		} catch (error) {
+			console.error('AI command error:', error);
+			return new Response(
+				JSON.stringify({
+					error: 'Failed to process command'
+				}),
+				{ status: 500 }
+			);
+		}
+	}
+
+	/**
+	 * Get AI tool schema for function calling
+	 */
+	private getAIToolSchema() {
+		// Return OpenAI function definitions for all shape operations
+		// See PRD-final.md section 2.3
+		return [
+			{
+				type: 'function',
+				function: {
+					name: 'createRectangle',
+					description: 'Create a rectangle on the canvas',
+					parameters: {
+						type: 'object',
+						properties: {
+							x: { type: 'number' },
+							y: { type: 'number' },
+							width: { type: 'number' },
+							height: { type: 'number' },
+							fill: { type: 'string' },
+							stroke: { type: 'string' }
+						},
+						required: ['x', 'y', 'width', 'height']
+					}
+				}
+			}
+			// ... 14 more tools (see PRD 2.3)
+		];
+	}
+
+	/**
+	 * Execute AI tool by modifying Yjs document
+	 */
+	private async executeAITool(toolCall: any) {
+		// Modify Yjs document directly in Durable Object
+		// Changes will auto-sync to all connected clients
+	}
+
+	/**
+	 * Rate limiting per user (10 commands/minute)
+	 */
+	private async checkRateLimit(userId: string): Promise<boolean> {
+		// Store in Durable Object state
+		const key = `ratelimit:${userId}`;
+		const now = Date.now();
+		const window = 60000; // 1 minute
+
+		const calls = (await this.party.storage.get<number[]>(key)) || [];
+		const recentCalls = calls.filter((t) => now - t < window);
+
+		if (recentCalls.length >= 10) {
+			return false;
+		}
+
+		recentCalls.push(now);
+		await this.party.storage.put(key, recentCalls);
+		return true;
+	}
+
+	/**
+	 * Get current canvas state from Yjs document
+	 */
+	private async getCanvasState() {
+		// Access Yjs document from Durable Object storage
+		// Return all shapes
+	}
 }
 ```
 
@@ -771,34 +789,44 @@ database_id = "<from create command>"
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ locals, platform }) => {
-  const db = platform?.env?.DB;
-  const userId = locals.user?.id;
-  
-  // Get all projects user has access to
-  const projects = await db.prepare(`
+	const db = platform?.env?.DB;
+	const userId = locals.user?.id;
+
+	// Get all projects user has access to
+	const projects = await db
+		.prepare(
+			`
     SELECT p.* FROM projects p
     LEFT JOIN permissions perm ON p.id = perm.project_id
     WHERE p.owner_id = ? OR perm.user_id = ?
     ORDER BY p.updated_at DESC
-  `).bind(userId, userId).all();
-  
-  return new Response(JSON.stringify(projects.results));
+  `
+		)
+		.bind(userId, userId)
+		.all();
+
+	return new Response(JSON.stringify(projects.results));
 };
 
 export const POST: RequestHandler = async ({ request, locals, platform }) => {
-  const db = platform?.env?.DB;
-  const { name } = await request.json();
-  const userId = locals.user?.id;
-  
-  const id = crypto.randomUUID();
-  const now = Date.now();
-  
-  await db.prepare(`
+	const db = platform?.env?.DB;
+	const { name } = await request.json();
+	const userId = locals.user?.id;
+
+	const id = crypto.randomUUID();
+	const now = Date.now();
+
+	await db
+		.prepare(
+			`
     INSERT INTO projects (id, name, owner_id, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?)
-  `).bind(id, name, userId, now, now).run();
-  
-  return new Response(JSON.stringify({ id, name }));
+  `
+		)
+		.bind(id, name, userId, now, now)
+		.run();
+
+	return new Response(JSON.stringify({ id, name }));
 };
 ```
 
@@ -850,26 +878,26 @@ bucket_name = "collabcanvas-images"
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ locals, platform }) => {
-  const r2 = platform?.env?.IMAGES;
-  const userId = locals.user?.id;
-  
-  if (!userId) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-  
-  // Generate unique filename
-  const fileId = crypto.randomUUID();
-  const filename = `${userId}/${fileId}`;
-  
-  // Generate presigned URL (valid for 5 minutes)
-  const uploadUrl = await r2.createPresignedUrl(filename, {
-    expiresIn: 300,
-    method: 'PUT'
-  });
-  
-  const publicUrl = `https://collabcanvas-images.${platform.env.ACCOUNT_ID}.r2.cloudflarestorage.com/${filename}`;
-  
-  return new Response(JSON.stringify({ uploadUrl, publicUrl }));
+	const r2 = platform?.env?.IMAGES;
+	const userId = locals.user?.id;
+
+	if (!userId) {
+		return new Response('Unauthorized', { status: 401 });
+	}
+
+	// Generate unique filename
+	const fileId = crypto.randomUUID();
+	const filename = `${userId}/${fileId}`;
+
+	// Generate presigned URL (valid for 5 minutes)
+	const uploadUrl = await r2.createPresignedUrl(filename, {
+		expiresIn: 300,
+		method: 'PUT'
+	});
+
+	const publicUrl = `https://collabcanvas-images.${platform.env.ACCOUNT_ID}.r2.cloudflarestorage.com/${filename}`;
+
+	return new Response(JSON.stringify({ uploadUrl, publicUrl }));
 };
 ```
 
@@ -878,21 +906,21 @@ export const POST: RequestHandler = async ({ locals, platform }) => {
 ```typescript
 // src/lib/api/images.ts
 export async function uploadImage(file: File): Promise<string> {
-  // 1. Request presigned URL
-  const res = await fetch('/api/images/upload', { method: 'POST' });
-  const { uploadUrl, publicUrl } = await res.json();
-  
-  // 2. Upload directly to R2
-  await fetch(uploadUrl, {
-    method: 'PUT',
-    body: file,
-    headers: {
-      'Content-Type': file.type
-    }
-  });
-  
-  // 3. Return public URL
-  return publicUrl;
+	// 1. Request presigned URL
+	const res = await fetch('/api/images/upload', { method: 'POST' });
+	const { uploadUrl, publicUrl } = await res.json();
+
+	// 2. Upload directly to R2
+	await fetch(uploadUrl, {
+		method: 'PUT',
+		body: file,
+		headers: {
+			'Content-Type': file.type
+		}
+	});
+
+	// 3. Return public URL
+	return publicUrl;
 }
 ```
 
@@ -918,26 +946,26 @@ export async function uploadImage(file: File): Promise<string> {
 ```svelte
 <!-- src/routes/canvas/+page.svelte (slim orchestrator) -->
 <script lang="ts">
-  import Canvas from '$lib/components/canvas/Canvas.svelte';
-  import Toolbar from '$lib/components/canvas/Toolbar.svelte';
-  import PropertiesPanel from '$lib/components/canvas/PropertiesPanel.svelte';
-  import CommandPalette from '$lib/components/canvas/CommandPalette.svelte';
-  import { initializeProvider } from '$lib/collaboration';
-  import { initializeShapesSync } from '$lib/stores/shapes';
-  
-  let { data } = $props();
-  
-  onMount(() => {
-    initializeShapesSync();
-    initializeProvider(data.user.id, data.userProfile.displayName, data.userProfile.color);
-  });
+	import Canvas from '$lib/components/canvas/Canvas.svelte';
+	import Toolbar from '$lib/components/canvas/Toolbar.svelte';
+	import PropertiesPanel from '$lib/components/canvas/PropertiesPanel.svelte';
+	import CommandPalette from '$lib/components/canvas/CommandPalette.svelte';
+	import { initializeProvider } from '$lib/collaboration';
+	import { initializeShapesSync } from '$lib/stores/shapes';
+
+	let { data } = $props();
+
+	onMount(() => {
+		initializeShapesSync();
+		initializeProvider(data.user.id, data.userProfile.displayName, data.userProfile.color);
+	});
 </script>
 
 <div class="flex h-screen">
-  <Toolbar />
-  <Canvas />
-  <PropertiesPanel />
-  <CommandPalette />
+	<Toolbar />
+	<Canvas />
+	<PropertiesPanel />
+	<CommandPalette />
 </div>
 ```
 
@@ -957,50 +985,59 @@ export async function uploadImage(file: File): Promise<string> {
 ```svelte
 <!-- src/lib/components/canvas/Toolbar.svelte -->
 <script lang="ts">
-  import { Button } from '$lib/components/ui/button';
-  import { Separator } from '$lib/components/ui/separator';
-  import { activeTool } from '$lib/stores/tool';
-  
-  // Icons from lucide-svelte
-  import { 
-    MousePointer2, Square, Circle, Pentagon, Star, 
-    Type, Minus, Image, Undo, Redo, Sparkles 
-  } from 'lucide-svelte';
-  
-  const tools = [
-    { id: 'select', icon: MousePointer2, label: 'Select' },
-    { id: 'rectangle', icon: Square, label: 'Rectangle' },
-    { id: 'circle', icon: Circle, label: 'Circle' },
-    // ... more tools
-  ];
+	import { Button } from '$lib/components/ui/button';
+	import { Separator } from '$lib/components/ui/separator';
+	import { activeTool } from '$lib/stores/tool';
+
+	// Icons from lucide-svelte
+	import {
+		MousePointer2,
+		Square,
+		Circle,
+		Pentagon,
+		Star,
+		Type,
+		Minus,
+		Image,
+		Undo,
+		Redo,
+		Sparkles
+	} from 'lucide-svelte';
+
+	const tools = [
+		{ id: 'select', icon: MousePointer2, label: 'Select' },
+		{ id: 'rectangle', icon: Square, label: 'Rectangle' },
+		{ id: 'circle', icon: Circle, label: 'Circle' }
+		// ... more tools
+	];
 </script>
 
 <div class="fixed left-4 top-4 flex flex-col gap-2 bg-white rounded-lg shadow-lg border p-2">
-  {#each tools as tool}
-    <Button 
-      variant={$activeTool === tool.id ? 'default' : 'ghost'}
-      size="icon"
-      on:click={() => activeTool.set(tool.id)}
-    >
-      <svelte:component this={tool.icon} class="w-4 h-4" />
-    </Button>
-  {/each}
-  
-  <Separator />
-  
-  <Button variant="ghost" size="icon" on:click={() => history.undo()}>
-    <Undo class="w-4 h-4" />
-  </Button>
-  
-  <Button variant="ghost" size="icon" on:click={() => history.redo()}>
-    <Redo class="w-4 h-4" />
-  </Button>
-  
-  <Separator />
-  
-  <Button variant="ghost" size="icon" on:click={openCommandPalette}>
-    <Sparkles class="w-4 h-4" />
-  </Button>
+	{#each tools as tool}
+		<Button
+			variant={$activeTool === tool.id ? 'default' : 'ghost'}
+			size="icon"
+			on:click={() => activeTool.set(tool.id)}
+		>
+			<svelte:component this={tool.icon} class="w-4 h-4" />
+		</Button>
+	{/each}
+
+	<Separator />
+
+	<Button variant="ghost" size="icon" on:click={() => history.undo()}>
+		<Undo class="w-4 h-4" />
+	</Button>
+
+	<Button variant="ghost" size="icon" on:click={() => history.redo()}>
+		<Redo class="w-4 h-4" />
+	</Button>
+
+	<Separator />
+
+	<Button variant="ghost" size="icon" on:click={openCommandPalette}>
+		<Sparkles class="w-4 h-4" />
+	</Button>
 </div>
 ```
 
@@ -1011,38 +1048,38 @@ export async function uploadImage(file: File): Promise<string> {
 ```svelte
 <!-- src/lib/components/canvas/PropertiesPanel.svelte -->
 <script lang="ts">
-  import { selectedShapes } from '$lib/stores/selection';
-  import { Input } from '$lib/components/ui/input';
-  import { Label } from '$lib/components/ui/label';
-  import { Slider } from '$lib/components/ui/slider';
-  import ShapeControls from '$lib/components/shapes/ShapeControls.svelte';
-  
-  let selected = $derived($selectedShapes);
-  let shape = $derived(selected.length === 1 ? selected[0] : null);
+	import { selectedShapes } from '$lib/stores/selection';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { Slider } from '$lib/components/ui/slider';
+	import ShapeControls from '$lib/components/shapes/ShapeControls.svelte';
+
+	let selected = $derived($selectedShapes);
+	let shape = $derived(selected.length === 1 ? selected[0] : null);
 </script>
 
 {#if shape}
-  <div class="fixed right-0 top-0 h-screen w-80 bg-white border-l shadow-lg overflow-y-auto">
-    <div class="p-4 space-y-6">
-      <!-- Transform -->
-      <section>
-        <h3 class="text-sm font-semibold mb-3">Transform</h3>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <Label>X</Label>
-            <Input type="number" bind:value={shape.x} />
-          </div>
-          <div>
-            <Label>Y</Label>
-            <Input type="number" bind:value={shape.y} />
-          </div>
-        </div>
-      </section>
-      
-      <!-- Shape-specific controls -->
-      <ShapeControls {shape} />
-    </div>
-  </div>
+	<div class="fixed right-0 top-0 h-screen w-80 bg-white border-l shadow-lg overflow-y-auto">
+		<div class="p-4 space-y-6">
+			<!-- Transform -->
+			<section>
+				<h3 class="text-sm font-semibold mb-3">Transform</h3>
+				<div class="grid grid-cols-2 gap-3">
+					<div>
+						<Label>X</Label>
+						<Input type="number" bind:value={shape.x} />
+					</div>
+					<div>
+						<Label>Y</Label>
+						<Input type="number" bind:value={shape.y} />
+					</div>
+				</div>
+			</section>
+
+			<!-- Shape-specific controls -->
+			<ShapeControls {shape} />
+		</div>
+	</div>
 {/if}
 ```
 
@@ -1063,58 +1100,60 @@ export async function uploadImage(file: File): Promise<string> {
 **Actions**:
 
 1. **Enable Strict TypeScript**:
+
 ```json
 // tsconfig.json
 {
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true
-  }
+	"compilerOptions": {
+		"strict": true,
+		"noImplicitAny": true,
+		"strictNullChecks": true,
+		"strictFunctionTypes": true
+	}
 }
 ```
 
 2. **Extract Constants**:
+
 ```typescript
 // src/lib/constants.ts
 export const CANVAS = {
-  GRID_SIZE: 50,
-  GRID_COLOR: '#e2e8f0',
-  MIN_ZOOM: 0.1,
-  MAX_ZOOM: 5,
-  ZOOM_STEP: 1.05
+	GRID_SIZE: 50,
+	GRID_COLOR: '#e2e8f0',
+	MIN_ZOOM: 0.1,
+	MAX_ZOOM: 5,
+	ZOOM_STEP: 1.05
 } as const;
 
 export const CURSOR = {
-  THROTTLE_MS: 30,
-  EDGE_PADDING: 30,
-  ANIMATION_DURATION: 120
+	THROTTLE_MS: 30,
+	EDGE_PADDING: 30,
+	ANIMATION_DURATION: 120
 } as const;
 
 export const SHAPES = {
-  DEFAULT_WIDTH: 150,
-  DEFAULT_HEIGHT: 100,
-  MIN_SIZE: 5,
-  DEFAULT_STROKE_WIDTH: 2
+	DEFAULT_WIDTH: 150,
+	DEFAULT_HEIGHT: 100,
+	MIN_SIZE: 5,
+	DEFAULT_STROKE_WIDTH: 2
 } as const;
 ```
 
 3. **Error Boundaries**:
+
 ```typescript
 // src/lib/utils/error-handler.ts
 export function handleCanvasError(error: Error, context: string) {
-  console.error(`Canvas error in ${context}:`, error);
-  
-  // Show user-friendly toast
-  showToast({
-    variant: 'destructive',
-    title: 'Something went wrong',
-    description: 'Please try again or refresh the page.'
-  });
+	console.error(`Canvas error in ${context}:`, error);
+
+	// Show user-friendly toast
+	showToast({
+		variant: 'destructive',
+		title: 'Something went wrong',
+		description: 'Please try again or refresh the page.'
+	});
 }
 ```
-
 
 ---
 
@@ -1161,25 +1200,25 @@ export function handleCanvasError(error: Error, context: string) {
 
 Once refactoring is complete, implement in this order:
 
-1. **Shapes** (Phases 1-2 of Final PRD)
+1.  **Shapes** (Phases 1-2 of Final PRD)
 
                                                 - Add 6 new shape types
                                                 - Update Toolbar with all tools
                                                 - Implement rotation, multi-select
 
-2. **AI Agent** (Phase 3 of Final PRD)
+2.  **AI Agent** (Phase 3 of Final PRD)
 
                                                 - Command palette UI
                                                 - OpenAI integration
                                                 - 15+ tool implementations
 
-3. **Images** (Phase 4 of Final PRD)
+3.  **Images** (Phase 4 of Final PRD)
 
                                                 - Upload flow
                                                 - ImageShape renderer
                                                 - R2 integration
 
-4. **UX Polish** (Phase 5 of Final PRD)
+4.  **UX Polish** (Phase 5 of Final PRD)
 
                                                 - Undo/redo
                                                 - Keyboard shortcuts
@@ -1198,25 +1237,35 @@ Once refactoring is complete, implement in this order:
 ```typescript
 // src/routes/migration/+server.ts
 export const POST: RequestHandler = async ({ locals, platform }) => {
-  const db = platform?.env?.DB;
-  const userId = locals.user?.id;
-  
-  // 1. Create default project for user
-  const projectId = crypto.randomUUID();
-  await db.prepare(`
+	const db = platform?.env?.DB;
+	const userId = locals.user?.id;
+
+	// 1. Create default project for user
+	const projectId = crypto.randomUUID();
+	await db
+		.prepare(
+			`
     INSERT INTO projects (id, name, owner_id, created_at, updated_at)
     VALUES (?, 'My First Project', ?, ?, ?)
-  `).bind(projectId, userId, Date.now(), Date.now()).run();
-  
-  // 2. Create canvas for "main" room
-  const canvasId = 'main'; // Preserve existing room ID
-  await db.prepare(`
+  `
+		)
+		.bind(projectId, userId, Date.now(), Date.now())
+		.run();
+
+	// 2. Create canvas for "main" room
+	const canvasId = 'main'; // Preserve existing room ID
+	await db
+		.prepare(
+			`
     INSERT INTO canvases (id, project_id, name, created_by, created_at, updated_at)
     VALUES (?, ?, 'Untitled Canvas', ?, ?, ?)
-  `).bind(canvasId, projectId, userId, Date.now(), Date.now()).run();
-  
-  // 3. Redirect to new canvas URL
-  return redirect(303, `/project/${projectId}/canvas/${canvasId}`);
+  `
+		)
+		.bind(canvasId, projectId, userId, Date.now(), Date.now())
+		.run();
+
+	// 3. Redirect to new canvas URL
+	return redirect(303, `/project/${projectId}/canvas/${canvasId}`);
 };
 ```
 
@@ -1240,14 +1289,14 @@ import { describe, it, expect } from 'vitest';
 import { ShapeFactory } from './ShapeFactory';
 
 describe('ShapeFactory', () => {
-  it('creates rectangle with correct defaults', () => {
-    const rect = ShapeFactory.create('rectangle', { x: 0, y: 0 });
-    expect(rect.type).toBe('rectangle');
-    expect(rect.width).toBe(150);
-    expect(rect.height).toBe(100);
-  });
-  
-  // ... more tests
+	it('creates rectangle with correct defaults', () => {
+		const rect = ShapeFactory.create('rectangle', { x: 0, y: 0 });
+		expect(rect.type).toBe('rectangle');
+		expect(rect.width).toBe(150);
+		expect(rect.height).toBe(100);
+	});
+
+	// ... more tests
 });
 ```
 
@@ -1258,20 +1307,20 @@ describe('ShapeFactory', () => {
 import { test, expect } from '@playwright/test';
 
 test('multi-select rectangles with shift+click', async ({ page }) => {
-  await page.goto('/project/test/canvas/test');
-  
-  // Create 2 rectangles
-  await page.click('[data-tool="rectangle"]');
-  await page.click('.konva-container', { position: { x: 100, y: 100 } });
-  await page.click('.konva-container', { position: { x: 200, y: 200 } });
-  
-  // Select both with shift
-  await page.click('.konva-container', { position: { x: 100, y: 100 } });
-  await page.click('.konva-container', { position: { x: 200, y: 200 }, modifiers: ['Shift'] });
-  
-  // Verify both selected
-  const transformer = await page.locator('.konva-transformer');
-  expect(await transformer.count()).toBe(1);
+	await page.goto('/project/test/canvas/test');
+
+	// Create 2 rectangles
+	await page.click('[data-tool="rectangle"]');
+	await page.click('.konva-container', { position: { x: 100, y: 100 } });
+	await page.click('.konva-container', { position: { x: 200, y: 200 } });
+
+	// Select both with shift
+	await page.click('.konva-container', { position: { x: 100, y: 100 } });
+	await page.click('.konva-container', { position: { x: 200, y: 200 }, modifiers: ['Shift'] });
+
+	// Verify both selected
+	const transformer = await page.locator('.konva-transformer');
+	expect(await transformer.count()).toBe(1);
 });
 ```
 
@@ -1281,23 +1330,23 @@ test('multi-select rectangles with shift+click', async ({ page }) => {
 
 ### Identified During Refactoring
 
-1. **Viewport Culling** (not in MVP):
+1.  **Viewport Culling** (not in MVP):
 
                                                 - Only render shapes within viewport bounds
                                                 - Use quadtree for spatial indexing
                                                 - Can handle 5000+ shapes easily
 
-2. **Konva Layer Caching**:
+2.  **Konva Layer Caching**:
 
                                                 - Cache static grid layer
                                                 - Only redraw shapes layer when changes occur
 
-3. **Cursor Throttling** (already implemented):
+3.  **Cursor Throttling** (already implemented):
 
                                                 - 30ms throttle working well
                                                 - Consider WebWorker for cursor interpolation
 
-4. **Yjs Batching**:
+4.  **Yjs Batching**:
 
                                                 - Already using `ydoc.transact()` for atomic updates
                                                 - Good for multi-shape operations

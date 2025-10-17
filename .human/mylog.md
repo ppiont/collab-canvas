@@ -24,12 +24,13 @@ Used mainly for conversing with Claude in the initial planning phase. It's fanta
 
 I've connected Sourcery AI with GitHub to review my PRs and make suggestions. It outputs suggestions in a format that is geared toward LLM prompting. These I feed back into Cursor.
 
-
 ### MCPs
-I've relied heavily on GitKraken, GitHub MCPs for structuring and writing commits and PRs. 
+
+I've relied heavily on GitKraken, GitHub MCPs for structuring and writing commits and PRs.
 To debug app behavior and frontend errors, I began using Google-DevTools MCP on the recommendation of another Gauntleteer. It's mindblowingly efficient!
 
 ## Example prompts:
+
 ```
 We just finished Phase 6 and made a PR. Sourcery AI suggested the following improvements:
 
@@ -57,6 +58,7 @@ We've finished our MVP. Now we need to start work on the final product (@PRD-fin
 ```
 
 ## Semi-chronological timeline of things I remembered to jot down.
+
 1. Asked Claude for PRD based on collab canvas project assignment doc.
 2. Validated PRD with claude, went through clarifications on technology choices and functional requirements.
 3. Debated its choice of Railway vs Vercel/Netlify/Cloudflare etc. Says Railways is better for Svelte. Svelte was a hard lock, because I like shiny things.
@@ -69,12 +71,13 @@ We've finished our MVP. Now we need to start work on the final product (@PRD-fin
 10. Struggling a lot with PartyKit's global edge service. Can't deploy. Dev server works perfectly. Risky decision not to change arch. But it's just so buttery smooth.
 11. Since I skipped Google Auth, made Claude adapt project plan.
 12. Tested, fixed online counter. Decided to make Cursor add shape resizing and drag mode hint visual ad hoc. Diverging from the Tasks is actually very robust, since the PRD created by Claude was BULLET PROOF. I'm only DELETING stuff or adding non-functional improvements.
-13. PartyKit's free managed service was [temporarily down](https://github.com/partykit/partykit/issues/971) so I had to host it on Cloudflare Workers + Durable Objects. 
+13. PartyKit's free managed service was [temporarily down](https://github.com/partykit/partykit/issues/971) so I had to host it on Cloudflare Workers + Durable Objects.
 14. Lots of UI/UX was polished here. Learning to better manage context window when vibe coding, and to utilize AI to write commit msg and PRs autonomously (my allowlist is growing!).
 15. Added Google Auth back in. Screw Supabase - don't want it for auth because of Firebase dependency for Google Auth. Deployed Auth0 instead.
 16. Really beginning to lean heavily into Google Dev-Tools MCP. It cuts down my debugging time by literally 10x+.
 
 ## Major learnings:
+
 - Context is alpha-omega.
 - MCPs are OP
 - AI powers the ship but I've still gotta steer it. Could have avoided a lot of Supabase confusion, deployment and teardown if I'd spent a bit more time investigating things outside my knowledge zone. I initially thought its persistence was necessary, because I didn't understand PartyKit (Claude just argued convincingly for it).

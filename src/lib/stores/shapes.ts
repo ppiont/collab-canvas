@@ -24,16 +24,16 @@ export const shapes = writable<Shape[]>([]);
  * Call this once on app initialization
  */
 export function initializeShapesSync(shapeMapInstance: Y.Map<Shape>) {
-    shapesMap = shapeMapInstance;
+	shapesMap = shapeMapInstance;
 
-    // Listen to Yjs changes and update Svelte store
-    shapesMap.observe(() => {
-        const allShapes = getAllShapes();
-        shapes.set(allShapes);
-    });
+	// Listen to Yjs changes and update Svelte store
+	shapesMap.observe(() => {
+		const allShapes = getAllShapes();
+		shapes.set(allShapes);
+	});
 
-    // Initial load
-    shapes.set(getAllShapes());
+	// Initial load
+	shapes.set(getAllShapes());
 }
 
 /**
@@ -41,83 +41,83 @@ export function initializeShapesSync(shapeMapInstance: Y.Map<Shape>) {
  * All modifications go through these functions for consistency
  */
 export const shapeOperations = {
-    /**
-     * Add a new shape to the canvas
-     */
-    add: (shape: Shape) => {
-        if (!shapesMap) {
-            console.error('shapesMap not initialized');
-            return;
-        }
-        ydoc.transact(() => {
-            shapesMap.set(shape.id, shape);
-        }, 'user-action');
-    },
+	/**
+	 * Add a new shape to the canvas
+	 */
+	add: (shape: Shape) => {
+		if (!shapesMap) {
+			console.error('shapesMap not initialized');
+			return;
+		}
+		ydoc.transact(() => {
+			shapesMap.set(shape.id, shape);
+		}, 'user-action');
+	},
 
-    /**
-     * Update an existing shape by ID
-     */
-    update: (id: string, changes: Partial<Shape>) => {
-        if (!shapesMap) {
-            console.error('shapesMap not initialized');
-            return;
-        }
-        const existing = shapesMap.get(id);
-        if (existing) {
-            ydoc.transact(() => {
-                // Safe type assertion: existing is Shape, changes is Partial<Shape>, spread is valid
-                const updated = { ...existing, ...changes, modifiedAt: Date.now() } as Shape;
-                shapesMap.set(id, updated);
-            }, 'user-action');
-        } else {
-            console.warn('Shape not found for update:', id);
-        }
-    },
+	/**
+	 * Update an existing shape by ID
+	 */
+	update: (id: string, changes: Partial<Shape>) => {
+		if (!shapesMap) {
+			console.error('shapesMap not initialized');
+			return;
+		}
+		const existing = shapesMap.get(id);
+		if (existing) {
+			ydoc.transact(() => {
+				// Safe type assertion: existing is Shape, changes is Partial<Shape>, spread is valid
+				const updated = { ...existing, ...changes, modifiedAt: Date.now() } as Shape;
+				shapesMap.set(id, updated);
+			}, 'user-action');
+		} else {
+			console.warn('Shape not found for update:', id);
+		}
+	},
 
-    /**
-     * Delete a shape by ID
-     */
-    delete: (id: string) => {
-        if (!shapesMap) {
-            console.error('shapesMap not initialized');
-            return;
-        }
-        ydoc.transact(() => {
-            shapesMap.delete(id);
-        }, 'user-action');
-    },
+	/**
+	 * Delete a shape by ID
+	 */
+	delete: (id: string) => {
+		if (!shapesMap) {
+			console.error('shapesMap not initialized');
+			return;
+		}
+		ydoc.transact(() => {
+			shapesMap.delete(id);
+		}, 'user-action');
+	},
 
-    /**
-     * Delete multiple shapes
-     */
-    deleteMultiple: (ids: string[]) => {
-        if (!shapesMap) {
-            console.error('shapesMap not initialized');
-            return;
-        }
-        ydoc.transact(() => {
-            ids.forEach(id => shapesMap.delete(id));
-        }, 'user-action');
-    },
+	/**
+	 * Delete multiple shapes
+	 */
+	deleteMultiple: (ids: string[]) => {
+		if (!shapesMap) {
+			console.error('shapesMap not initialized');
+			return;
+		}
+		ydoc.transact(() => {
+			ids.forEach((id) => shapesMap.delete(id));
+		}, 'user-action');
+	},
 
-    /**
-     * Clear all shapes (for testing)
-     */
-    clear: () => {
-        if (!shapesMap) {
-            console.error('shapesMap not initialized');
-            return;
-        }
-        ydoc.transact(() => {
-            shapesMap.clear();
-        }, 'user-action');
-    },
+	/**
+	 * Clear all shapes (for testing)
+	 */
+	clear: () => {
+		if (!shapesMap) {
+			console.error('shapesMap not initialized');
+			return;
+		}
+		ydoc.transact(() => {
+			shapesMap.clear();
+		}, 'user-action');
+	},
 
-    /**
-     * Get a single shape by ID
-     */
-    get: (id: string): Shape | undefined => {
-        if (!shapesMap) return undefined;
-        return shapesMap.get(id);
-    }
+	/**
+	 * Get a single shape by ID
+	 */
+	get: (id: string): Shape | undefined => {
+		if (!shapesMap) return undefined;
+		return shapesMap.get(id);
+	}
 };

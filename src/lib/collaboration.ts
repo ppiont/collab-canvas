@@ -74,6 +74,7 @@ export function initializeProvider(
 		connectionStatus.set(event.status);
 	});
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	_provider.on('sync', (isSynced: boolean) => {
 		// Sync complete - shapes loaded
 	});
@@ -117,4 +118,3 @@ export function getAllShapes(): Shape[] {
 export function getOnlineUserCount(): number {
 	return _provider?.awareness.getStates().size || 1;
 }
-

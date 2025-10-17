@@ -56,9 +56,9 @@
 				// Signin successful - redirect to canvas
 				goto('/canvas');
 			}
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error('Auth error:', err);
-			error = err.message || 'Authentication failed';
+			error = err instanceof Error ? err.message : 'Authentication failed';
 		} finally {
 			loading = false;
 		}

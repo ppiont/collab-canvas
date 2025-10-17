@@ -8,11 +8,13 @@
 ## ✅ What I Just Fixed
 
 ### The Problem:
+
 - AI was creating shapes at hardcoded center (400, 300)
 - User might be zoomed in or panned somewhere else
 - Shapes appeared off-screen
 
 ### The Solution:
+
 1. **Pass current viewport to AI** (pan position + zoom level)
 2. **Calculate visible center** in canvas coordinates
 3. **Send to GPT-4** in the context message
@@ -23,16 +25,18 @@
 ## 🔧 Changes Made
 
 **Files Modified:**
+
 1. `src/routes/canvas/+page.svelte` - Pass viewport to CommandPalette
 2. `src/lib/components/CommandPalette.svelte` - Calculate visible center, send to backend
 3. `partykit/server.ts` - Receive viewport, include in GPT-4 prompt
 4. `partykit/ai/prompts.ts` - Tell GPT-4 to use viewport center
 
 **Math:**
+
 ```typescript
 // Converts screen position to canvas coordinates
-visibleCenterX = (-viewport.x + stageWidth / 2) / viewport.scale
-visibleCenterY = (-viewport.y + stageHeight / 2) / viewport.scale
+visibleCenterX = (-viewport.x + stageWidth / 2) / viewport.scale;
+visibleCenterY = (-viewport.y + stageHeight / 2) / viewport.scale;
 ```
 
 ---
@@ -73,6 +77,7 @@ visibleCenterY = (-viewport.y + stageHeight / 2) / viewport.scale
 ```
 
 Then in the GPT-4 context:
+
 ```
 VIEWPORT INFO (user's visible area):
 - Visible center: (850, 420)
@@ -86,11 +91,13 @@ IMPORTANT: Create new shapes near the visible center (850, 420)
 ## ✅ Expected Behavior
 
 **Before:**
+
 - Create circle → appears at (400, 300) always
 - User panned away → can't see new shape
 - User has to pan back to find it
 
 **After:**
+
 - Create circle → appears at visible center
 - User can immediately see it
 - Much better UX! ✅
@@ -104,7 +111,6 @@ Now that shapes appear in viewport, test the rubric-critical commands:
 1. **"Create a login form"**
    - Should appear in your current view
    - Should be properly laid out
-   
 2. **"Build a navigation bar with Home, About, Services, Contact"**
    - Should appear where you're looking
    - Horizontal layout
@@ -120,4 +126,3 @@ These are the commands that will be in the demo video, so make sure they work!
 **Status:** ✅ Viewport awareness implemented  
 **Test:** Try creating shapes after panning/zooming  
 **Next:** Test complex commands for rubric
-

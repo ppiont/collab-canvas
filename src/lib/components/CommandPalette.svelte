@@ -111,12 +111,10 @@
 			// Execute AI tools client-side using our Yjs connection
 			if (data.toolsToExecute && data.toolsToExecute.length > 0) {
 				console.log('[AI] Executing', data.toolsToExecute.length, 'tools:', data.toolsToExecute);
-				
+
 				// Execute tools in parallel for faster performance
-				await Promise.all(
-					data.toolsToExecute.map(tool => executeAITool(tool.name, tool.params))
-				);
-				
+				await Promise.all(data.toolsToExecute.map((tool) => executeAITool(tool.name, tool.params)));
+
 				console.log('[AI] All tools executed');
 			} else {
 				console.warn('[AI] No tools to execute in response');
@@ -154,7 +152,7 @@
 	/**
 	 * Execute an AI tool client-side
 	 */
-	async function executeAITool(toolName: string, params: any): Promise<void> {
+	async function executeAITool(toolName: string, params: Record<string, unknown>): Promise<void> {
 		console.log('[AI Tool Execution]', toolName, params);
 
 		// Creation tools - use ShapeFactory
@@ -170,7 +168,7 @@
 		];
 
 		if (creationTools.includes(toolName)) {
-			const typeMap: Record<string, any> = {
+			const typeMap: Record<string, string> = {
 				createRectangle: 'rectangle',
 				createCircle: 'circle',
 				createEllipse: 'ellipse',
@@ -189,30 +187,35 @@
 
 		// Manipulation tools
 		if (toolName === 'moveShape') {
-			shapeOperations.update(params.shapeId, { x: params.x, y: params.y });
+			shapeOperations.update(params.shapeId as string, {
+				x: params.x as number,
+				y: params.y as number
+			});
 		} else if (toolName === 'resizeShape') {
-			const updates: any = {};
+			const updates: Record<string, unknown> = {};
 			if (params.width) updates.width = params.width;
 			if (params.height) updates.height = params.height;
 			if (params.radius) updates.radius = params.radius;
-			shapeOperations.update(params.shapeId, updates);
+			shapeOperations.update(params.shapeId as string, updates);
 		} else if (toolName === 'rotateShape') {
-			shapeOperations.update(params.shapeId, { rotation: params.degrees % 360 });
+			shapeOperations.update(params.shapeId as string, {
+				rotation: (params.degrees as number) % 360
+			});
 		} else if (toolName === 'updateShapeColor') {
-			const updates: any = {};
+			const updates: Record<string, unknown> = {};
 			if (params.fill) updates.fill = params.fill;
 			if (params.stroke) updates.stroke = params.stroke;
-			shapeOperations.update(params.shapeId, updates);
+			shapeOperations.update(params.shapeId as string, updates);
 		} else if (toolName === 'deleteShape') {
-			shapeOperations.delete(params.shapeId);
+			shapeOperations.delete(params.shapeId as string);
 		} else if (toolName === 'duplicateShape') {
-			const original = shapeOperations.get(params.shapeId);
+			const original = shapeOperations.get(params.shapeId as string);
 			if (original) {
 				const duplicate = {
 					...original,
 					id: crypto.randomUUID(),
-					x: original.x + (params.offsetX || 20),
-					y: original.y + (params.offsetY || 20),
+					x: (original.x as number) + ((params.offsetX as number) || 20),
+					y: (original.y as number) + ((params.offsetY as number) || 20),
 					createdBy: userId,
 					createdAt: Date.now()
 				};
@@ -222,9 +225,9 @@
 		// Layout tools
 		else if (toolName === 'arrangeHorizontal') {
 			console.log('[Layout] arrangeHorizontal - IDs:', params.shapeIds);
-			const shapes = params.shapeIds
+			const shapes = (params.shapeIds as string[])
 				.map((id: string) => shapeOperations.get(id))
-				.filter((s: any) => s !== undefined);
+				.filter((s: unknown): s is ReturnType<typeof shapeOperations.get> => s !== undefined);
 
 			console.log('[Layout] Found', shapes.length, 'shapes:', shapes);
 
@@ -233,21 +236,21 @@
 				return;
 			}
 
-			const spacing = params.spacing || 20;
-			let currentX = params.startX || 100;
-			const y = params.startY || shapes[0].y;
+			const spacing = (params.spacing as number) || 20;
+			let currentX = (params.startX as number) || 100;
+			const y = (params.startY as number) || (shapes[0].y as number);
 
 			console.log('[Layout] Starting at X:', currentX, 'Y:', y, 'Spacing:', spacing);
 
-			shapes.forEach((shape: any, index: number) => {
+			shapes.forEach((shape) => {
 				const width =
-					shape.width ||
-					(shape.radius ? shape.radius * 2 : 0) ||
-					(shape.outerRadius ? shape.outerRadius * 2 : 0) ||
+					(shape.width as number) ||
+					((shape.radius as number) ? (shape.radius as number) * 2 : 0) ||
+					((shape.outerRadius as number) ? (shape.outerRadius as number) * 2 : 0) ||
 					100;
 				console.log(
 					'[Layout] Shape',
-					index,
+					shapes.indexOf(shape),
 					'- ID:',
 					shape.id,
 					'Moving to X:',
@@ -263,39 +266,39 @@
 
 			console.log('[Layout] arrangeHorizontal complete');
 		} else if (toolName === 'arrangeVertical') {
-			const shapes = params.shapeIds
+			const shapes = (params.shapeIds as string[])
 				.map((id: string) => shapeOperations.get(id))
-				.filter((s: any) => s !== undefined);
+				.filter((s: unknown): s is ReturnType<typeof shapeOperations.get> => s !== undefined);
 
 			if (shapes.length === 0) return;
 
-			const spacing = params.spacing || 20;
-			const x = params.startX || shapes[0].x;
-			let currentY = params.startY || 100;
+			const spacing = (params.spacing as number) || 20;
+			const x = (params.startX as number) || (shapes[0].x as number);
+			let currentY = (params.startY as number) || 100;
 
-			shapes.forEach((shape: any) => {
+			shapes.forEach((shape) => {
 				const height =
-					shape.height ||
-					(shape.radius ? shape.radius * 2 : 0) ||
-					(shape.outerRadius ? shape.outerRadius * 2 : 0) ||
+					(shape.height as number) ||
+					((shape.radius as number) ? (shape.radius as number) * 2 : 0) ||
+					((shape.outerRadius as number) ? (shape.outerRadius as number) * 2 : 0) ||
 					100;
 				shapeOperations.update(shape.id, { x, y: currentY });
 				currentY += height + spacing;
 			});
 		} else if (toolName === 'arrangeGrid') {
-			const shapes = params.shapeIds
+			const shapes = (params.shapeIds as string[])
 				.map((id: string) => shapeOperations.get(id))
-				.filter((s: any) => s !== undefined);
+				.filter((s: unknown): s is ReturnType<typeof shapeOperations.get> => s !== undefined);
 
 			if (shapes.length === 0) return;
 
-			const spacing = params.spacing || 20;
-			const startX = params.startX || 100;
-			const startY = params.startY || 100;
-			const cols = params.columns;
+			const spacing = (params.spacing as number) || 20;
+			const startX = (params.startX as number) || 100;
+			const startY = (params.startY as number) || 100;
+			const cols = params.columns as number;
 			const cellSize = 150; // Approximate cell size
 
-			shapes.forEach((shape: any, index: number) => {
+			shapes.forEach((shape, index: number) => {
 				const row = Math.floor(index / cols);
 				const col = index % cols;
 				shapeOperations.update(shape.id, {
@@ -304,74 +307,77 @@
 				});
 			});
 		} else if (toolName === 'distributeEvenly') {
-			const shapes = params.shapeIds
+			const shapes = (params.shapeIds as string[])
 				.map((id: string) => shapeOperations.get(id))
-				.filter((s: any) => s !== undefined);
+				.filter((s: unknown): s is ReturnType<typeof shapeOperations.get> => s !== undefined);
 
 			if (shapes.length < 2) return;
 
 			if (params.direction === 'horizontal') {
-				const xs = shapes.map((s: any) => s.x);
+				const xs = shapes.map((s: ReturnType<typeof shapeOperations.get>) => s.x);
 				const minX = Math.min(...xs);
 				const maxX = Math.max(...xs);
 				const spacing = (maxX - minX) / (shapes.length - 1);
 
-				shapes.forEach((shape: any, i: number) => {
+				shapes.forEach((shape, i: number) => {
 					shapeOperations.update(shape.id, { x: minX + i * spacing });
 				});
 			} else {
-				const ys = shapes.map((s: any) => s.y);
+				const ys = shapes.map((s: ReturnType<typeof shapeOperations.get>) => s.y);
 				const minY = Math.min(...ys);
 				const maxY = Math.max(...ys);
 				const spacing = (maxY - minY) / (shapes.length - 1);
 
-				shapes.forEach((shape: any, i: number) => {
+				shapes.forEach((shape, i: number) => {
 					shapeOperations.update(shape.id, { y: minY + i * spacing });
 				});
 			}
 		} else if (toolName === 'alignShapes') {
-			const shapes = params.shapeIds
+			const shapes = (params.shapeIds as string[])
 				.map((id: string) => shapeOperations.get(id))
-				.filter((s: any) => s !== undefined);
+				.filter((s: unknown): s is ReturnType<typeof shapeOperations.get> => s !== undefined);
 
 			if (shapes.length === 0) return;
 
 			const alignment = params.alignment;
-			const positions = shapes.map((s: any) => ({ x: s.x, y: s.y }));
+			const positions = shapes.map((s: ReturnType<typeof shapeOperations.get>) => ({
+				x: s.x,
+				y: s.y
+			}));
 
 			switch (alignment) {
 				case 'left': {
 					const minX = Math.min(...positions.map((p: { x: number; y: number }) => p.x));
-					shapes.forEach((shape: any) => shapeOperations.update(shape.id, { x: minX }));
+					shapes.forEach((shape) => shapeOperations.update(shape.id, { x: minX }));
 					break;
 				}
 				case 'right': {
 					const maxX = Math.max(...positions.map((p: { x: number; y: number }) => p.x));
-					shapes.forEach((shape: any) => shapeOperations.update(shape.id, { x: maxX }));
+					shapes.forEach((shape) => shapeOperations.update(shape.id, { x: maxX }));
 					break;
 				}
 				case 'center': {
 					const avgX =
 						positions.reduce((sum: number, p: { x: number; y: number }) => sum + p.x, 0) /
 						positions.length;
-					shapes.forEach((shape: any) => shapeOperations.update(shape.id, { x: avgX }));
+					shapes.forEach((shape) => shapeOperations.update(shape.id, { x: avgX }));
 					break;
 				}
 				case 'top': {
 					const minY = Math.min(...positions.map((p: { x: number; y: number }) => p.y));
-					shapes.forEach((shape: any) => shapeOperations.update(shape.id, { y: minY }));
+					shapes.forEach((shape) => shapeOperations.update(shape.id, { y: minY }));
 					break;
 				}
 				case 'bottom': {
 					const maxY = Math.max(...positions.map((p: { x: number; y: number }) => p.y));
-					shapes.forEach((shape: any) => shapeOperations.update(shape.id, { y: maxY }));
+					shapes.forEach((shape) => shapeOperations.update(shape.id, { y: maxY }));
 					break;
 				}
 				case 'middle': {
 					const avgY =
 						positions.reduce((sum: number, p: { x: number; y: number }) => sum + p.y, 0) /
 						positions.length;
-					shapes.forEach((shape: any) => shapeOperations.update(shape.id, { y: avgY }));
+					shapes.forEach((shape) => shapeOperations.update(shape.id, { y: avgY }));
 					break;
 				}
 			}

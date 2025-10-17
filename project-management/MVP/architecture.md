@@ -5,7 +5,7 @@ graph TB
         Canvas[Konva Canvas: Stage + Layers]
         YDoc[Yjs Document: objects, cursors]
         Provider[YPartyKitProvider WebSocket]
-        
+
         UI --> Canvas
         Canvas --> YDoc
         YDoc <--> Provider
@@ -16,7 +16,7 @@ graph TB
         YCRDT[Yjs CRDT State Canonical]
         Awareness[Awareness API Cursors]
         Persist[Durable Storage persist: true]
-        
+
         Room --> YCRDT
         Room --> Awareness
         Room --> Persist
@@ -27,7 +27,7 @@ graph TB
             App[SvelteKit App routes/canvas]
             Hooks[Auth Hooks hooks.server.ts]
         end
-        
+
         subgraph Auth0Service["Auth0"]
             Auth[Auth0 Universal Login Email]
         end
@@ -42,7 +42,7 @@ graph TB
     %% Real-time Sync Flow
     Provider <-->|WebSocket Yjs updates 40-50ms| Room
     Room -->|Broadcast to all clients| Provider
-    
+
     %% Cursor Flow
     Provider -.->|Awareness API 50ms throttle| Awareness
     Awareness -.->|Broadcast cursors| Provider
@@ -56,7 +56,7 @@ graph TB
     classDef edgeStyle fill:#fff3e0,stroke:#f57c00,stroke-width:2px
     classDef backendStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
     classDef auth0Style fill:#eb5424,stroke:#d14420,stroke-width:2px,color:#fff
-    
+
     class UI,Canvas,YDoc,Provider clientStyle
     class Room,YCRDT,Awareness,Persist edgeStyle
     class App,Hooks backendStyle

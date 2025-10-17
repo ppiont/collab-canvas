@@ -31,14 +31,17 @@
 		const states = currentProvider.awareness.getStates();
 		const usersList: OnlineUser[] = [];
 
-		states.forEach((state: any, clientId: number) => {
-			if (state.user) {
-				usersList.push({
-					clientId,
-					id: state.user.id,
-					name: state.user.name,
-					color: state.user.color
-				});
+		states.forEach((state: Record<string, unknown>, clientId: number) => {
+			if (state && typeof state === 'object' && 'user' in state) {
+				const user = state.user as typeof state.user;
+				if (user) {
+					usersList.push({
+						clientId,
+						id: (user as Record<string, string>).id,
+						name: (user as Record<string, string>).name,
+						color: (user as Record<string, string>).color
+					});
+				}
 			}
 		});
 
