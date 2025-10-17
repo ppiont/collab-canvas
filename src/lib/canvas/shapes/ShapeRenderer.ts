@@ -208,14 +208,6 @@ export class ShapeRenderer {
 		// This ensures visual stacking matches data (bottom to top order)
 		this.reorderShapesByZIndex(sortedShapes);
 
-		// Keep locally dragging shape on top
-		if (this.locallyDraggingId) {
-			const draggedNode = this.shapesLayer.findOne(`#${this.locallyDraggingId}`);
-			if (draggedNode) {
-				draggedNode.moveToTop();
-			}
-		}
-
 		// CRITICAL: Move transformer to top after rendering shapes
 		// This ensures the transformer is always visible above shapes
 		if (this.transformer) {
