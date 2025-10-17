@@ -58,7 +58,10 @@
 			const controller = new AbortController();
 			const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-			const url = `http://${PUBLIC_PARTYKIT_HOST}/parties/yjs/main/api/ai/command`;
+			// Build URL, handling cases where PUBLIC_PARTYKIT_HOST may or may not include protocol
+			const host = PUBLIC_PARTYKIT_HOST || 'localhost:1999';
+			const protocol = host.startsWith('http://') || host.startsWith('https://') ? '' : 'https://';
+			const url = `${protocol}${host}/parties/yjs/main/api/ai/command`;
 
 			// Calculate visible center of viewport
 			const stageWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
@@ -151,8 +154,7 @@
 			'createText',
 			'createPolygon',
 			'createStar',
-			'createTriangle',
-			'createImage'
+			'createTriangle'
 		];
 
 		if (creationTools.includes(toolName)) {
@@ -163,8 +165,7 @@
 				createText: 'text',
 				createPolygon: 'polygon',
 				createStar: 'star',
-				createTriangle: 'triangle',
-				createImage: 'image'
+				createTriangle: 'triangle'
 			};
 
 			const shapeType = typeMap[toolName];

@@ -1,6 +1,6 @@
 /**
  * AI Tool Schema for OpenAI Function Calling
- * Defines 22 tools for canvas manipulation
+ * Defines 20 tools for canvas manipulation (6 creation, 6 manipulation, 5 layout, 3 query)
  */
 
 import type { ChatCompletionTool } from 'openai/resources/chat/completions';
@@ -10,7 +10,7 @@ import type { ChatCompletionTool } from 'openai/resources/chat/completions';
  */
 export const AI_TOOLS: ChatCompletionTool[] = [
 	// ═══════════════════════════════════════════════════════
-	// CREATION TOOLS (8 tools)
+	// CREATION TOOLS (6 tools)
 	// ═══════════════════════════════════════════════════════
 
 	{
@@ -44,26 +44,6 @@ export const AI_TOOLS: ChatCompletionTool[] = [
 					x: { type: 'number', description: 'X position (center)' },
 					y: { type: 'number', description: 'Y position (center)' },
 					radius: { type: 'number', description: 'Radius in pixels (default: 50)' },
-					fill: { type: 'string', description: 'Fill color as hex code' },
-					stroke: { type: 'string', description: 'Stroke color as hex code' }
-				},
-				required: ['x', 'y']
-			}
-		}
-	},
-
-	{
-		type: 'function',
-		function: {
-			name: 'createEllipse',
-			description: 'Create an ellipse shape on the canvas',
-			parameters: {
-				type: 'object',
-				properties: {
-					x: { type: 'number', description: 'X position (center)' },
-					y: { type: 'number', description: 'Y position (center)' },
-					radiusX: { type: 'number', description: 'Horizontal radius (default: 75)' },
-					radiusY: { type: 'number', description: 'Vertical radius (default: 50)' },
 					fill: { type: 'string', description: 'Fill color as hex code' },
 					stroke: { type: 'string', description: 'Stroke color as hex code' }
 				},
@@ -117,7 +97,7 @@ export const AI_TOOLS: ChatCompletionTool[] = [
 		type: 'function',
 		function: {
 			name: 'createPolygon',
-			description: 'Create a regular polygon (triangle, pentagon, hexagon, etc.)',
+			description: 'Create a regular polygon (pentagon, hexagon, etc.)',
 			parameters: {
 				type: 'object',
 				properties: {
@@ -157,20 +137,17 @@ export const AI_TOOLS: ChatCompletionTool[] = [
 	{
 		type: 'function',
 		function: {
-			name: 'createImage',
-			description: 'Create an image placeholder on the canvas',
+			name: 'createTriangle',
+			description: 'Create a triangle shape',
 			parameters: {
 				type: 'object',
 				properties: {
-					x: { type: 'number', description: 'X position' },
-					y: { type: 'number', description: 'Y position' },
-					width: { type: 'number', description: 'Width in pixels (default: 200)' },
-					height: { type: 'number', description: 'Height in pixels (default: 200)' },
-					imageUrl: {
-						type: 'string',
-						description:
-							'Image URL (use placeholder service like https://via.placeholder.com/WIDTHxHEIGHT)'
-					}
+					x: { type: 'number', description: 'X position (center)' },
+					y: { type: 'number', description: 'Y position (center)' },
+					width: { type: 'number', description: 'Width in pixels (default: 100)' },
+					height: { type: 'number', description: 'Height in pixels (default: 100)' },
+					fill: { type: 'string', description: 'Fill color as hex code' },
+					stroke: { type: 'string', description: 'Stroke color as hex code' }
 				},
 				required: ['x', 'y']
 			}
@@ -466,12 +443,11 @@ export const TOOL_NAMES = [
 	// Creation
 	'createRectangle',
 	'createCircle',
-	'createEllipse',
 	'createLine',
 	'createText',
 	'createPolygon',
 	'createStar',
-	'createImage',
+	'createTriangle',
 	// Manipulation
 	'moveShape',
 	'resizeShape',

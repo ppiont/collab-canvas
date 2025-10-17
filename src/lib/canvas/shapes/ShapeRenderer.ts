@@ -204,6 +204,10 @@ export class ShapeRenderer {
 			this.shapesLayer.add(konvaShape);
 		});
 
+		// Reorder shapes in layer based on zIndex
+		// This ensures visual stacking matches data (bottom to top order)
+		this.reorderShapesByZIndex(sortedShapes);
+
 		// Keep locally dragging shape on top
 		if (this.locallyDraggingId) {
 			const draggedNode = this.shapesLayer.findOne(`#${this.locallyDraggingId}`);
@@ -222,6 +226,54 @@ export class ShapeRenderer {
 	}
 
 	/**
+	 * Reorder shapes in layer based on their zIndex values
+	 * In Konva, visual stacking order = children array order
+	 */
+	private reorderShapesByZIndex(sortedShapes: Shape[]): void {
+		const allShapeNodes = this.shapesLayer.find('.shape');
+		if (allShapeNodes.length <= 1) return;
+
+		// Get current order from layer
+		const currentOrder = allShapeNodes.map((node) => node.id());
+		const desiredOrder = sortedShapes.map((shape) => shape.id);
+
+		// Check if reordering is needed
+		const needsReordering = !this.arraysEqual(currentOrder, desiredOrder);
+		if (!needsReordering) {
+			return;
+		}
+
+		// Create map of nodes for quick lookup
+		const nodeMap = new Map<string, Konva.Node>();
+		allShapeNodes.forEach((node) => {
+			nodeMap.set(node.id(), node);
+		});
+
+		// Move each shape to its correct position
+		sortedShapes.forEach((shape, targetIndex) => {
+			const node = nodeMap.get(shape.id);
+			if (!node) return;
+
+			const currentIndex = node.getZIndex();
+			if (currentIndex === targetIndex) return; // Already in correct position
+
+			// Move to bottom first, then up to target position
+			node.moveToBottom();
+			for (let i = 0; i < targetIndex; i++) {
+				node.moveUp();
+			}
+		});
+	}
+
+	/**
+	 * Simple array equality check
+	 */
+	private arraysEqual(a: string[], b: string[]): boolean {
+		if (a.length !== b.length) return false;
+		return a.every((val, idx) => val === b[idx]);
+	}
+
+	/**
 	 * Update existing Konva node properties from shape data
 	 * This is CRITICAL for undo/redo to work on selected shapes
 	 */
@@ -230,6 +282,9 @@ export class ShapeRenderer {
 		node.x(shape.x);
 		node.y(shape.y);
 		node.rotation(shape.rotation || 0);
+		// NOTE: zIndex is NOT used for visual stacking in Konva
+		// Visual stacking is determined by order in layer children array
+		// This is handled separately in renderShapes() by reordering nodes
 
 		const konvaShape = node as Konva.Shape;
 		// Only apply fill if it's enabled (default true if not specified)

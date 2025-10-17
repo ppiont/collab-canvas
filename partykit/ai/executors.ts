@@ -85,27 +85,6 @@ export async function executeTool(
 				return { success: true, result: newShape.id };
 			}
 
-			case 'createEllipse': {
-				const newShape: ShapeData = {
-					id: crypto.randomUUID(),
-					type: 'ellipse',
-					x: (params.x as number) || 0,
-					y: (params.y as number) || 0,
-					radiusX: (params.radiusX as number) || 75,
-					radiusY: (params.radiusY as number) || 50,
-					fill: (params.fill as string) || '#3b82f6',
-					stroke: (params.stroke as string) || '#1e3a8a',
-					strokeWidth: 2,
-					opacity: 1,
-					rotation: 0,
-					zIndex: shapesMap.size,
-					createdBy: 'ai',
-					createdAt: Date.now()
-				};
-				shapesMap.set(newShape.id, newShape);
-				return { success: true, result: newShape.id };
-			}
-
 			case 'createLine': {
 				const newShape: ShapeData = {
 					id: crypto.randomUUID(),
@@ -189,17 +168,17 @@ export async function executeTool(
 				return { success: true, result: newShape.id };
 			}
 
-			case 'createImage': {
+			case 'createTriangle': {
 				const newShape: ShapeData = {
 					id: crypto.randomUUID(),
-					type: 'image',
+					type: 'triangle',
 					x: (params.x as number) || 0,
 					y: (params.y as number) || 0,
-					width: (params.width as number) || 200,
-					height: (params.height as number) || 200,
-					imageUrl:
-						(params.imageUrl as string) ||
-						`https://via.placeholder.com/${(params.width as number) || 200}x${(params.height as number) || 200}`,
+					width: (params.width as number) || 100,
+					height: (params.height as number) || 100,
+					fill: (params.fill as string) || '#3b82f6',
+					stroke: (params.stroke as string) || '#1e3a8a',
+					strokeWidth: 2,
 					opacity: 1,
 					rotation: 0,
 					zIndex: shapesMap.size,

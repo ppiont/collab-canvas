@@ -529,54 +529,34 @@ export class CanvasEventHandlers {
 			// Layer management shortcuts
 			const isModifierKey = e.metaKey || e.ctrlKey;
 
-			// Cmd+] - Bring forward / Bring to front
-			if (isModifierKey && e.key === ']' && !isTyping) {
+			// Cmd+] - Bring to front
+			if (isModifierKey && (e.key === ']' || e.code === 'BracketRight') && !isTyping) {
 				e.preventDefault();
 				const selectedIds = this.selectionManager.getSelectedIds();
+
 				if (selectedIds.length > 0) {
 					const allShapes = this.getShapes();
-
-					if (e.shiftKey) {
-						// Cmd+Shift+] - Bring to front
-						const maxZ = Math.max(...allShapes.map((s) => s.zIndex || 0), 0);
-						selectedIds.forEach((id) => {
-							shapeOperations.update(id, { zIndex: maxZ + 1 });
-						});
-					} else {
-						// Cmd+] - Bring forward
-						selectedIds.forEach((id) => {
-							const shape = allShapes.find((s) => s.id === id);
-							if (shape) {
-								shapeOperations.update(id, { zIndex: (shape.zIndex || 0) + 1 });
-							}
-						});
-					}
+					const maxZ = Math.max(...allShapes.map((s) => s.zIndex || 0), 0);
+					selectedIds.forEach((id) => {
+						shapeOperations.update(id, { zIndex: maxZ + 1 });
+					});
 				}
+				return;
 			}
 
-			// Cmd+[ - Send backward / Send to back
-			if (isModifierKey && e.key === '[' && !isTyping) {
+			// Cmd+[ - Send to back
+			if (isModifierKey && (e.key === '[' || e.code === 'BracketLeft') && !isTyping) {
 				e.preventDefault();
 				const selectedIds = this.selectionManager.getSelectedIds();
+
 				if (selectedIds.length > 0) {
 					const allShapes = this.getShapes();
-
-					if (e.shiftKey) {
-						// Cmd+Shift+[ - Send to back
-						const minZ = Math.min(...allShapes.map((s) => s.zIndex || 0), 0);
-						selectedIds.forEach((id) => {
-							shapeOperations.update(id, { zIndex: minZ - 1 });
-						});
-					} else {
-						// Cmd+[ - Send backward
-						selectedIds.forEach((id) => {
-							const shape = allShapes.find((s) => s.id === id);
-							if (shape) {
-								shapeOperations.update(id, { zIndex: (shape.zIndex || 0) - 1 });
-							}
-						});
-					}
+					const minZ = Math.min(...allShapes.map((s) => s.zIndex || 0), 0);
+					selectedIds.forEach((id) => {
+						shapeOperations.update(id, { zIndex: minZ - 1 });
+					});
 				}
+				return;
 			}
 
 			// Arrow keys - nudge selected shapes (only when not typing)
