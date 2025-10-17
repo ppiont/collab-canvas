@@ -20,12 +20,10 @@
 		sliderValue = Math.round(value);
 	});
 
-	function handleSliderChange() {
-		// Round to integer and update immediately
-		const rounded = Math.round(sliderValue);
-		sliderValue = rounded;
-		onchange?.(rounded);
-	}
+	// Watch for changes to sliderValue (from slider) and call onchange
+	$effect(() => {
+		onchange?.(Math.round(sliderValue));
+	});
 
 	function handleInputChange(e: Event) {
 		const target = e.target as HTMLInputElement;
@@ -51,7 +49,6 @@
 	<Slider
 		type="single"
 		bind:value={sliderValue}
-		onchange={handleSliderChange}
 		{min}
 		{max}
 		step={1}

@@ -16,6 +16,11 @@
 	$effect(() => {
 		rotationValue = Math.round(value);
 	});
+
+	// Watch for changes to rotationValue (from slider) and call onchange
+	$effect(() => {
+		onchange?.(Math.round(rotationValue));
+	});
 </script>
 
 <div class="space-y-2">
@@ -26,7 +31,6 @@
 	<Slider
 		type="single"
 		bind:value={rotationValue}
-		onchange={() => onchange?.(Math.max(-180, Math.min(180, Math.round(rotationValue))))}
 		min={-180}
 		max={180}
 		step={1}
