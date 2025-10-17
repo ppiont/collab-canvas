@@ -39,8 +39,18 @@
 	const blendMode = $derived(getUniformValue('blendMode'));
 	const shadow = $derived(getUniformValue('shadow'));
 	const rotation = $derived(getUniformValue('rotation'));
-	const x = $derived(getUniformValue('x'));
-	const y = $derived(getUniformValue('y'));
+	const x = $derived(
+		(() => {
+			const val = getUniformValue('x');
+			return val === 'mixed' ? 'mixed' : Math.round(val as number);
+		})()
+	);
+	const y = $derived(
+		(() => {
+			const val = getUniformValue('y');
+			return val === 'mixed' ? 'mixed' : Math.round(val as number);
+		})()
+	);
 
 	let rotationValue = $state(0);
 	let fontSizeValue = $state(16);
