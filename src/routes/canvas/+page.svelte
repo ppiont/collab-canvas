@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import Toolbar from '$lib/components/Toolbar.svelte';
 	import ConnectionStatus from '$lib/components/ConnectionStatus.svelte';
-	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import DebugOverlay from '$lib/components/DebugOverlay.svelte';
 	import Toast from '$lib/components/Toast.svelte';
@@ -429,8 +428,6 @@
 	<ConnectionStatus currentUserId={data.user.id} onUserClick={handleUserClick} />
 
 	<!-- Properties Panel -->
-	<PropertiesPanel />
-
 	<!-- Command Palette -->
 	<CommandPalette bind:open={commandPaletteOpen} userId={data.user.id} viewport={$viewport} />
 
