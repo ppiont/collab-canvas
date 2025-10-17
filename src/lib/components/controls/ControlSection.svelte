@@ -1,14 +1,12 @@
 <script lang="ts">
 	import { ChevronDown } from 'lucide-svelte';
-	import type { Snippet } from 'svelte';
 
 	interface Props {
 		title: string;
 		sectionId: string;
-		children: Snippet;
 	}
 
-	let { title, sectionId, children }: Props = $props();
+	let { title, sectionId }: Props = $props();
 
 	const localStorageKey = `section-collapsed-${sectionId}`;
 
@@ -44,7 +42,8 @@
 
 	{#if !isCollapsed}
 		<div class="border-t p-3 space-y-3">
-			{@render children()}
+			<!-- svelte-ignore slot_element_deprecated -->
+			<slot />
 		</div>
 	{/if}
 </div>

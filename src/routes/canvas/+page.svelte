@@ -26,6 +26,7 @@
 	import { clipboardOperations } from '$lib/stores/clipboard';
 	import { initializeUndoManager, history } from '$lib/stores/history';
 	import { darkenColor } from '$lib/user-utils';
+	import { selectedShapeIds } from '$lib/stores/selection';
 
 	let { data } = $props();
 
@@ -223,7 +224,8 @@
 		// Initialize selection manager
 		selectionManager = new SelectionManager(stage, layers.shapes);
 		selectionManager.setOnSelectionChange((selectedIds) => {
-			// selectedShapeId = selectedIds.length > 0 ? selectedIds[0] : null; // Removed
+			// Sync with the selectedShapeIds store for UI components like PropertiesPanel
+			selectedShapeIds.set(new Set(selectedIds));
 			// Update selection styling immediately
 			if (shapeRenderer) {
 				shapeRenderer.updateSelectionStyling(selectedIds, $shapes);
