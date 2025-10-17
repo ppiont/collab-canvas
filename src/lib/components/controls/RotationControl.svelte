@@ -26,13 +26,8 @@
 <div class="space-y-2">
 	<div class="flex justify-between items-center">
 		<Label class="text-xs">Rotation</Label>
-		<span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">{Math.round(rotationValue)}°</span>
+		<span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">{Math.round(rotationValue)}°</span
+		>
 	</div>
-	<Slider
-		type="single"
-		bind:value={rotationValue}
-		min={-180}
-		max={180}
-		step={1}
-	/>
+	<Slider type="single" bind:value={rotationValue} min={-180} max={180} step={1} />
 </div>
