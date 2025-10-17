@@ -10,6 +10,7 @@
  */
 
 import Konva from 'konva';
+import { lineManager } from '../line/LineManager.svelte';
 
 /** Callback for selection changes */
 export type SelectionChangeCallback = (selectedIds: string[]) => void;

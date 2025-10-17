@@ -6,6 +6,7 @@
 	import DebugOverlay from '$lib/components/DebugOverlay.svelte';
 	import Toast from '$lib/components/Toast.svelte';
 	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
+	import { lineManager } from '$lib/canvas/line/LineManager.svelte';
 
 	// Import managers
 	import { CanvasEngine } from '$lib/canvas/core/CanvasEngine';
@@ -346,6 +347,21 @@
 		eventHandlers.setupDragHandlers();
 		eventHandlers.setupDragNetHandlers(); // Drag-net (marquee) selection
 		eventHandlers.setupKeyboardHandlers();
+
+		// Initialize LineManager with Yjs integration
+		lineManager.setCallbacks(
+			(points) => {
+				// When line points change, sync to Yjs
+				const lineId = lineManager.getSelectedLineId();
+				if (lineId) {
+					shapeOperations.update(lineId, { points });
+				}
+			},
+			(id) => {
+				// Get line shape from store for LineManager
+				return $shapes.find((s) => s.id === id) as any;
+			}
+		);
 
 		// Window resize
 		const handleResize = () => {
