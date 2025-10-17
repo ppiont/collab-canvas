@@ -50,8 +50,8 @@
 			name: 'Navigation',
 			shortcuts: [
 				{ action: 'Pan Canvas', keys: 'Space+Drag' },
-				{ action: 'Zoom In', keys: 'Cmd+Scroll' },
-				{ action: 'Zoom Out', keys: 'Cmd+Scroll' }
+				{ action: 'Zoom In', keys: 'Scroll Up' },
+				{ action: 'Zoom Out', keys: 'Scroll Down' }
 			]
 		},
 		{
@@ -90,13 +90,13 @@
 </script>
 
 <Dialog.Root bind:open={isOpen}>
-	<Dialog.Content class="max-w-3xl max-h-[85vh] overflow-y-auto">
+	<Dialog.Content class="max-w-5xl max-h-[90vh]">
 		<Dialog.Header>
 			<Dialog.Title>Keyboard Shortcuts</Dialog.Title>
 			<Dialog.Description>Hold TAB to view all available shortcuts</Dialog.Description>
 		</Dialog.Header>
 
-		<div class="grid grid-cols-2 gap-6 pr-4">
+		<div class="grid grid-cols-3 gap-6 pr-4">
 			{#each shortcutCategories as category (category.name)}
 				<div class="space-y-2">
 					<h3 class="font-semibold text-sm text-foreground/80">{category.name}</h3>
