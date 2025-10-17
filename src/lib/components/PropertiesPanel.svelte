@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { shapes, shapeOperations } from '$lib/stores/shapes';
+	import { selectedShapeIds } from '$lib/stores/selection';
 	import type { Shape, BlendMode } from '$lib/types/shapes';
 	import ControlSection from './controls/ControlSection.svelte';
 	import ColorControl from './controls/ColorControl.svelte';
@@ -11,14 +12,26 @@
 	import { Label } from './ui/label';
 	import { Slider } from './ui/slider';
 
-	interface Props {
-		selectedShapeIds: Set<string>;
-	}
+	// Subscribe to stores
+	let allShapes = $state<Shape[]>([]);
+	let selectedIds = $state<Set<string>>(new Set());
 
-	let { selectedShapeIds }: Props = $props();
+	// Subscribe to store changes
+	$effect(() => {
+		const unsubscribeShapes = shapes.subscribe((s) => {
+			allShapes = s;
+		});
+		const unsubscribeSelection = selectedShapeIds.subscribe((ids) => {
+			selectedIds = ids;
+		});
+		return () => {
+			unsubscribeShapes();
+			unsubscribeSelection();
+		};
+	});
 
-	// Get selected shapes from store
-	const selectedShapes = $derived($shapes.filter((s) => selectedShapeIds.has(s.id)));
+	// Get selected shapes
+	const selectedShapes = $derived(allShapes.filter((s) => selectedIds.has(s.id)));
 
 	// Check if property values are uniform across selected shapes
 	function getUniformValue<K extends keyof Shape>(key: K): Shape[K] | 'mixed' | undefined {
@@ -32,7 +45,7 @@
 
 	// Update multiple shapes with new value
 	function updateSelected<K extends keyof Shape>(key: K, value: Shape[K]) {
-		selectedShapeIds.forEach((id) => {
+		selectedIds.forEach((id) => {
 			shapeOperations.update(id, { [key]: value });
 		});
 	}
@@ -184,7 +197,7 @@
 					<BlendModeControl
 						value={(blendMode as BlendMode | undefined) ?? 'normal'}
 						onchange={(mode: string) => {
-							selectedShapeIds.forEach((id) => {
+							selectedIds.forEach((id) => {
 								shapeOperations.update(id, { blendMode: mode as BlendMode });
 							});
 						}}

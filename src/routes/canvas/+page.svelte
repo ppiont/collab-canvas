@@ -26,7 +26,6 @@
 	import { clipboardOperations } from '$lib/stores/clipboard';
 	import { initializeUndoManager, history } from '$lib/stores/history';
 	import { darkenColor } from '$lib/user-utils';
-	import { selectedShapeIds } from '$lib/stores/selection';
 
 	let { data } = $props();
 
@@ -431,7 +430,7 @@
 	<ConnectionStatus currentUserId={data.user.id} onUserClick={handleUserClick} />
 
 	<!-- Properties Panel -->
-	<PropertiesPanel selectedShapeIds={$selectedShapeIds} />
+	<PropertiesPanel />
 
 	<!-- Command Palette -->
 	<CommandPalette bind:open={commandPaletteOpen} userId={data.user.id} viewport={$viewport} />
