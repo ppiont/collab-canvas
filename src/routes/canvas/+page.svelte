@@ -59,6 +59,7 @@
 	let toastVisible = $state(false);
 	let toastMessage = $state('');
 	let toastTimeout: ReturnType<typeof setTimeout> | null = null;
+	let selectionTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	// Derive reactive values from stores (modern Svelte 5 pattern)
 	let stageScale = $derived($viewport.scale);
@@ -236,7 +237,7 @@
 
 		// Select the newly pasted shapes
 		if (selectionManager && pastedIds.length > 0) {
-			setTimeout(() => {
+			selectionTimeout = setTimeout(() => {
 				selectionManager.selectMultiple(pastedIds);
 			}, 50);
 		}
@@ -520,6 +521,9 @@
 			window.removeEventListener('keydown', handleUndoRedo);
 			if (toastTimeout) {
 				clearTimeout(toastTimeout);
+			}
+			if (selectionTimeout) {
+				clearTimeout(selectionTimeout);
 			}
 			clearTimeout(hintTimeout);
 		};
