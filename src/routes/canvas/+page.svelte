@@ -17,10 +17,18 @@
 	import { ShapeRenderer } from '$lib/canvas/shapes/ShapeRenderer';
 	import { ShapeFactory } from '$lib/canvas/shapes/ShapeFactory';
 	import { CanvasEventHandlers } from '$lib/canvas/core/EventHandlers';
+	import { LiveShapeRenderer } from '$lib/canvas/collaboration/LiveShapeRenderer';
 
 	// Import stores and collaboration
 	import { shapes, shapeOperations, initializeShapesSync } from '$lib/stores/shapes';
-	import { initializeProvider, disconnectProvider, provider, shapesMap } from '$lib/collaboration';
+	import {
+		initializeProvider,
+		disconnectProvider,
+		provider,
+		shapesMap,
+		updateDraggedShape,
+		clearDraggedShape
+	} from '$lib/collaboration';
 	import { viewport } from '$lib/stores/canvas';
 	import { CANVAS } from '$lib/constants';
 	import type { Shape } from '$lib/types/shapes';
@@ -38,6 +46,7 @@
 	let selectionManager: SelectionManager;
 	let cursorManager: CursorManager;
 	let shapeRenderer = $state<ShapeRenderer | null>(null);
+	let liveShapeRenderer = $state<LiveShapeRenderer | null>(null);
 	let eventHandlers: CanvasEventHandlers;
 
 	// Component state
@@ -295,6 +304,16 @@
 			onBroadcastCursor: () => {
 				cursorManager?.broadcastCursorImmediate();
 			},
+			// PHASE 7: Live shape drag broadcast
+			onBroadcastShapeDrag: (id: string, position: { x: number; y: number; endDrag?: boolean }) => {
+				if ((position as any).endDrag) {
+					// dragend signal - clear from Awareness
+					clearDraggedShape(id);
+				} else {
+					// dragmove - update live position in Awareness
+					updateDraggedShape(id, position.x, position.y, data.user.id);
+				}
+			},
 			getMaxZIndex: () => maxZIndex
 		});
 
@@ -320,6 +339,11 @@
 		const unsubscribeProvider = provider.subscribe((providerValue) => {
 			if (providerValue?.awareness && cursorManager) {
 				cursorManager.initialize(providerValue.awareness, data.user.id, width, height);
+
+				// PHASE 7, 3: Initialize live shape renderer for real-time drag feedback
+				if (!liveShapeRenderer) {
+					liveShapeRenderer = new LiveShapeRenderer(layers.shapes, stage, providerValue.awareness);
+				}
 			}
 		});
 
@@ -436,6 +460,7 @@
 			selectionManager?.destroy();
 			cursorManager?.destroy();
 			shapeRenderer?.destroy();
+			liveShapeRenderer?.destroy();
 			eventHandlers?.destroy();
 			disconnectProvider();
 			unsubscribeProvider();

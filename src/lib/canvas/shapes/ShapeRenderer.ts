@@ -21,6 +21,7 @@ export interface ShapeEventCallbacks {
 	onShapeUpdate: (id: string, changes: Partial<Shape>) => void;
 	onShapeSelect: (id: string) => void;
 	onBroadcastCursor: () => void;
+	onBroadcastShapeDrag: (id: string, position: { x: number; y: number }) => void; // NEW: Live shape drag broadcast
 	getMaxZIndex: () => number;
 	getSelectedIds: () => string[]; // NEW: Get currently selected shape IDs
 	getShapeById: (id: string) => Shape | undefined; // NEW: Get shape by ID
@@ -50,6 +51,10 @@ export class ShapeRenderer {
 
 	// Performance stats (for debugging)
 	private lastCullingStats: ReturnType<typeof getCullingStats> | null = null;
+
+	// PHASE 4: Throttled drag broadcasts (50ms = ~20 updates/sec)
+	private lastDragBroadcastTime: { [shapeId: string]: number } = {};
+	private dragBroadcastThrottle = 50; // milliseconds
 
 	constructor(shapesLayer: Konva.Layer, stage: Konva.Stage) {
 		this.shapesLayer = shapesLayer;
@@ -602,9 +607,20 @@ export class ShapeRenderer {
 		});
 
 		konvaShape.on('dragmove', () => {
+			// PHASE 2 & 4: Broadcast live shape position via Awareness (throttled)
+			// This allows collaborators to see smooth movement without creating undo entries
+			const now = Date.now();
+			const lastBroadcast = this.lastDragBroadcastTime[shapeId] || 0;
+
+			if (now - lastBroadcast >= this.dragBroadcastThrottle) {
+				this.callbacks!.onBroadcastShapeDrag(shapeId, {
+					x: konvaShape.x(),
+					y: konvaShape.y()
+				});
+				this.lastDragBroadcastTime[shapeId] = now;
+			}
+
 			// Broadcast cursor position
-			// DO NOT write to Yjs on every dragmove - causes too many undo steps
-			// Only write final position on dragend
 			this.callbacks!.onBroadcastCursor();
 		});
 
@@ -622,17 +638,25 @@ export class ShapeRenderer {
 			konvaShape.shadowOffset({ x: 0, y: 0 });
 			this.stage.container().style.cursor = 'move';
 
-			// Update final position and clear drag state
+			// PHASE 5: Persist final position to Yjs (creates ONE undo entry)
 			this.callbacks!.onShapeUpdate(shapeId, {
 				x: e.target.x(),
 				y: e.target.y(),
 				draggedBy: undefined
 			});
 
+			// PHASE 6: Clear from Awareness so other users stop seeing the drag ghost
+			this.callbacks!.onBroadcastShapeDrag(shapeId, {
+				x: e.target.x(),
+				y: e.target.y(),
+				endDrag: true // Signal to clear from Awareness
+			} as { x: number; y: number; endDrag: boolean });
+
 			// Broadcast final cursor position
 			this.callbacks!.onBroadcastCursor();
 
-			// Clear drag tracking
+			// Clear drag tracking and throttle time
+			delete this.lastDragBroadcastTime[shapeId];
 			requestAnimationFrame(() => {
 				this.locallyDraggingId = null;
 			});

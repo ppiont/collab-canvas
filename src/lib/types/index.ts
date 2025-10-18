@@ -34,6 +34,9 @@ export {
 // Canvas types
 export type { CanvasViewport, CanvasConfig, ToolType, CursorMode } from './canvas';
 
+// Collaboration types
+export type { DraggedShape, AwarenessUser } from './collaboration';
+
 // Project types
 export type {
 	Project,
