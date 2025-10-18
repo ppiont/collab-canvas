@@ -1,6 +1,6 @@
 /**
  * Comprehensive Shape Type System for CollabCanvas
- * Supports 8 shape types: rectangle, circle, line, text, polygon, star, triangle, image
+ * Supports 7 shape types: rectangle, circle, line, text, polygon, star, triangle
  */
 
 /** All supported shape types */
@@ -11,8 +11,7 @@ export type ShapeType =
 	| 'text'
 	| 'polygon'
 	| 'star'
-	| 'triangle'
-	| 'image';
+	| 'triangle';
 
 /** Blend modes for shape rendering */
 export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten';
@@ -108,14 +107,6 @@ export interface TriangleShape extends BaseShape {
 	height: number;
 }
 
-/** Image shape */
-export interface ImageShape extends BaseShape {
-	type: 'image';
-	width: number;
-	height: number;
-	imageUrl: string; // R2 URL
-}
-
 /** Union type for all shapes */
 export type Shape =
 	| RectangleShape
@@ -124,8 +115,7 @@ export type Shape =
 	| TextShape
 	| PolygonShape
 	| StarShape
-	| TriangleShape
-	| ImageShape;
+	| TriangleShape;
 
 /** Type guards for discriminated unions */
 export function isRectangle(shape: Shape): shape is RectangleShape {
@@ -156,10 +146,6 @@ export function isTriangle(shape: Shape): shape is TriangleShape {
 	return shape.type === 'triangle';
 }
 
-export function isImage(shape: Shape): shape is ImageShape {
-	return shape.type === 'image';
-}
-
 /** Default values for base shape properties */
 export const DEFAULT_BASE_SHAPE: Omit<
 	BaseShape,
@@ -179,6 +165,5 @@ export const DEFAULT_SHAPE_DIMENSIONS = {
 	text: { fontSize: 16, fontFamily: 'system-ui' },
 	polygon: { sides: 5, radius: 50 },
 	star: { numPoints: 5, innerRadius: 25, outerRadius: 50 },
-	image: { width: 200, height: 150 },
 	triangle: { width: 100, height: 100 }
 } as const;

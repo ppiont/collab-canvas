@@ -353,11 +353,6 @@ export class ShapeRenderer {
 				text.align(shape.align || 'left');
 				break;
 			}
-
-			case 'image':
-				(node as Konva.Rect).width(shape.width);
-				(node as Konva.Rect).height(shape.height);
-				break;
 		}
 	}
 
@@ -528,17 +523,6 @@ export class ShapeRenderer {
 					align: shape.align || 'left'
 					// NOTE: Intentionally NOT including stroke or strokeWidth
 					// Konva.Text stroke rendering creates visual artifacts
-				});
-
-			case 'image':
-				// Image shapes need special handling with Image objects
-				// For now, return a placeholder rect (will be implemented in image support phase)
-				return new Konva.Rect({
-					...baseConfig,
-					width: shape.width,
-					height: shape.height,
-					fill: '#e2e8f0',
-					stroke: '#94a3b8'
 				});
 
 			default:

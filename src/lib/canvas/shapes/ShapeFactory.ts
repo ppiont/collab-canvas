@@ -13,8 +13,7 @@ import type {
 	TextShape,
 	PolygonShape,
 	StarShape,
-	TriangleShape,
-	ImageShape
+	TriangleShape
 } from '$lib/types/shapes';
 import { DEFAULT_BASE_SHAPE, DEFAULT_SHAPE_DIMENSIONS } from '$lib/types/shapes';
 
@@ -109,17 +108,6 @@ export class ShapeFactory {
 					width: props.width ?? DEFAULT_SHAPE_DIMENSIONS.triangle.width,
 					height: props.height ?? DEFAULT_SHAPE_DIMENSIONS.triangle.height
 				} as TriangleShape;
-			}
-
-			case 'image': {
-				const props = baseProps as Partial<ImageShape>;
-				return {
-					...base,
-					type: 'image',
-					width: props.width ?? DEFAULT_SHAPE_DIMENSIONS.image.width,
-					height: props.height ?? DEFAULT_SHAPE_DIMENSIONS.image.height,
-					imageUrl: props.imageUrl ?? ''
-				} as ImageShape;
 			}
 
 			default:

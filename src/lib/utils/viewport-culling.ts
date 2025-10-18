@@ -164,25 +164,6 @@ export function getShapeBounds(shape: Shape): ShapeBounds {
 			};
 		}
 
-		case 'image': {
-			if (!hasRotation) {
-				return {
-					left: shape.x,
-					right: shape.x + shape.width,
-					top: shape.y,
-					bottom: shape.y + shape.height
-				};
-			}
-			// Conservative bounds for rotated image
-			const diagonal = Math.sqrt(shape.width ** 2 + shape.height ** 2);
-			return {
-				left: shape.x - diagonal / 2,
-				right: shape.x + diagonal / 2,
-				top: shape.y - diagonal / 2,
-				bottom: shape.y + diagonal / 2
-			};
-		}
-
 		default: {
 			// Fallback: point bounds
 			// TypeScript exhaustiveness check - should never reach here

@@ -155,8 +155,7 @@ export class SelectionNet {
 		let shapeBounds: { x: number; y: number; width: number; height: number };
 
 		switch (shape.type) {
-			case 'rectangle':
-			case 'image': {
+			case 'rectangle': {
 				// Konva.Rect uses top-left positioning by default
 				shapeBounds = {
 					x: shape.x,
