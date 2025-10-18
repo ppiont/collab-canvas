@@ -162,12 +162,12 @@ export function clearDraggedShape(shapeId: string): void {
 /**
  * Get current dragged shapes from all users
  */
-export function getAllDraggedShapes(): Map<string, any> {
-	const allDragged = new Map();
+export function getAllDraggedShapes(): Map<string, { id: string; x: number; y: number; userId: string; timestamp: number }> {
+	const allDragged = new Map<string, { id: string; x: number; y: number; userId: string; timestamp: number }>();
 
 	if (!_provider) return allDragged;
 
-	_provider.awareness.getStates().forEach((state: any) => {
+	_provider.awareness.getStates().forEach((state: Record<string, any>) => {
 		if (state.draggedShapes) {
 			Object.entries(state.draggedShapes).forEach(([shapeId, dragInfo]: [string, any]) => {
 				allDragged.set(`${state.user?.id}-${shapeId}`, dragInfo);

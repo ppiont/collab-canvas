@@ -6,6 +6,8 @@
 
 import Konva from 'konva';
 import type { Shape } from '$lib/types/shapes';
+import type { Awareness } from 'y-protocols/awareness';
+import type * as Y from 'yjs';
 
 interface DraggedShapeInfo {
 	id: string;
@@ -15,6 +17,15 @@ interface DraggedShapeInfo {
 	timestamp: number;
 }
 
+interface AwarenessStateData {
+	user?: {
+		id: string;
+		name: string;
+		color: string;
+	};
+	draggedShapes?: Record<string, DraggedShapeInfo>;
+}
+
 /**
  * LiveShapeRenderer displays ACTUAL shapes being dragged by other users
  * Renders real shapes (rectangles, circles, etc.) semi-transparently
@@ -22,15 +33,15 @@ interface DraggedShapeInfo {
 export class LiveShapeRenderer {
 	private shapesLayer: Konva.Layer;
 	private stage: Konva.Stage;
-	private awareness: any;
-	private shapesMap: any; // Reference to Yjs shapes map
+	private awareness: Awareness;
+	private shapesMap: Y.Map<Shape>;
 	private draggedShapeNodes = new Map<string, Konva.Group>();
 	private userColors = new Map<string, string>();
 	private lastUpdateTime = 0;
 	private updateInterval = 16; // 60fps update
 	private awarenessChangeHandler: (() => void) | null = null;
 
-	constructor(shapesLayer: Konva.Layer, stage: Konva.Stage, awareness: any, shapesMap: any) {
+	constructor(shapesLayer: Konva.Layer, stage: Konva.Stage, awareness: Awareness, shapesMap: Y.Map<Shape>) {
 		this.shapesLayer = shapesLayer;
 		this.stage = stage;
 		this.awareness = awareness;
@@ -68,12 +79,12 @@ export class LiveShapeRenderer {
 		const seenKeys = new Set<string>();
 
 		// Collect all dragged shapes from all users
-		this.awareness.getStates().forEach((state: any) => {
+		this.awareness.getStates().forEach((state: AwarenessStateData) => {
 			if (state.draggedShapes && state.user) {
 				const userColor = state.user.color || '#3b82f6';
 				this.userColors.set(state.user.id, userColor);
 
-				Object.entries(state.draggedShapes).forEach(([shapeId, dragInfo]: [string, any]) => {
+				Object.entries(state.draggedShapes).forEach(([shapeId, dragInfo]) => {
 					const key = `${state.user.id}-${shapeId}`;
 					seenKeys.add(key);
 
@@ -102,7 +113,7 @@ export class LiveShapeRenderer {
 		});
 
 		// Remove ghosts for drags that ended
-		for (const [key, node] of this.draggedShapeNodes.entries()) {
+		for (const [key] of this.draggedShapeNodes.entries()) {
 			if (!seenKeys.has(key)) {
 				this.removeDragGhost(key);
 			}
@@ -133,7 +144,7 @@ export class LiveShapeRenderer {
 
 		switch (shapeData.type) {
 			case 'rectangle': {
-				const rect = shapeData as any;
+				const rect = shapeData as Extract<Shape, { type: 'rectangle' }>;
 				shapeNode = new Konva.Rect({
 					width: rect.width,
 					height: rect.height,
@@ -146,7 +157,7 @@ export class LiveShapeRenderer {
 			}
 
 			case 'circle': {
-				const circle = shapeData as any;
+				const circle = shapeData as Extract<Shape, { type: 'circle' }>;
 				shapeNode = new Konva.Circle({
 					radius: circle.radius,
 					fill: circle.fill || userColor,
@@ -158,7 +169,7 @@ export class LiveShapeRenderer {
 			}
 
 			case 'triangle': {
-				const triangle = shapeData as any;
+				const triangle = shapeData as Extract<Shape, { type: 'triangle' }>;
 				shapeNode = new Konva.RegularPolygon({
 					sides: 3,
 					radius: Math.max(triangle.width, triangle.height) / 2,
@@ -171,7 +182,7 @@ export class LiveShapeRenderer {
 			}
 
 			case 'polygon': {
-				const polygon = shapeData as any;
+				const polygon = shapeData as Extract<Shape, { type: 'polygon' }>;
 				shapeNode = new Konva.RegularPolygon({
 					sides: 5, // Default pentagon
 					radius: polygon.radius,
@@ -184,7 +195,7 @@ export class LiveShapeRenderer {
 			}
 
 			case 'star': {
-				const star = shapeData as any;
+				const star = shapeData as Extract<Shape, { type: 'star' }>;
 				shapeNode = new Konva.Star({
 					numPoints: star.numPoints || 5,
 					innerRadius: star.innerRadius || 20,
@@ -198,7 +209,7 @@ export class LiveShapeRenderer {
 			}
 
 			case 'line': {
-				const line = shapeData as any;
+				const line = shapeData as Extract<Shape, { type: 'line' }>;
 				shapeNode = new Konva.Line({
 					points: line.points,
 					stroke: line.stroke || userColor,
@@ -211,7 +222,7 @@ export class LiveShapeRenderer {
 			}
 
 			case 'text': {
-				const text = shapeData as any;
+				const text = shapeData as Extract<Shape, { type: 'text' }>;
 				shapeNode = new Konva.Text({
 					text: text.text,
 					fontSize: text.fontSize,
@@ -234,7 +245,7 @@ export class LiveShapeRenderer {
 		}
 
 		if (shapeNode) {
-			ghost.add(shapeNode);
+			ghost.add(shapeNode as Konva.Shape);
 		}
 
 		// Apply rotation from shape data to match current visual state
