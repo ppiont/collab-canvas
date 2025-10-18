@@ -139,6 +139,22 @@ export class SelectionManager {
 		const x2 = points[2] + line.x();
 		const y2 = points[3] + line.y();
 
+		// Listen to line dragmove to update endpoint positions (Bug Fix #2)
+		line.off('dragmove.lineEndpoints'); // Remove old listeners
+		line.on('dragmove.lineEndpoints', () => {
+			if (!this.isDraggingLineEndpoint) {
+				// Update all endpoint circles when line is dragged
+				const currentPoints = line.points();
+				for (let j = 0; j < this.lineEndpoints.length; j++) {
+					const endpoint = this.lineEndpoints[j];
+					const pIndex = j * 2;
+					endpoint.x(currentPoints[pIndex] + line.x());
+					endpoint.y(currentPoints[pIndex + 1] + line.y());
+				}
+				this.layer?.batchDraw();
+			}
+		});
+
 		// Create endpoint circles
 		for (let i = 0; i < 2; i++) {
 			const x = i === 0 ? x1 : x2;
@@ -162,8 +178,9 @@ export class SelectionManager {
 			});
 
 			circle.on('dragmove', () => {
-				// Update the line's points LOCALLY only
-				const newPoints = [...points];
+				// BUG FIX #1: Read fresh points from line instead of using closure
+				const currentPoints = line.points();
+				const newPoints = [...currentPoints];
 				newPoints[pointIndex] = circle.x() - line.x();
 				newPoints[pointIndex + 1] = circle.y() - line.y();
 				line.points(newPoints);
@@ -207,6 +224,12 @@ export class SelectionManager {
 	 */
 	private hideLineTransformer(): void {
 		if (this.lineTransformerGroup) {
+			// Clean up line dragmove listener to prevent memory leaks
+			const lineNode = this.layer?.findOne(`#${Array.from(this.selectedIds)[0]}`);
+			if (lineNode) {
+				lineNode.off('dragmove.lineEndpoints');
+			}
+
 			this.lineTransformerGroup.destroyChildren();
 			this.lineEndpoints = [];
 		}
