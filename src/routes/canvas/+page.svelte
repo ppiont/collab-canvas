@@ -75,11 +75,21 @@
 		}
 
 		try {
+			// Center rectangles by offsetting from cursor position
+			// (Other shapes like circles, polygons, stars are naturally centered)
+			let shapeX = x;
+			let shapeY = y;
+			if (tool === 'rectangle') {
+				// Default rectangle is 150x100, so offset by half to center it
+				shapeX = x - 75;
+				shapeY = y - 50;
+			}
+
 			return ShapeFactory.create(
 				tool,
 				{
-					x,
-					y,
+					x: shapeX,
+					y: shapeY,
 					fill: data.userProfile.color, // Use user's color instead of hardcoded blue
 					stroke: darkenColor(data.userProfile.color, 20), // Use a darker version of the user's color for the stroke outline
 					strokeWidth: 2,
