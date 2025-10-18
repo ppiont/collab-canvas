@@ -228,6 +228,9 @@ export class SelectionManager {
 		const isLine = node instanceof Konva.Line;
 		const isClosedPolygon = isLine && (node as Konva.Line).closed();
 
+		// Get the current stage scale to compensate for zoom
+		const stageScale = this.stage.scaleX();
+
 		if (isLine && !isClosedPolygon) {
 			// For open lines only, calculate and show length
 			const line = node as Konva.Line;
@@ -254,9 +257,10 @@ export class SelectionManager {
 				const midX = (x1 + x2) / 2;
 				const midY = (y1 + y2) / 2;
 
+				// Apply inverse scale to compensate for stage zoom
 				this.sizeLabel.position({
-					x: midX + 12,
-					y: midY - 12
+					x: (midX + 12) / stageScale,
+					y: (midY - 12) / stageScale
 				});
 
 				this.sizeLabel.visible(true);
@@ -295,8 +299,9 @@ export class SelectionManager {
 			}
 
 			// Position below the shape using bounding box
-			const labelX = box.x + box.width / 2;
-			const labelY = box.y + box.height + 12;
+			// Apply inverse scale to compensate for stage zoom
+			const labelX = (box.x + box.width / 2) / stageScale;
+			const labelY = (box.y + box.height + 12) / stageScale;
 
 			this.sizeLabel.position({
 				x: labelX,
