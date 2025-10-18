@@ -44,8 +44,8 @@
 			shortcuts: [
 				{ action: 'Select All', keys: 'Cmd+A' },
 				{ action: 'Deselect', keys: 'Esc' },
-				{ action: 'Multi-select', keys: 'Cmd+Click' },
-				{ action: 'Add to Selection', keys: 'Shift+Click' }
+				{ action: 'Drag-Net Select', keys: 'Click+Drag' },
+				{ action: 'Toggle Selection', keys: 'Shift+Click' }
 			]
 		},
 		{
