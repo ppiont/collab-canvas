@@ -164,6 +164,18 @@ export function getShapeBounds(shape: Shape): ShapeBounds {
 			};
 		}
 
+		case 'triangle': {
+			// Triangle bounds based on width/height
+			const w = shape.width / 2;
+			const h = shape.height / 2;
+			return {
+				left: shape.x - w,
+				right: shape.x + w,
+				top: shape.y - h,
+				bottom: shape.y + h
+			};
+		}
+
 		default: {
 			// Fallback: point bounds
 			// TypeScript exhaustiveness check - should never reach here

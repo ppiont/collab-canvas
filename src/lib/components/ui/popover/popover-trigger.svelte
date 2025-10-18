@@ -5,15 +5,13 @@
 	let {
 		ref = $bindable(null),
 		class: className,
-		asChild = false,
 		...restProps
-	}: PopoverPrimitive.TriggerProps & { asChild?: boolean } = $props();
+	}: PopoverPrimitive.TriggerProps = $props();
 </script>
 
 <PopoverPrimitive.Trigger
 	bind:ref
 	data-slot="popover-trigger"
 	class={cn('', className)}
-	{asChild}
 	{...restProps}
 />

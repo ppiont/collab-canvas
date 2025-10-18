@@ -11,24 +11,22 @@ export type {
 	BaseShape,
 	RectangleShape,
 	CircleShape,
-	EllipseShape,
 	LineShape,
 	TextShape,
 	PolygonShape,
 	StarShape,
-	ImageShape,
+	TriangleShape,
 	Shape
 } from './shapes';
 
 export {
 	isRectangle,
 	isCircle,
-	isEllipse,
 	isLine,
 	isText,
 	isPolygon,
 	isStar,
-	isImage,
+	isTriangle,
 	DEFAULT_BASE_SHAPE,
 	DEFAULT_SHAPE_DIMENSIONS
 } from './shapes';
