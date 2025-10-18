@@ -23,7 +23,7 @@
 			name: 'Editing',
 			shortcuts: [
 				{ action: 'Duplicate', keys: 'Cmd+D' },
-				{ action: 'Delete', keys: 'Delete' },
+				{ action: 'Delete', keys: 'Backspace' },
 				{ action: 'Copy', keys: 'Cmd+C' },
 				{ action: 'Paste', keys: 'Cmd+V' },
 				{ action: 'Undo', keys: 'Cmd+Z' },
