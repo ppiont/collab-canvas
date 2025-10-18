@@ -34,38 +34,5 @@ export {
 // Canvas types
 export type { CanvasViewport, CanvasConfig, ToolType, CursorMode } from './canvas';
 
-// Collaboration types
-export type { DraggedShape, AwarenessUser } from './collaboration';
-
-// Project types
-export type {
-	Project,
-	Canvas,
-	ProjectRole,
-	Permission,
-	ProjectWithRole,
-	CanvasWithMetadata
-} from './project';
-
-// AI types
-export type {
-	AICommandRequest,
-	AICommandResponse,
-	AIToolResult,
-	CreateShapeParams,
-	MoveShapeParams,
-	ResizeShapeParams,
-	RotateShapeParams,
-	UpdateColorParams,
-	UpdateTextParams,
-	DeleteShapeParams,
-	DuplicateShapeParams,
-	ArrangeShapesParams,
-	ArrangeGridParams,
-	AlignShapesParams,
-	CanvasState,
-	RateLimitState
-} from './ai';
-
 // Backward compatibility - export Rectangle as RectangleShape
 export type { RectangleShape as Rectangle } from './shapes';
