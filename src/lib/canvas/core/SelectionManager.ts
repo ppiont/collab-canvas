@@ -228,9 +228,6 @@ export class SelectionManager {
 		const isLine = node instanceof Konva.Line;
 		const isClosedPolygon = isLine && (node as Konva.Line).closed();
 
-		// Get the current stage scale to compensate for zoom on offsets only
-		const stageScale = this.stage.scaleX();
-
 		if (isLine && !isClosedPolygon) {
 			// For open lines only, calculate and show length
 			const line = node as Konva.Line;
@@ -253,14 +250,13 @@ export class SelectionManager {
 					text.text(`${length}px`);
 				}
 
-				// Position near the line midpoint
-				const midX = (x1 + x2) / 2;
-				const midY = (y1 + y2) / 2;
+				// Position near the line midpoint in layer space
+				const midX = (x1 + x2) / 2 + line.x();
+				const midY = (y1 + y2) / 2 + line.y();
 
-				// Scale only the offset to maintain fixed visual distance at all zoom levels
 				this.sizeLabel.position({
-					x: midX + 12 / stageScale,
-					y: midY - 12 / stageScale
+					x: midX + 12,
+					y: midY - 12
 				});
 
 				this.sizeLabel.visible(true);
@@ -268,28 +264,31 @@ export class SelectionManager {
 			}
 		} else {
 			// For regular shapes and closed polygons, show dimensions
-			// Force transformer to recalculate to get accurate box
-			this.transformer.forceUpdate();
-
-			// Get the bounding box in canvas space
-			const box = node.getClientRect();
-
-			// Calculate dimensions
+			// Work entirely in layer space using local shape properties
 			let nodeWidth: number;
 			let nodeHeight: number;
+			let labelX: number;
+			let labelY: number;
 
-			if (isClosedPolygon) {
+			if (isClosedPolygon || node instanceof Konva.RegularPolygon) {
 				// For polygons, use bounding box dimensions
+				const box = node.getClientRect({ relativeTo: this.layer });
 				nodeWidth = Math.round(box.width);
 				nodeHeight = Math.round(box.height);
-			} else if (node instanceof Konva.RegularPolygon) {
-				// For regular polygons (triangles), use bounding box dimensions
-				nodeWidth = Math.round(box.width);
-				nodeHeight = Math.round(box.height);
+				labelX = box.x + box.width / 2;
+				labelY = box.y + box.height + 12;
 			} else {
-				// For regular shapes, use actual width/height * scale (not rotated bounds)
+				// For regular shapes, use local position + dimensions
 				nodeWidth = Math.round(node.width() * node.scaleX());
 				nodeHeight = Math.round(node.height() * node.scaleY());
+
+				const shapeX = node.x();
+				const shapeY = node.y();
+				const shapeWidth = node.width() * node.scaleX();
+				const shapeHeight = node.height() * node.scaleY();
+
+				labelX = shapeX + shapeWidth / 2;
+				labelY = shapeY + shapeHeight + 12;
 			}
 
 			// Update text with actual dimensions
@@ -297,11 +296,6 @@ export class SelectionManager {
 			if (text) {
 				text.text(`${nodeWidth} × ${nodeHeight}`);
 			}
-
-			// Position below the shape using bounding box
-			// Scale only the 12px offset to maintain fixed visual distance at all zoom levels
-			const labelX = box.x + box.width / 2;
-			const labelY = box.y + box.height + 12 / stageScale;
 
 			this.sizeLabel.position({
 				x: labelX,
