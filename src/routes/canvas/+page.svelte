@@ -7,6 +7,7 @@
 	import DebugOverlay from '$lib/components/DebugOverlay.svelte';
 	import Toast from '$lib/components/Toast.svelte';
 	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
+	import TextFormattingToolbar from '$lib/components/TextFormattingToolbar.svelte';
 
 	// Import managers
 	import { CanvasEngine } from '$lib/canvas/core/CanvasEngine';
@@ -64,6 +65,18 @@
 
 	// State for shortcuts hint visibility
 	let showShortcutsHint = $state(true);
+
+	// Text formatting toolbar state
+	let textFormattingVisible = $state(false);
+	let textFormattingPosition = $state({ x: 0, y: 0 });
+	let editingTextId = $state<string | null>(null);
+	let textFormatState = $state({
+		fontWeight: 'normal' as 'normal' | 'bold',
+		fontStyle: 'normal' as 'normal' | 'italic',
+		textDecoration: 'none',
+		align: 'left' as 'left' | 'center' | 'right',
+		fontSize: 16
+	});
 
 	// Helper function to create shapes based on active tool
 	function createShapeAtPosition(x: number, y: number): Shape | null {
@@ -322,6 +335,20 @@
 			shapeRenderer.setTransformer(transformer);
 		}
 
+		// Set text editing callbacks for formatting toolbar
+		shapeRenderer.setTextEditingCallback(
+			(textId, toolbarPosition, format) => {
+				editingTextId = textId;
+				textFormattingPosition = toolbarPosition;
+				textFormatState = format;
+				textFormattingVisible = true;
+			},
+			() => {
+				editingTextId = null;
+				textFormattingVisible = false;
+			}
+		);
+
 		// Initialize cursor manager
 		cursorManager = new CursorManager(stage, layers.cursors);
 
@@ -500,11 +527,43 @@
 	<!-- Properties Panel -->
 	<PropertiesPanel />
 
-	<!-- Command Palette -->
-	<CommandPalette bind:open={commandPaletteOpen} userId={data.user.id} viewport={$viewport} />
+<!-- Command Palette -->
+<CommandPalette bind:open={commandPaletteOpen} userId={data.user.id} viewport={$viewport} />
 
-	<!-- Keyboard Shortcuts (hold TAB) -->
-	<KeyboardShortcuts />
+<!-- Text Formatting Toolbar -->
+<TextFormattingToolbar
+	bind:visible={textFormattingVisible}
+	bind:position={textFormattingPosition}
+	fontWeight={textFormatState.fontWeight}
+	fontStyle={textFormatState.fontStyle}
+	textDecoration={textFormatState.textDecoration}
+	align={textFormatState.align}
+	fontSize={textFormatState.fontSize}
+	onFormatChange={(format) => {
+		if (editingTextId) {
+			shapeOperations.update(editingTextId, format);
+			// Update local state to reflect changes
+			if (format.fontWeight !== undefined) {
+				textFormatState.fontWeight = format.fontWeight as 'normal' | 'bold';
+			}
+			if (format.fontStyle !== undefined) {
+				textFormatState.fontStyle = format.fontStyle as 'normal' | 'italic';
+			}
+			if (format.textDecoration !== undefined) {
+				textFormatState.textDecoration = format.textDecoration;
+			}
+			if (format.align !== undefined) {
+				textFormatState.align = format.align as 'left' | 'center' | 'right';
+			}
+			if (format.fontSize !== undefined) {
+				textFormatState.fontSize = format.fontSize;
+			}
+		}
+	}}
+/>
+
+<!-- Keyboard Shortcuts (hold TAB) -->
+<KeyboardShortcuts />
 
 	<!-- Debug Overlay (press ~ to toggle) -->
 	<DebugOverlay {shapeRenderer} shapesCount={$shapes.length} />

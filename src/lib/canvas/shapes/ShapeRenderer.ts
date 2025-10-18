@@ -357,15 +357,18 @@ export class ShapeRenderer {
 				break;
 			}
 
-			case 'text': {
-				const text = node as Konva.Text;
-				text.text(shape.text);
-				text.fontSize(shape.fontSize);
-				text.fontFamily(shape.fontFamily || 'system-ui');
-				text.fontStyle(shape.fontStyle);
-				text.align(shape.align || 'left');
-				break;
-			}
+		case 'text': {
+			const text = node as Konva.Text;
+			text.text(shape.text);
+			text.fontSize(shape.fontSize);
+			text.fontFamily(shape.fontFamily || 'system-ui');
+			text.setAttr('fontWeight', shape.fontWeight || 'normal');
+			text.setAttr('fontStyle', shape.fontStyle || 'normal');
+			text.setAttr('textDecoration', shape.textDecoration || '');
+			text.setAttr('align', shape.align || 'left');
+			if (shape.width) text.width(shape.width);
+			break;
+		}
 		}
 	}
 
@@ -538,8 +541,11 @@ export class ShapeRenderer {
 					text: shape.text,
 					fontSize: shape.fontSize,
 					fontFamily: shape.fontFamily || SHAPES.DEFAULT_FONT_FAMILY,
-					fontStyle: shape.fontStyle,
-					align: shape.align || 'left'
+					fontWeight: shape.fontWeight || 'normal',
+					fontStyle: shape.fontStyle || 'normal',
+					textDecoration: shape.textDecoration || '',
+					align: shape.align || 'left',
+					width: shape.width || undefined
 					// NOTE: Intentionally NOT including stroke or strokeWidth
 					// Konva.Text stroke rendering creates visual artifacts
 				});
@@ -681,6 +687,44 @@ export class ShapeRenderer {
 		// handlers here as they would prevent event bubbling.
 	}
 
+	// Callback for text editing integration
+	private textEditingCallback:
+		| ((
+				textId: string,
+				toolbarPosition: { x: number; y: number },
+				format: {
+					fontWeight: 'normal' | 'bold';
+					fontStyle: 'normal' | 'italic';
+					textDecoration: string;
+					align: 'left' | 'center' | 'right';
+					fontSize: number;
+				}
+		  ) => void)
+		| null = null;
+
+	private textEditingEndCallback: (() => void) | null = null;
+
+	/**
+	 * Set callback for text editing
+	 */
+	setTextEditingCallback(
+		onStart: (
+			textId: string,
+			toolbarPosition: { x: number; y: number },
+			format: {
+				fontWeight: 'normal' | 'bold';
+				fontStyle: 'normal' | 'italic';
+				textDecoration: string;
+				align: 'left' | 'center' | 'right';
+				fontSize: number;
+			}
+		) => void,
+		onEnd: () => void
+	): void {
+		this.textEditingCallback = onStart;
+		this.textEditingEndCallback = onEnd;
+	}
+
 	/**
 	 * Enable text editing for a text shape
 	 */
@@ -698,28 +742,60 @@ export class ShapeRenderer {
 		const stageBox = this.stage.container().getBoundingClientRect();
 		const scale = this.stage.scaleX();
 
+		// Calculate toolbar position (above the text)
+		const toolbarX = stageBox.left + textPosition.x * scale;
+		const toolbarY = stageBox.top + textPosition.y * scale - 60; // 60px above text
+
+		// Notify about text editing start with formatting toolbar info
+		if (this.textEditingCallback) {
+			const fontWeight = shape.fontWeight;
+			const fontStyle = shape.fontStyle;
+			this.textEditingCallback(shape.id, { x: toolbarX, y: toolbarY }, {
+				fontWeight: (fontWeight === 'bold' || fontWeight === 'normal') ? fontWeight : 'normal',
+				fontStyle: (fontStyle === 'italic' || fontStyle === 'normal') ? fontStyle : 'normal',
+				textDecoration: shape.textDecoration || 'none',
+				align: shape.align || 'left',
+				fontSize: shape.fontSize
+			});
+		}
+
 		const textarea = document.createElement('textarea');
 		document.body.appendChild(textarea);
 
-		// Position textarea
+		// Enhanced textarea styling
 		textarea.value = shape.text;
 		textarea.style.position = 'absolute';
 		textarea.style.top = `${stageBox.top + textPosition.y * scale}px`;
 		textarea.style.left = `${stageBox.left + textPosition.x * scale}px`;
-		textarea.style.width = `${textNode.width() * scale}px`;
+		textarea.style.minWidth = `${Math.max(100, textNode.width() * scale)}px`;
 		textarea.style.fontSize = `${shape.fontSize * scale}px`;
 		textarea.style.fontFamily = shape.fontFamily || 'system-ui';
-		textarea.style.border = '2px solid #667eea';
-		textarea.style.padding = '4px';
+		textarea.style.fontWeight = String(shape.fontWeight || 'normal');
+		textarea.style.fontStyle = shape.fontStyle || 'normal';
+		textarea.style.textDecoration = shape.textDecoration || 'none';
+		textarea.style.border = '2px solid #a78bfa';
+		textarea.style.borderRadius = '8px';
+		textarea.style.padding = '8px';
 		textarea.style.margin = '0';
 		textarea.style.overflow = 'hidden';
-		textarea.style.background = 'white';
+		textarea.style.background = 'rgba(255, 255, 255, 0.95)';
+		textarea.style.backdropFilter = 'blur(8px)';
 		textarea.style.outline = 'none';
 		textarea.style.resize = 'none';
 		textarea.style.lineHeight = '1.2';
 		textarea.style.transformOrigin = 'left top';
 		textarea.style.textAlign = shape.align || 'left';
 		textarea.style.color = shape.fill || '#000000';
+		textarea.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.2)';
+		textarea.style.zIndex = '1000';
+
+		// Auto-grow textarea
+		const adjustHeight = () => {
+			textarea.style.height = 'auto';
+			textarea.style.height = `${textarea.scrollHeight}px`;
+		};
+		textarea.addEventListener('input', adjustHeight);
+		adjustHeight();
 
 		textarea.focus();
 		textarea.select();
@@ -737,6 +813,11 @@ export class ShapeRenderer {
 			// Clear editing state
 			this.locallyEditingId = null;
 
+			// Notify text editing end
+			if (this.textEditingEndCallback) {
+				this.textEditingEndCallback();
+			}
+
 			// Update text if changed
 			if (newText !== shape.text) {
 				this.callbacks!.onShapeUpdate(shape.id, { text: newText });
@@ -753,11 +834,12 @@ export class ShapeRenderer {
 				e.preventDefault();
 				removeTextarea();
 			}
+			// Don't close on Enter - allow multi-line text
 		});
 
 		textarea.addEventListener('blur', () => {
-			// Small delay to allow click events to process first
-			setTimeout(removeTextarea, 10);
+			// Small delay to allow toolbar clicks to process first
+			setTimeout(removeTextarea, 150);
 		});
 	}
 
