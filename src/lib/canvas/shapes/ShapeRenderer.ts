@@ -462,16 +462,18 @@ export class ShapeRenderer {
 
 			case 'polygon': {
 				const polygonShape = shape as Extract<Shape, { type: 'polygon' }>;
-				// Generate points for polygon from sides and radius
-				const points: number[] = [];
-				for (let i = 0; i < polygonShape.sides; i++) {
-					const angle = (i / polygonShape.sides) * Math.PI * 2 - Math.PI / 2;
-					points.push(Math.cos(angle) * polygonShape.radius, Math.sin(angle) * polygonShape.radius);
-				}
-				return new Konva.Line({
+				return new Konva.RegularPolygon({
 					...baseConfig,
-					points: points,
-					closed: true
+					sides: polygonShape.sides,
+					radius: polygonShape.radius,
+					fill: polygonShape.fill || undefined,
+					stroke: polygonShape.stroke || undefined,
+					strokeWidth: polygonShape.strokeWidth || 0,
+					strokeEnabled: polygonShape.strokeEnabled !== false,
+					shadowColor: polygonShape.shadow?.color || undefined,
+					shadowBlur: polygonShape.shadow?.blur || 0,
+					shadowOpacity: polygonShape.shadow ? 0.5 : 0,
+					shadowOffset: polygonShape.shadow ? { x: polygonShape.shadow.offsetX, y: polygonShape.shadow.offsetY } : { x: 0, y: 0 }
 				});
 			}
 

@@ -201,7 +201,18 @@ export class SelectionNet {
 				break;
 			}
 
-			case 'polygon':
+			case 'polygon': {
+				const polygonShape = shape as Extract<Shape, { type: 'polygon' }>;
+				// Polygons are now RegularPolygon with radius
+				shapeBounds = {
+					x: shape.x - polygonShape.radius,
+					y: shape.y - polygonShape.radius,
+					width: polygonShape.radius * 2,
+					height: polygonShape.radius * 2
+				};
+				break;
+			}
+
 			case 'star': {
 				// Use radius as bounding box approximation
 				const radius = shape.type === 'star' ? shape.outerRadius : shape.radius;

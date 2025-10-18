@@ -273,7 +273,7 @@ export class SelectionManager {
 			// Calculate dimensions
 			let nodeWidth: number;
 			let nodeHeight: number;
-			
+
 			if (isClosedPolygon) {
 				// For polygons, use bounding box dimensions
 				nodeWidth = Math.round(box.width);
