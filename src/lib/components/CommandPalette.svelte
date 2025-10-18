@@ -190,23 +190,23 @@
 			shapeOperations.update(params.shapeId as string, {
 				rotation: (params.degrees as number) % 360
 			});
-	} else if (toolName === 'updateShapeColor') {
-		const updates: Record<string, unknown> = {};
-		if (params.fill) updates.fill = params.fill;
-		if (params.stroke) updates.stroke = params.stroke;
-		shapeOperations.update(params.shapeId as string, updates);
-	} else if (toolName === 'updateText') {
-		const updates: Record<string, unknown> = {};
-		if (params.text) updates.text = params.text;
-		if (params.fontSize) updates.fontSize = params.fontSize;
-		if (params.fontFamily) updates.fontFamily = params.fontFamily;
-		if (params.fontWeight) updates.fontWeight = params.fontWeight;
-		if (params.fontStyle) updates.fontStyle = params.fontStyle;
-		if (params.textDecoration) updates.textDecoration = params.textDecoration;
-		if (params.align) updates.align = params.align;
-		if (params.fill) updates.fill = params.fill;
-		shapeOperations.update(params.shapeId as string, updates);
-	} else if (toolName === 'deleteShape') {
+		} else if (toolName === 'updateShapeColor') {
+			const updates: Record<string, unknown> = {};
+			if (params.fill) updates.fill = params.fill;
+			if (params.stroke) updates.stroke = params.stroke;
+			shapeOperations.update(params.shapeId as string, updates);
+		} else if (toolName === 'updateText') {
+			const updates: Record<string, unknown> = {};
+			if (params.text) updates.text = params.text;
+			if (params.fontSize) updates.fontSize = params.fontSize;
+			if (params.fontFamily) updates.fontFamily = params.fontFamily;
+			if (params.fontWeight) updates.fontWeight = params.fontWeight;
+			if (params.fontStyle) updates.fontStyle = params.fontStyle;
+			if (params.textDecoration) updates.textDecoration = params.textDecoration;
+			if (params.align) updates.align = params.align;
+			if (params.fill) updates.fill = params.fill;
+			shapeOperations.update(params.shapeId as string, updates);
+		} else if (toolName === 'deleteShape') {
 			shapeOperations.delete(params.shapeId as string);
 		} else if (toolName === 'duplicateShape') {
 			const original = shapeOperations.get(params.shapeId as string);
@@ -468,27 +468,27 @@
 							>
 								Make a 200x150 blue rectangle
 							</button>
-						<button
-							type="button"
-							onclick={() => (command = 'Add text that says Hello World')}
-							class="rounded-lg bg-white px-3 py-1.5 text-xs text-slate-700 shadow-sm border border-violet-200 hover:border-violet-400 hover:bg-violet-50 transition-colors"
-						>
-							Add text "Hello World"
-						</button>
-						<button
-							type="button"
-							onclick={() => (command = 'Make all text bold and centered')}
-							class="rounded-lg bg-white px-3 py-1.5 text-xs text-slate-700 shadow-sm border border-violet-200 hover:border-violet-400 hover:bg-violet-50 transition-colors"
-						>
-							Make all text bold and centered
-						</button>
-						<button
-							type="button"
-							onclick={() => (command = 'Create a login form')}
-							class="rounded-lg bg-white px-3 py-1.5 text-xs text-slate-700 shadow-sm border border-violet-200 hover:border-violet-400 hover:bg-violet-50 transition-colors"
-						>
-							Create a login form
-						</button>
+							<button
+								type="button"
+								onclick={() => (command = 'Add text that says Hello World')}
+								class="rounded-lg bg-white px-3 py-1.5 text-xs text-slate-700 shadow-sm border border-violet-200 hover:border-violet-400 hover:bg-violet-50 transition-colors"
+							>
+								Add text "Hello World"
+							</button>
+							<button
+								type="button"
+								onclick={() => (command = 'Make all text bold and centered')}
+								class="rounded-lg bg-white px-3 py-1.5 text-xs text-slate-700 shadow-sm border border-violet-200 hover:border-violet-400 hover:bg-violet-50 transition-colors"
+							>
+								Make all text bold and centered
+							</button>
+							<button
+								type="button"
+								onclick={() => (command = 'Create a login form')}
+								class="rounded-lg bg-white px-3 py-1.5 text-xs text-slate-700 shadow-sm border border-violet-200 hover:border-violet-400 hover:bg-violet-50 transition-colors"
+							>
+								Create a login form
+							</button>
 						</div>
 					</div>
 				{/if}
