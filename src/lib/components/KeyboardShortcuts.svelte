@@ -16,7 +16,7 @@
 				{ action: 'Text', keys: 'T' },
 				{ action: 'Polygon', keys: 'P' },
 				{ action: 'Star', keys: 'S' },
-				{ action: 'Triangle', keys: 'H' }
+				{ action: 'Triangle', keys: 'G' }
 			]
 		},
 		{
@@ -29,6 +29,10 @@
 				{ action: 'Undo', keys: 'Cmd+Z' },
 				{ action: 'Redo', keys: 'Cmd+Shift+Z' }
 			]
+		},
+		{
+			name: 'AI',
+			shortcuts: [{ action: 'Command Palette', keys: 'Cmd+K' }]
 		},
 		{
 			name: 'Movement',
