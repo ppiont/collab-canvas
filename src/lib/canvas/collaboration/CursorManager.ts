@@ -53,6 +53,9 @@ export class CursorManager {
 	private canvasWidth = 0;
 	private canvasHeight = 0;
 
+	// Event handler references for cleanup
+	private awarenessChangeHandler: (() => void) | null = null;
+
 	constructor(stage: Konva.Stage, cursorsLayer: Konva.Layer) {
 		this.stage = stage;
 		this.cursorsLayer = cursorsLayer;
@@ -68,7 +71,7 @@ export class CursorManager {
 		this.canvasHeight = height;
 
 		// Listen to awareness changes
-		const handleAwarenessChange = () => {
+		this.awarenessChangeHandler = () => {
 			this.renderCursors();
 
 			// Update follow mode if active
@@ -77,8 +80,8 @@ export class CursorManager {
 			}
 		};
 
-		awareness.on('change', handleAwarenessChange);
-		awareness.on('update', handleAwarenessChange);
+		awareness.on('change', this.awarenessChangeHandler);
+		awareness.on('update', this.awarenessChangeHandler);
 
 		// Start pulse animation for off-screen indicators
 		this.startPulseAnimation();
@@ -629,6 +632,13 @@ export class CursorManager {
 	 * Clean up resources
 	 */
 	destroy(): void {
+		// Clean up awareness listeners FIRST
+		if (this.awareness && this.awarenessChangeHandler) {
+			this.awareness.off('change', this.awarenessChangeHandler);
+			this.awareness.off('update', this.awarenessChangeHandler);
+			this.awarenessChangeHandler = null;
+		}
+
 		if (this.pulseAnimation) {
 			this.pulseAnimation.stop();
 			this.pulseAnimation = null;
