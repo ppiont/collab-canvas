@@ -81,11 +81,12 @@ export class LiveShapeRenderer {
 		// Collect all dragged shapes from all users
 		this.awareness.getStates().forEach((state: AwarenessStateData) => {
 			if (state.draggedShapes && state.user) {
-				const userColor = state.user.color || '#3b82f6';
-				this.userColors.set(state.user.id, userColor);
+				const user = state.user; // Store in const to satisfy TypeScript
+				const userColor = user.color || '#3b82f6';
+				this.userColors.set(user.id, userColor);
 
 				Object.entries(state.draggedShapes).forEach(([shapeId, dragInfo]) => {
-					const key = `${state.user.id}-${shapeId}`;
+					const key = `${user.id}-${shapeId}`;
 					seenKeys.add(key);
 
 					// Check for stale dragged shapes (older than 5 seconds)
@@ -95,7 +96,7 @@ export class LiveShapeRenderer {
 							id: shapeId,
 							x: dragInfo.x,
 							y: dragInfo.y,
-							userId: state.user.id,
+							userId: user.id,
 							timestamp: dragInfo.timestamp
 						});
 					}
