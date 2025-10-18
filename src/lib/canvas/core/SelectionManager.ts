@@ -76,7 +76,7 @@ export class SelectionManager {
 			anchorSize: 10,
 			anchorCornerRadius: 2,
 			rotateAnchorOffset: 30,
-			rotateAnchorCursor: 'crosshair',
+			rotateAnchorCursor: 'url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjMgNHY2aC02TTEgMjB2LTZoNiIvPjxwYXRoIGQ9Ik0zLjUxIDlhOSA5IDAgMCAxIDE0Ljg1LTMuMzZNMjAuNDkgMTVhOSA5IDAgMCAxLTE0Ljg1IDMuMzYiLz48L3N2Zz4=") 12 12, auto',
 			boundBoxFunc: (oldBox, newBox) => {
 				// Limit minimum size
 				if (newBox.width < 5 || newBox.height < 5) {
@@ -225,12 +225,12 @@ export class SelectionManager {
 			return;
 		}
 
-		// Check if the selected node is a line
 		const node = nodes[0];
 		const isLine = node instanceof Konva.Line;
+		const isClosedPolygon = isLine && (node as Konva.Line).closed();
 
-		if (isLine) {
-			// For lines, calculate and show length
+		if (isLine && !isClosedPolygon) {
+			// For open lines only, calculate and show length
 			const line = node as Konva.Line;
 			const points = line.points();
 
@@ -265,20 +265,26 @@ export class SelectionManager {
 				this.sizeLabel.moveToTop();
 			}
 		} else {
-			// For regular shapes, show dimensions
+			// For regular shapes and closed polygons, show dimensions
 			// Force transformer to recalculate to get accurate box
 			this.transformer.forceUpdate();
 
-			// Get the selected node
-			const nodes = this.transformer.nodes();
-			if (nodes.length === 0) {
-				this.sizeLabel.visible(false);
-				return;
-			}
+			// Get the bounding box in canvas space
+			const box = node.getClientRect();
 
-			const node = nodes[0];
-			const nodeWidth = Math.round(node.width() * node.scaleX());
-			const nodeHeight = Math.round(node.height() * node.scaleY());
+			// Calculate dimensions
+			let nodeWidth: number;
+			let nodeHeight: number;
+
+			if (isClosedPolygon) {
+				// For polygons, use bounding box dimensions
+				nodeWidth = Math.round(box.width);
+				nodeHeight = Math.round(box.height);
+			} else {
+				// For regular shapes, use actual width/height * scale (not rotated bounds)
+				nodeWidth = Math.round(node.width() * node.scaleX());
+				nodeHeight = Math.round(node.height() * node.scaleY());
+			}
 
 			// Update text with actual dimensions
 			const text = this.sizeLabel.findOne('Text') as Konva.Text;
@@ -286,13 +292,13 @@ export class SelectionManager {
 				text.text(`${nodeWidth} × ${nodeHeight}`);
 			}
 
-			// Get the bounding box relative to the layer (this handles all transformations correctly)
-			const box = node.getClientRect({ relativeTo: this.layer });
+			// Position below the shape using bounding box
+			const labelX = box.x + box.width / 2;
+			const labelY = box.y + box.height + 12;
 
-			// Position below the shape
 			this.sizeLabel.position({
-				x: box.x + box.width / 2,
-				y: box.y + box.height + 12
+				x: labelX,
+				y: labelY
 			});
 
 			this.sizeLabel.visible(true);
