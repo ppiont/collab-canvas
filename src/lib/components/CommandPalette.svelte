@@ -393,11 +393,11 @@
 							{/if}
 						</div>
 
-						<Button
-							type="submit"
+						<Button 
+							type="submit" 
 							size="lg"
 							disabled={!command.trim() || commandState === 'loading'}
-							class="h-14 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 font-semibold text-white shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/40 disabled:opacity-50"
+							class="h-14 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 font-semibold text-white shadow-lg shadow-violet-500/30 hover:brightness-110 hover:scale-105 transition-all disabled:opacity-50"
 						>
 							{#if commandState === 'loading'}
 								<Loader2 class="h-4 w-4 animate-spin mr-2" />
