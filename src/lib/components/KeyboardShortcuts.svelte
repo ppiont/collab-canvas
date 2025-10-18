@@ -59,8 +59,8 @@
 		{
 			name: 'Z-Order Management',
 			shortcuts: [
-				{ action: 'Bring to Front', keys: 'Cmd+]' },
-				{ action: 'Send to Back', keys: 'Cmd+[' }
+				{ action: 'Bring to Front', keys: 'Cmd+Shift+]' },
+				{ action: 'Send to Back', keys: 'Cmd+Shift+[' }
 			]
 		}
 	];

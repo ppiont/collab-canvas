@@ -615,21 +615,22 @@ export class SelectionManager {
 				const node = this.layer.findOne(`#${id}`);
 				if (node) {
 					if (node instanceof Konva.Line && !node.closed()) {
-						// It's an open line - use custom transformer
+						// It's an open line
 						lineNode = node;
 						lineId = id;
-					} else {
-						selectedNodes.push(node);
 					}
+					selectedNodes.push(node);
 				}
 			});
 
-			// If a line is selected, use custom line transformer
-			if (lineNode) {
+			// Only use custom line transformer if SINGLE line is selected
+			// For multiselect (including lines), use regular transformer
+			if (lineNode && this.selectedIds.size === 1) {
+				// Single line selected - show endpoint editing
 				this.transformer.nodes([]);
 				this.createLineTransformer(lineNode, lineId);
 			} else {
-				// Use regular transformer for other shapes
+				// Multiple shapes OR non-line shapes - use regular transformer
 				this.hideLineTransformer();
 				if (selectedNodes.length > 0) {
 					this.transformer.nodes(selectedNodes);
