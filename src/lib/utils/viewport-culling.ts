@@ -90,25 +90,6 @@ export function getShapeBounds(shape: Shape): ShapeBounds {
 			};
 		}
 
-		case 'ellipse': {
-			if (!hasRotation) {
-				return {
-					left: shape.x - shape.radiusX,
-					right: shape.x + shape.radiusX,
-					top: shape.y - shape.radiusY,
-					bottom: shape.y + shape.radiusY
-				};
-			}
-			// Conservative bounds for rotated ellipse
-			const maxRadius = Math.max(shape.radiusX, shape.radiusY);
-			return {
-				left: shape.x - maxRadius,
-				right: shape.x + maxRadius,
-				top: shape.y - maxRadius,
-				bottom: shape.y + maxRadius
-			};
-		}
-
 		case 'line': {
 			// Find min/max of all points
 			const points = shape.points;

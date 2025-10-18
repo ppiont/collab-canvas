@@ -178,17 +178,6 @@ export class SelectionNet {
 				break;
 			}
 
-			case 'ellipse': {
-				// Ellipses are centered
-				shapeBounds = {
-					x: shape.x - shape.radiusX,
-					y: shape.y - shape.radiusY,
-					width: shape.radiusX * 2,
-					height: shape.radiusY * 2
-				};
-				break;
-			}
-
 			case 'polygon':
 			case 'star': {
 				// Use radius as bounding box approximation
