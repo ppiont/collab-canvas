@@ -10,7 +10,6 @@
  */
 
 import Konva from 'konva';
-import { lineManager } from '../line/LineManager.svelte';
 
 /** Callback for selection changes */
 export type SelectionChangeCallback = (selectedIds: string[]) => void;
@@ -254,7 +253,6 @@ export class SelectionManager {
 				// Position near the line midpoint
 				const midX = (x1 + x2) / 2;
 				const midY = (y1 + y2) / 2;
-				const scale = this.stage.scaleX();
 
 				this.sizeLabel.position({
 					x: midX + 12,
@@ -442,7 +440,6 @@ export class SelectionManager {
 						line.points(scaledPoints);
 					}
 				} else if (className === 'RegularPolygon') {
-					const polygon = node as Konva.RegularPolygon;
 					// Triangle - allow independent X/Y scaling like stars
 					changes.scaleX = scaleX;
 					changes.scaleY = scaleY;
