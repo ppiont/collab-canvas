@@ -54,6 +54,9 @@
 	// Derive reactive values from stores (modern Svelte 5 pattern)
 	let stageScale = $derived($viewport.scale);
 
+	// State for shortcuts hint visibility
+	let showShortcutsHint = $state(true);
+
 	// Helper function to create shapes based on active tool
 	function createShapeAtPosition(x: number, y: number): Shape | null {
 		const tool = $activeTool;
@@ -234,6 +237,11 @@
 		// Initialize canvas dimensions
 		const width = window.innerWidth;
 		const height = window.innerHeight;
+
+		// Hide shortcuts hint after 10 seconds
+		const hintTimeout = setTimeout(() => {
+			showShortcutsHint = false;
+		}, 10000);
 
 		// Initialize canvas engine
 		canvasEngine = new CanvasEngine(containerDiv, {
@@ -437,6 +445,7 @@
 			if (toastTimeout) {
 				clearTimeout(toastTimeout);
 			}
+			clearTimeout(hintTimeout);
 		};
 	});
 
@@ -494,6 +503,11 @@
 		{Math.round(stageScale * 100)}%
 	</div>
 
+	<!-- Keyboard shortcuts hint -->
+	<div class="shortcuts-hint" class:hidden={!showShortcutsHint}>
+		Press <kbd>TAB</kbd> for shortcuts
+	</div>
+
 	<!-- Konva container -->
 	<div bind:this={containerDiv}></div>
 </div>
@@ -531,5 +545,35 @@
 			system-ui,
 			-apple-system,
 			sans-serif;
+	}
+
+	.shortcuts-hint {
+		position: fixed;
+		top: 20px; /* Changed from bottom to top */
+		left: 50%; /* Center horizontally */
+		transform: translateX(-50%); /* Adjust for centering */
+		background: rgba(0, 0, 0, 0.5);
+		color: rgba(255, 255, 255, 0.8);
+		padding: 6px 12px;
+		border-radius: 6px;
+		font-size: 12px;
+		z-index: 999;
+		pointer-events: none;
+		font-family: system-ui, -apple-system, sans-serif;
+		transition: opacity 0.3s ease;
+		opacity: 1;
+	}
+
+	.shortcuts-hint.hidden {
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.shortcuts-hint kbd {
+		background: rgba(255, 255, 255, 0.15);
+		padding: 2px 6px;
+		border-radius: 3px;
+		font-family: ui-monospace, 'Courier New', monospace;
+		font-weight: 500;
 	}
 </style>
