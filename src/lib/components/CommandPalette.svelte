@@ -368,7 +368,7 @@
 						<div class="relative flex-1">
 							<Input
 								bind:value={command}
-								placeholder="Tell me what to create... (e.g., 'Create a red circle' or 'Make a login form')"
+								placeholder="Tell me what to create..."
 								disabled={commandState === 'loading'}
 								class="h-14 rounded-xl border-2 border-violet-200 bg-white px-5 text-base shadow-inner focus-visible:border-violet-500 focus-visible:ring-violet-500/20"
 								autofocus
@@ -393,8 +393,8 @@
 							{/if}
 						</div>
 
-						<Button 
-							type="submit" 
+						<Button
+							type="submit"
 							size="lg"
 							disabled={!command.trim() || commandState === 'loading'}
 							class="h-14 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 font-semibold text-white shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/40 disabled:opacity-50"
