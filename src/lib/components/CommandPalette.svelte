@@ -364,32 +364,49 @@
 					}}
 					class="space-y-4"
 				>
-					<div class="relative">
-						<Input
-							bind:value={command}
-							placeholder="Tell me what to create... (e.g., 'Create a red circle' or 'Make a login form')"
-							disabled={commandState === 'loading'}
-							class="h-14 rounded-xl border-2 border-violet-200 bg-white px-5 text-base shadow-inner focus-visible:border-violet-500 focus-visible:ring-violet-500/20"
-							autofocus
-						/>
+					<div class="flex gap-3">
+						<div class="relative flex-1">
+							<Input
+								bind:value={command}
+								placeholder="Tell me what to create... (e.g., 'Create a red circle' or 'Make a login form')"
+								disabled={commandState === 'loading'}
+								class="h-14 rounded-xl border-2 border-violet-200 bg-white px-5 text-base shadow-inner focus-visible:border-violet-500 focus-visible:ring-violet-500/20"
+								autofocus
+							/>
 
-						{#if commandState === 'loading'}
-							<div class="absolute right-4 top-1/2 -translate-y-1/2">
-								<Loader2 class="h-5 w-5 animate-spin text-violet-600" />
-							</div>
-						{:else if commandState === 'success'}
-							<div class="absolute right-4 top-1/2 -translate-y-1/2">
-								<div class="rounded-full bg-green-100 p-1">
-									<CheckCircle2 class="h-5 w-5 text-green-600" />
+							{#if commandState === 'loading'}
+								<div class="absolute right-4 top-1/2 -translate-y-1/2">
+									<Loader2 class="h-5 w-5 animate-spin text-violet-600" />
 								</div>
-							</div>
-						{:else if commandState === 'error'}
-							<div class="absolute right-4 top-1/2 -translate-y-1/2">
-								<div class="rounded-full bg-red-100 p-1">
-									<XCircle class="h-5 w-5 text-red-600" />
+							{:else if commandState === 'success'}
+								<div class="absolute right-4 top-1/2 -translate-y-1/2">
+									<div class="rounded-full bg-green-100 p-1">
+										<CheckCircle2 class="h-5 w-5 text-green-600" />
+									</div>
 								</div>
-							</div>
-						{/if}
+							{:else if commandState === 'error'}
+								<div class="absolute right-4 top-1/2 -translate-y-1/2">
+									<div class="rounded-full bg-red-100 p-1">
+										<XCircle class="h-5 w-5 text-red-600" />
+									</div>
+								</div>
+							{/if}
+						</div>
+
+						<Button 
+							type="submit" 
+							size="lg"
+							disabled={!command.trim() || commandState === 'loading'}
+							class="h-14 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 font-semibold text-white shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/40 disabled:opacity-50"
+						>
+							{#if commandState === 'loading'}
+								<Loader2 class="h-4 w-4 animate-spin mr-2" />
+								Processing...
+							{:else}
+								<Sparkles class="h-4 w-4 mr-2 text-yellow-300 fill-yellow-300" />
+								Execute
+							{/if}
+						</Button>
 					</div>
 
 					{#if commandState === 'loading'}
@@ -417,39 +434,6 @@
 							</div>
 						</div>
 					{/if}
-
-					<div class="flex items-center justify-between">
-						<div class="flex items-center gap-4 text-xs text-slate-600">
-							<span class="flex items-center gap-1">
-								<kbd
-									class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs border border-slate-300"
-									>⌘K</kbd
-								>
-								to toggle
-							</span>
-							<span class="flex items-center gap-1">
-								<kbd
-									class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs border border-slate-300"
-									>ESC</kbd
-								>
-								to close
-							</span>
-						</div>
-						<Button 
-							type="submit" 
-							size="lg"
-							disabled={!command.trim() || commandState === 'loading'}
-							class="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 font-semibold shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/40 disabled:opacity-50"
-						>
-							{#if commandState === 'loading'}
-								<Loader2 class="h-4 w-4 animate-spin mr-2" />
-								Processing...
-							{:else}
-								<Sparkles class="h-4 w-4 mr-2 text-yellow-300 fill-yellow-300" />
-								Execute
-							{/if}
-						</Button>
-					</div>
 				</form>
 
 				<!-- Example commands -->
