@@ -28,7 +28,6 @@ export type ToolType =
 	| 'polygon'
 	| 'star'
 	| 'triangle'
-	| 'image'
 	| 'pan';
 
 /** Cursor mode for canvas */
