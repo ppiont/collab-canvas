@@ -37,9 +37,6 @@ export class LiveShapeRenderer {
 
 		// Listen for Awareness state changes
 		this.setupAwarenessListener();
-
-		// Schedule periodic updates
-		this.scheduleUpdates();
 	}
 
 	/**
@@ -53,16 +50,6 @@ export class LiveShapeRenderer {
 
 		// Initial render
 		this.updateDraggedShapes();
-	}
-
-	/**
-	 * Schedule periodic updates for smooth animation
-	 */
-	private scheduleUpdates(): void {
-		const updateLoop = () => {
-			requestAnimationFrame(updateLoop);
-		};
-		updateLoop();
 	}
 
 	/**
