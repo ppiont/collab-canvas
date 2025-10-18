@@ -49,7 +49,7 @@ export const isSelectToolActive = derived(activeTool, ($tool) => $tool === 'sele
  * Is a shape creation tool active?
  */
 export const isCreateToolActive = derived(activeTool, ($tool) =>
-	['rectangle', 'circle', 'line', 'text', 'polygon', 'star', 'triangle', 'image'].includes($tool)
+	['rectangle', 'circle', 'line', 'text', 'polygon', 'star', 'triangle'].includes($tool)
 );
 
 /**
@@ -69,6 +69,5 @@ export const TOOL_NAMES: Record<ToolType, string> = {
 	polygon: 'Polygon',
 	star: 'Star',
 	triangle: 'Triangle',
-	image: 'Image',
 	pan: 'Pan'
 };
