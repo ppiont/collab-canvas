@@ -228,7 +228,7 @@ export class SelectionManager {
 		const isLine = node instanceof Konva.Line;
 		const isClosedPolygon = isLine && (node as Konva.Line).closed();
 
-		// Get the current stage scale to compensate for zoom
+		// Get the current stage scale to compensate for zoom on offsets only
 		const stageScale = this.stage.scaleX();
 
 		if (isLine && !isClosedPolygon) {
@@ -257,10 +257,10 @@ export class SelectionManager {
 				const midX = (x1 + x2) / 2;
 				const midY = (y1 + y2) / 2;
 
-				// Apply inverse scale to compensate for stage zoom
+				// Scale only the offset to maintain fixed visual distance at all zoom levels
 				this.sizeLabel.position({
-					x: (midX + 12) / stageScale,
-					y: (midY - 12) / stageScale
+					x: midX + 12 / stageScale,
+					y: midY - 12 / stageScale
 				});
 
 				this.sizeLabel.visible(true);
@@ -299,9 +299,9 @@ export class SelectionManager {
 			}
 
 			// Position below the shape using bounding box
-			// Apply inverse scale to compensate for stage zoom
-			const labelX = (box.x + box.width / 2) / stageScale;
-			const labelY = (box.y + box.height + 12) / stageScale;
+			// Scale only the 12px offset to maintain fixed visual distance at all zoom levels
+			const labelX = box.x + box.width / 2;
+			const labelY = box.y + box.height + 12 / stageScale;
 
 			this.sizeLabel.position({
 				x: labelX,
