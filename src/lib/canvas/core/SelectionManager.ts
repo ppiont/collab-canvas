@@ -314,21 +314,31 @@ export class SelectionManager {
 				labelY = shapeY + shapeHeight + 12;
 			}
 
-			// Update text with actual dimensions
-			const text = this.sizeLabel.findOne('Text') as Konva.Text;
-			if (text) {
-				text.text(`${nodeWidth} × ${nodeHeight}`);
+			// Only show label if dimensions are valid (not NaN, not Infinity, and positive)
+			const isValidDimension = (val: number) => 
+				!isNaN(val) && isFinite(val) && val > 0;
+
+			if (isValidDimension(nodeWidth) && isValidDimension(nodeHeight) && 
+			    isValidDimension(labelX) && isValidDimension(labelY)) {
+				// Update text with actual dimensions
+				const text = this.sizeLabel.findOne('Text') as Konva.Text;
+				if (text) {
+					text.text(`${nodeWidth} × ${nodeHeight}`);
+				}
+
+				this.sizeLabel.position({
+					x: labelX,
+					y: labelY
+				});
+
+				this.sizeLabel.visible(true);
+
+				// Move size label to top so it's always visible
+				this.sizeLabel.moveToTop();
+			} else {
+				// Hide label if dimensions are invalid
+				this.sizeLabel.visible(false);
 			}
-
-			this.sizeLabel.position({
-				x: labelX,
-				y: labelY
-			});
-
-			this.sizeLabel.visible(true);
-
-			// Move size label to top so it's always visible
-			this.sizeLabel.moveToTop();
 		}
 	}
 
@@ -431,7 +441,8 @@ export class SelectionManager {
 					}
 			} else if (className === 'Text') {
 				const text = node as Konva.Text;
-				const newWidth = Math.round(node.width() * scaleX);
+				// Enforce minimum width of 20px to prevent NaN and too-small text boxes
+				const newWidth = Math.max(20, Math.round(node.width() * scaleX));
 				changes.width = newWidth;
 				text.width(newWidth);
 			} else if (className === 'Line') {
