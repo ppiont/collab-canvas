@@ -246,40 +246,6 @@ export class LiveShapeRenderer {
 			ghost.add(shapeNode);
 		}
 
-		// Add user indicator label
-		const userInfo = this.awareness.getStates().get(
-			Array.from(this.awareness.getStates().entries()).find(
-				([_, state]: [any, any]) => state.user?.id === dragInfo.userId
-			)?.[0]
-		);
-
-		if (userInfo?.user?.name) {
-			const label = new Konva.Label({
-				x: 10,
-				y: 10
-			});
-
-			label.add(
-				new Konva.Tag({
-					fill: userColor,
-					cornerRadius: 2,
-					opacity: 0.8
-				})
-			);
-
-			label.add(
-				new Konva.Text({
-					text: `${userInfo.user.name}`,
-					fontSize: 10,
-					fontFamily: 'system-ui',
-					fill: '#ffffff',
-					padding: 3
-				})
-			);
-
-			ghost.add(label);
-		}
-
 		ghost.setAttr('dragKey', key);
 		this.shapesLayer.add(ghost);
 		this.draggedShapeNodes.set(key, ghost);

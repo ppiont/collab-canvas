@@ -52,10 +52,6 @@ export class ShapeRenderer {
 	// Performance stats (for debugging)
 	private lastCullingStats: ReturnType<typeof getCullingStats> | null = null;
 
-	// PHASE 4: Throttled drag broadcasts (50ms = ~20 updates/sec)
-	private lastDragBroadcastTime: { [shapeId: string]: number } = {};
-	private dragBroadcastThrottle = 50; // milliseconds
-
 	constructor(shapesLayer: Konva.Layer, stage: Konva.Stage) {
 		this.shapesLayer = shapesLayer;
 		this.stage = stage;
@@ -607,18 +603,12 @@ export class ShapeRenderer {
 		});
 
 		konvaShape.on('dragmove', () => {
-			// PHASE 2 & 4: Broadcast live shape position via Awareness (throttled)
-			// This allows collaborators to see smooth movement without creating undo entries
-			const now = Date.now();
-			const lastBroadcast = this.lastDragBroadcastTime[shapeId] || 0;
-
-			if (now - lastBroadcast >= this.dragBroadcastThrottle) {
-				this.callbacks!.onBroadcastShapeDrag(shapeId, {
-					x: konvaShape.x(),
-					y: konvaShape.y()
-				});
-				this.lastDragBroadcastTime[shapeId] = now;
-			}
+			// PHASE 2: Broadcast live shape position via Awareness (no throttle)
+			// Send every dragmove for smooth real-time movement
+			this.callbacks!.onBroadcastShapeDrag(shapeId, {
+				x: konvaShape.x(),
+				y: konvaShape.y()
+			});
 
 			// Broadcast cursor position
 			this.callbacks!.onBroadcastCursor();
@@ -655,8 +645,7 @@ export class ShapeRenderer {
 			// Broadcast final cursor position
 			this.callbacks!.onBroadcastCursor();
 
-			// Clear drag tracking and throttle time
-			delete this.lastDragBroadcastTime[shapeId];
+			// Clear drag tracking
 			requestAnimationFrame(() => {
 				this.locallyDraggingId = null;
 			});

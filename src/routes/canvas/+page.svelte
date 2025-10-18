@@ -342,7 +342,12 @@
 
 				// PHASE 7, 3: Initialize live shape renderer for real-time drag feedback
 				if (!liveShapeRenderer) {
-					liveShapeRenderer = new LiveShapeRenderer(layers.shapes, stage, providerValue.awareness, shapesMap);
+					liveShapeRenderer = new LiveShapeRenderer(
+						layers.shapes,
+						stage,
+						providerValue.awareness,
+						shapesMap
+					);
 				}
 			}
 		});
