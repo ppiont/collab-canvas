@@ -336,8 +336,10 @@
 
 <Dialog.Root bind:open>
 	<Dialog.Portal>
-		<!-- Subtle overlay -->
-		<div class="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"></div>
+		{#if open}
+			<!-- Subtle overlay -->
+			<div class="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"></div>
+		{/if}
 		
 		<!-- Floating palette -->
 		<DialogPrimitive.Content
@@ -422,16 +424,22 @@
 					<div class="flex items-center justify-between">
 						<div class="flex items-center gap-4 text-xs text-slate-600">
 							<span class="flex items-center gap-1">
-								<kbd class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs border border-slate-300">⌘K</kbd>
+								<kbd
+									class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs border border-slate-300"
+									>⌘K</kbd
+								>
 								to toggle
 							</span>
 							<span class="flex items-center gap-1">
-								<kbd class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs border border-slate-300">ESC</kbd>
+								<kbd
+									class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs border border-slate-300"
+									>ESC</kbd
+								>
 								to close
 							</span>
 						</div>
-						<Button 
-							type="submit" 
+						<Button
+							type="submit"
 							size="lg"
 							disabled={!command.trim() || commandState === 'loading'}
 							class="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 font-semibold shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/40 disabled:opacity-50"
@@ -449,7 +457,9 @@
 
 				<!-- Example commands -->
 				{#if commandState === 'idle'}
-					<div class="mt-4 rounded-xl bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 p-4">
+					<div
+						class="mt-4 rounded-xl bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 p-4"
+					>
 						<p class="text-xs font-semibold text-violet-900 mb-2">Try these examples:</p>
 						<div class="flex flex-wrap gap-2">
 							<button
