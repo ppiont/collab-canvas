@@ -566,7 +566,69 @@ export class CanvasEventHandlers {
 				return;
 			}
 
-			// Arrow keys - nudge selected shapes (only when not typing)
+			// Text formatting shortcuts (when editing text)
+		if (isTyping && (e.metaKey || e.ctrlKey)) {
+			const selectedIds = Array.from(this.selectionManager.getSelectedIds());
+			
+			// Get first selected shape to check if it's text
+			const allShapes = this.getShapes();
+			const shape = selectedIds.length === 1 ? allShapes.find(s => s.id === selectedIds[0]) : null;
+			
+			if (shape && shape.type === 'text') {
+				// Cmd+B - Bold
+				if (e.key === 'b') {
+					e.preventDefault();
+					const currentWeight = shape.fontWeight || 'normal';
+					shapeOperations.update(shape.id, {
+						fontWeight: currentWeight === 'bold' ? 'normal' : 'bold'
+					});
+					return;
+				}
+				
+				// Cmd+I - Italic
+				if (e.key === 'i') {
+					e.preventDefault();
+					const currentStyle = shape.fontStyle || 'normal';
+					shapeOperations.update(shape.id, {
+						fontStyle: currentStyle === 'italic' ? 'normal' : 'italic'
+					});
+					return;
+				}
+				
+				// Cmd+U - Underline
+				if (e.key === 'u') {
+					e.preventDefault();
+					const currentDecoration = shape.textDecoration || 'none';
+					shapeOperations.update(shape.id, {
+						textDecoration: currentDecoration === 'underline' ? 'none' : 'underline'
+					});
+					return;
+				}
+				
+				// Cmd+Shift+L - Align Left
+				if (e.shiftKey && e.key === 'L') {
+					e.preventDefault();
+					shapeOperations.update(shape.id, { align: 'left' });
+					return;
+				}
+				
+				// Cmd+Shift+E - Align Center
+				if (e.shiftKey && e.key === 'E') {
+					e.preventDefault();
+					shapeOperations.update(shape.id, { align: 'center' });
+					return;
+				}
+				
+				// Cmd+Shift+R - Align Right
+				if (e.shiftKey && e.key === 'R') {
+					e.preventDefault();
+					shapeOperations.update(shape.id, { align: 'right' });
+					return;
+				}
+			}
+		}
+
+		// Arrow keys - nudge selected shapes (only when not typing)
 			if (!isTyping && !isModifierKey) {
 				const nudgeAmount = 1; // pixels to move
 				const selectedIds = this.selectionManager.getSelectedIds();
