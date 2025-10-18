@@ -167,6 +167,18 @@ export class SelectionNet {
 				break;
 			}
 
+			case 'triangle': {
+				// Triangles use width and height like rectangles
+				const triangleShape = shape as Extract<Shape, { type: 'triangle' }>;
+				shapeBounds = {
+					x: shape.x,
+					y: shape.y,
+					width: triangleShape.width,
+					height: triangleShape.height
+				};
+				break;
+			}
+
 			case 'circle': {
 				// Circles are centered
 				shapeBounds = {
@@ -174,6 +186,17 @@ export class SelectionNet {
 					y: shape.y - shape.radius,
 					width: shape.radius * 2,
 					height: shape.radius * 2
+				};
+				break;
+			}
+
+			case 'ellipse': {
+				// Ellipses are centered
+				shapeBounds = {
+					x: shape.x - shape.radiusX,
+					y: shape.y - shape.radiusY,
+					width: shape.radiusX * 2,
+					height: shape.radiusY * 2
 				};
 				break;
 			}

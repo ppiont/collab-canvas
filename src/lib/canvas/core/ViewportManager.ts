@@ -130,6 +130,8 @@ export class ViewportManager {
 		this.stage.position({ x: viewport.x, y: viewport.y });
 		this.stage.scale({ x: clampedScale, y: clampedScale });
 		this.stage.batchDraw();
+
+		this.notifyViewportChange();
 	}
 
 	/**
@@ -147,6 +149,8 @@ export class ViewportManager {
 
 		this.stage.position(newPos);
 		this.stage.batchDraw();
+
+		this.notifyViewportChange();
 	}
 
 	/**
