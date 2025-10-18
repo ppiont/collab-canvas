@@ -69,13 +69,15 @@
 	// Text formatting toolbar state
 	let textFormattingVisible = $state(false);
 	let textFormattingPosition = $state({ x: 0, y: 0 });
+	let textFormattingToolbarWidth = $state(0);
 	let editingTextId = $state<string | null>(null);
 	let textFormatState = $state({
 		fontWeight: 'normal' as 'normal' | 'bold',
 		fontStyle: 'normal' as 'normal' | 'italic',
 		textDecoration: 'none',
 		align: 'left' as 'left' | 'center' | 'right',
-		fontSize: 16
+		fontSize: 16,
+		fontFamily: 'system-ui'
 	});
 
 	// Sync toolbar state with actual shape properties
@@ -90,7 +92,8 @@
 					fontStyle: fontStyle === 'italic' || fontStyle === 'normal' ? fontStyle : 'normal',
 					textDecoration: shape.textDecoration || 'none',
 					align: shape.align || 'left',
-					fontSize: shape.fontSize
+					fontSize: shape.fontSize,
+					fontFamily: shape.fontFamily || 'system-ui'
 				};
 
 				// Also update the textarea styling immediately
@@ -98,6 +101,13 @@
 					shapeRenderer.updateTextareaFormatting(shape);
 				}
 			}
+		}
+	});
+
+	// Update ShapeRenderer's toolbar width when it changes
+	$effect(() => {
+		if (shapeRenderer && textFormattingToolbarWidth > 0) {
+			shapeRenderer.setToolbarWidth(textFormattingToolbarWidth);
 		}
 	});
 
@@ -363,7 +373,9 @@
 			(textId, toolbarPosition, format) => {
 				editingTextId = textId;
 				textFormattingPosition = toolbarPosition;
-				textFormatState = format;
+				textFormatState = {
+					...format
+				};
 				textFormattingVisible = true;
 			},
 			() => {
@@ -557,39 +569,44 @@
 	<TextFormattingToolbar
 		bind:visible={textFormattingVisible}
 		bind:position={textFormattingPosition}
+		bind:toolbarWidth={textFormattingToolbarWidth}
 		fontWeight={textFormatState.fontWeight}
 		fontStyle={textFormatState.fontStyle}
 		textDecoration={textFormatState.textDecoration}
 		align={textFormatState.align}
 		fontSize={textFormatState.fontSize}
-	onFormatChange={(format) => {
-		if (editingTextId && shapeRenderer) {
-			shapeOperations.update(editingTextId, format);
-			
-			// Update local state to reflect changes
-			if (format.fontWeight !== undefined) {
-				textFormatState.fontWeight = format.fontWeight as 'normal' | 'bold';
-			}
-			if (format.fontStyle !== undefined) {
-				textFormatState.fontStyle = format.fontStyle as 'normal' | 'italic';
-			}
-			if (format.textDecoration !== undefined) {
-				textFormatState.textDecoration = format.textDecoration;
-			}
-			if (format.align !== undefined) {
-				textFormatState.align = format.align as 'left' | 'center' | 'right';
-			}
-			if (format.fontSize !== undefined) {
-				textFormatState.fontSize = format.fontSize;
-			}
+		fontFamily={textFormatState.fontFamily}
+		onFormatChange={(format) => {
+			if (editingTextId && shapeRenderer) {
+				shapeOperations.update(editingTextId, format);
 
-			// Get updated shape and apply formatting to textarea immediately
-			const shape = $shapes.find((s) => s.id === editingTextId);
-			if (shape && shape.type === 'text') {
-				shapeRenderer.updateTextareaFormatting(shape);
+				// Update local state to reflect changes
+				if (format.fontWeight !== undefined) {
+					textFormatState.fontWeight = format.fontWeight as 'normal' | 'bold';
+				}
+				if (format.fontStyle !== undefined) {
+					textFormatState.fontStyle = format.fontStyle as 'normal' | 'italic';
+				}
+				if (format.textDecoration !== undefined) {
+					textFormatState.textDecoration = format.textDecoration;
+				}
+				if (format.align !== undefined) {
+					textFormatState.align = format.align as 'left' | 'center' | 'right';
+				}
+				if (format.fontSize !== undefined) {
+					textFormatState.fontSize = format.fontSize;
+				}
+				if (format.fontFamily !== undefined) {
+					textFormatState.fontFamily = format.fontFamily;
+				}
+
+				// Get updated shape and apply formatting to textarea immediately
+				const shape = $shapes.find((s) => s.id === editingTextId);
+				if (shape && shape.type === 'text') {
+					shapeRenderer.updateTextareaFormatting(shape);
+				}
 			}
-		}
-	}}
+		}}
 	/>
 
 	<!-- Keyboard Shortcuts (hold TAB) -->

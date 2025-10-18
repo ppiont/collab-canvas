@@ -261,6 +261,58 @@ export const AI_TOOLS: ChatCompletionTool[] = [
 	{
 		type: 'function',
 		function: {
+			name: 'updateText',
+			description: 'Update text content and/or formatting properties of a text shape',
+			parameters: {
+				type: 'object',
+				properties: {
+					shapeId: { type: 'string', description: 'ID of the text shape to update' },
+					text: { type: 'string', description: 'New text content' },
+					fontSize: { type: 'number', description: 'Font size in pixels (8-144)' },
+					fontFamily: {
+						type: 'string',
+						enum: [
+							'system-ui',
+							'Arial',
+							'Times New Roman',
+							'Courier New',
+							'Georgia',
+							'Verdana',
+							'Comic Sans MS',
+							'Impact'
+						],
+						description: 'Font family'
+					},
+					fontWeight: {
+						type: 'string',
+						enum: ['normal', 'bold'],
+						description: 'Font weight'
+					},
+					fontStyle: {
+						type: 'string',
+						enum: ['normal', 'italic'],
+						description: 'Font style'
+					},
+					textDecoration: {
+						type: 'string',
+						enum: ['none', 'underline'],
+						description: 'Text decoration'
+					},
+					align: {
+						type: 'string',
+						enum: ['left', 'center', 'right'],
+						description: 'Text alignment'
+					},
+					fill: { type: 'string', description: 'Text color as hex code' }
+				},
+				required: ['shapeId']
+			}
+		}
+	},
+
+	{
+		type: 'function',
+		function: {
 			name: 'bringToFront',
 			description: 'Bring one or more shapes to the front (top z-order)',
 			parameters: {
@@ -491,6 +543,7 @@ export const TOOL_NAMES = [
 	'resizeShape',
 	'rotateShape',
 	'updateShapeColor',
+	'updateText',
 	'deleteShape',
 	'duplicateShape',
 	'bringToFront',

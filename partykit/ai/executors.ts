@@ -27,6 +27,42 @@ interface ToolParams {
 	[key: string]: unknown;
 }
 
+/** Viewport type for filtering */
+interface Viewport {
+	centerX: number;
+	centerY: number;
+	stageWidth: number;
+	stageHeight: number;
+	zoom: number;
+}
+
+/**
+ * Filter shapes to only those visible in the viewport
+ */
+function filterShapesInViewport(shapes: ShapeData[], viewport: Viewport): ShapeData[] {
+	const viewportLeft = viewport.centerX - viewport.stageWidth / (2 * viewport.zoom);
+	const viewportRight = viewport.centerX + viewport.stageWidth / (2 * viewport.zoom);
+	const viewportTop = viewport.centerY - viewport.stageHeight / (2 * viewport.zoom);
+	const viewportBottom = viewport.centerY + viewport.stageHeight / (2 * viewport.zoom);
+
+	// Add some padding (20%) to catch shapes near edges
+	const padding = 0.2;
+	const paddedLeft = viewportLeft - (viewport.stageWidth / viewport.zoom) * padding;
+	const paddedRight = viewportRight + (viewport.stageWidth / viewport.zoom) * padding;
+	const paddedTop = viewportTop - (viewport.stageHeight / viewport.zoom) * padding;
+	const paddedBottom = viewportBottom + (viewport.stageHeight / viewport.zoom) * padding;
+
+	return shapes.filter((shape) => {
+		// Simple bounding box check - shape's position is in viewport
+		return (
+			shape.x >= paddedLeft &&
+			shape.x <= paddedRight &&
+			shape.y >= paddedTop &&
+			shape.y <= paddedBottom
+		);
+	});
+}
+
 /**
  * Execute an AI tool by modifying the Yjs document
  */
@@ -255,21 +291,43 @@ export async function executeTool(
 				return { success: true };
 			}
 
-			case 'updateShapeColor': {
-				const shape = shapesMap.get(params.shapeId as string);
-				if (!shape) {
-					return { success: false, error: 'Shape not found' };
-				}
-				const updates: ShapeData = { ...shape };
-				if (params.fill !== undefined) updates.fill = params.fill;
-				if (params.stroke !== undefined) updates.stroke = params.stroke;
-				updates.modifiedAt = Date.now();
+		case 'updateShapeColor': {
+			const shape = shapesMap.get(params.shapeId as string);
+			if (!shape) {
+				return { success: false, error: 'Shape not found' };
+			}
+			const updates: ShapeData = { ...shape };
+			if (params.fill !== undefined) updates.fill = params.fill;
+			if (params.stroke !== undefined) updates.stroke = params.stroke;
+			updates.modifiedAt = Date.now();
 
-				shapesMap.set(params.shapeId as string, updates);
-				return { success: true };
+			shapesMap.set(params.shapeId as string, updates);
+			return { success: true };
+		}
+
+		case 'updateText': {
+			const shape = shapesMap.get(params.shapeId as string);
+			if (!shape || shape.type !== 'text') {
+				return { success: false, error: 'Text shape not found' };
 			}
 
-			case 'deleteShape': {
+			const updates: Partial<ShapeData> = {};
+			if (params.text !== undefined) updates.text = params.text as string;
+			if (params.fontSize !== undefined)
+				updates.fontSize = Math.max(8, Math.min(144, params.fontSize as number));
+			if (params.fontFamily !== undefined) updates.fontFamily = params.fontFamily as string;
+			if (params.fontWeight !== undefined) updates.fontWeight = params.fontWeight as string;
+			if (params.fontStyle !== undefined) updates.fontStyle = params.fontStyle as string;
+			if (params.textDecoration !== undefined)
+				updates.textDecoration = params.textDecoration as string;
+			if (params.align !== undefined) updates.align = params.align as string;
+			if (params.fill !== undefined) updates.fill = params.fill as string;
+
+			shapesMap.set(params.shapeId as string, { ...shape, ...updates, modifiedAt: Date.now() });
+			return { success: true, result: params.shapeId as string };
+		}
+
+		case 'deleteShape': {
 				const shape = shapesMap.get(params.shapeId as string);
 				if (!shape) {
 					return { success: false, error: 'Shape not found' };
@@ -543,13 +601,20 @@ export async function executeTool(
 			// QUERY TOOLS
 			// ═══════════════════════════════════════════════════════
 
-			case 'getCanvasState': {
-				const allShapes: ShapeData[] = [];
-				shapesMap.forEach((shape) => {
-					allShapes.push(shape);
-				});
-				return { success: true, result: allShapes as unknown as string[] };
-			}
+		case 'getCanvasState': {
+			const allShapes: ShapeData[] = [];
+			shapesMap.forEach((shape) => {
+				allShapes.push(shape);
+			});
+
+			// Filter to only visible shapes if viewport is provided
+			const visibleShapes =
+				params.viewport && typeof params.viewport === 'object'
+					? filterShapesInViewport(allShapes, params.viewport as Viewport)
+					: allShapes;
+
+			return { success: true, result: visibleShapes as unknown as string[] };
+		}
 
 			case 'findShapesByType': {
 				const matching: string[] = [];

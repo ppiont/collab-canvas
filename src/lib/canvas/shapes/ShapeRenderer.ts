@@ -690,20 +690,23 @@ export class ShapeRenderer {
 	// Callback for text editing integration
 	private textEditingCallback:
 		| ((
-				textId: string,
-				toolbarPosition: { x: number; y: number },
-				format: {
-					fontWeight: 'normal' | 'bold';
-					fontStyle: 'normal' | 'italic';
-					textDecoration: string;
-					align: 'left' | 'center' | 'right';
-					fontSize: number;
-				}
-		  ) => void)
+			textId: string,
+			toolbarPosition: { x: number; y: number },
+			format: {
+				fontWeight: 'normal' | 'bold';
+				fontStyle: 'normal' | 'italic';
+				textDecoration: string;
+				align: 'left' | 'center' | 'right';
+				fontSize: number;
+				fontFamily: string;
+			}
+		) => void)
 		| null = null;
 
+	private toolbarWidth = 0;
+
 	private textEditingEndCallback: (() => void) | null = null;
-	
+
 	// Store reference to active textarea for live updates
 	private activeTextarea: HTMLTextAreaElement | null = null;
 
@@ -720,12 +723,20 @@ export class ShapeRenderer {
 				textDecoration: string;
 				align: 'left' | 'center' | 'right';
 				fontSize: number;
+				fontFamily: string;
 			}
 		) => void,
 		onEnd: () => void
 	): void {
 		this.textEditingCallback = onStart;
 		this.textEditingEndCallback = onEnd;
+	}
+
+	/**
+	 * Set the toolbar width to size the textarea accordingly
+	 */
+	setToolbarWidth(width: number): void {
+		this.toolbarWidth = width;
 	}
 
 	/**
@@ -774,13 +785,14 @@ export class ShapeRenderer {
 				fontStyle: (fontStyle === 'italic' || fontStyle === 'normal') ? fontStyle : 'normal',
 				textDecoration: shape.textDecoration || 'none',
 				align: shape.align || 'left',
-				fontSize: shape.fontSize
+				fontSize: shape.fontSize,
+				fontFamily: shape.fontFamily || 'system-ui'
 			});
 		}
 
 		const textarea = document.createElement('textarea');
 		document.body.appendChild(textarea);
-		
+
 		// Store reference for live updates
 		this.activeTextarea = textarea;
 
@@ -795,33 +807,36 @@ export class ShapeRenderer {
 			textarea.style.color = currentShape.fill || '#000000';
 		};
 
-		// Enhanced textarea styling
+		// Enhanced textarea styling with resize capability
 		textarea.value = shape.text;
 		textarea.style.position = 'absolute';
 		textarea.style.top = `${stageBox.top + textPosition.y * scale}px`;
 		textarea.style.left = `${stageBox.left + textPosition.x * scale}px`;
-		textarea.style.minWidth = `${Math.max(100, textNode.width() * scale)}px`;
+		// Set width to match toolbar width, fallback to textNode width or minimum
+		const defaultWidth = this.toolbarWidth > 0 ? this.toolbarWidth : Math.max(400, textNode.width() * scale);
+		textarea.style.width = `${defaultWidth}px`;
+		textarea.style.minHeight = '60px';
 		textarea.style.border = '2px solid #a78bfa';
 		textarea.style.borderRadius = '8px';
 		textarea.style.padding = '8px';
 		textarea.style.margin = '0';
-		textarea.style.overflow = 'hidden';
+		textarea.style.overflow = 'auto';
 		textarea.style.background = 'rgba(255, 255, 255, 0.95)';
 		textarea.style.backdropFilter = 'blur(8px)';
 		textarea.style.outline = 'none';
-		textarea.style.resize = 'none';
+		textarea.style.resize = 'both';
 		textarea.style.lineHeight = '1.2';
 		textarea.style.transformOrigin = 'left top';
 		textarea.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.2)';
 		textarea.style.zIndex = '1000';
-		
+
 		// Apply initial formatting
 		updateTextareaStyle(shape);
 
 		// Auto-grow textarea
 		const adjustHeight = () => {
 			textarea.style.height = 'auto';
-			textarea.style.height = `${textarea.scrollHeight}px`;
+			textarea.style.height = `${Math.max(60, textarea.scrollHeight)}px`;
 		};
 		textarea.addEventListener('input', adjustHeight);
 		adjustHeight();
@@ -867,10 +882,28 @@ export class ShapeRenderer {
 			// Don't close on Enter - allow multi-line text
 		});
 
-		textarea.addEventListener('blur', () => {
-			// Small delay to allow toolbar clicks to process first
-			// The onmousedown preventDefault on toolbar buttons prevents blur
-			setTimeout(removeTextarea, 100);
+		textarea.addEventListener('blur', (e) => {
+			// Check if blur is happening because of clicking on formatting toolbar
+			setTimeout(() => {
+				const activeElement = document.activeElement;
+				const clickedElement = e.relatedTarget as HTMLElement | null;
+
+				// Don't close if focus moved to toolbar or dropdown
+				if (
+					activeElement?.closest('[role="toolbar"]') ||
+					clickedElement?.closest('[role="toolbar"]') ||
+					activeElement?.closest('[role="listbox"]') ||
+					clickedElement?.closest('[role="listbox"]') ||
+					activeElement?.closest('[data-bits-menu-content]') ||
+					clickedElement?.closest('[data-bits-menu-content]')
+				) {
+					// Re-focus the textarea to keep editing mode active
+					textarea.focus();
+					return;
+				}
+
+				removeTextarea();
+			}, 100);
 		});
 	}
 

@@ -10,7 +10,6 @@
 	import RotationControl from './controls/RotationControl.svelte';
 	import { Input } from './ui/input';
 	import { Label } from './ui/label';
-	import { Slider } from './ui/slider';
 
 	// Get selected shapes from stores using Svelte 5 auto-subscription
 	const selectedShapes = $derived($shapes.filter((s) => $selectedShapeIds.has(s.id)));
@@ -52,14 +51,6 @@
 			return val === 'mixed' ? 'mixed' : Math.round(val as number);
 		})()
 	);
-
-	let fontSizeValue = $state(16);
-
-	$effect(() => {
-		if (firstShape && firstShape.type === 'text' && 'fontSize' in firstShape) {
-			fontSizeValue = (firstShape as { fontSize: number }).fontSize || 16;
-		}
-	});
 
 	// Helper function to auto-select input text on focus
 	function handleInputFocus(e: Event) {
@@ -209,79 +200,6 @@
 					/>
 				{/if}
 			</div>
-
-			<!-- Shape-Specific Controls -->
-			{#if selectedShapes.length === 1 && firstShape.type === 'text'}
-				<div class="bg-gray-50 rounded-lg p-4">
-					<h3 class="font-semibold text-xs mb-2">Text</h3>
-					<div class="space-y-3">
-						<div class="space-y-1">
-							<Label class="text-xs" for="font-family">Font Family</Label>
-							<select
-								id="font-family"
-								value={('fontFamily' in firstShape ? (firstShape.fontFamily as string) : 'Arial') ||
-									'Arial'}
-								onchange={(e) => {
-									updateSelected(
-										'fontFamily' as unknown as keyof Shape,
-										e.currentTarget.value as unknown as Shape[keyof Shape]
-									);
-								}}
-								onfocus={handleInputFocus}
-								class="w-full px-2 py-1 border rounded text-sm bg-white"
-							>
-								<option value="Arial">Arial</option>
-								<option value="Times New Roman">Times New Roman</option>
-								<option value="Courier New">Courier New</option>
-								<option value="Georgia">Georgia</option>
-								<option value="Verdana">Verdana</option>
-							</select>
-						</div>
-
-						<div class="space-y-2">
-							<div class="flex justify-between items-center">
-								<Label class="text-xs">Font Size</Label>
-								<span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
-									{fontSizeValue}px
-								</span>
-							</div>
-							<Slider
-								type="multiple"
-								value={[fontSizeValue]}
-								onchange={() => {
-									updateSelected(
-										'fontSize' as unknown as keyof Shape,
-										fontSizeValue as unknown as Shape[keyof Shape]
-									);
-								}}
-								min={8}
-								max={144}
-								step={1}
-							/>
-						</div>
-
-						<div class="space-y-1">
-							<Label class="text-xs" for="text-align">Alignment</Label>
-							<select
-								id="text-align"
-								value={('align' in firstShape ? (firstShape.align as string) : 'left') || 'left'}
-								onchange={(e) => {
-									updateSelected(
-										'align' as unknown as keyof Shape,
-										e.currentTarget.value as unknown as Shape[keyof Shape]
-									);
-								}}
-								onfocus={handleInputFocus}
-								class="w-full px-2 py-1 border rounded text-sm bg-white"
-							>
-								<option value="left">Left</option>
-								<option value="center">Center</option>
-								<option value="right">Right</option>
-							</select>
-						</div>
-					</div>
-				</div>
-			{/if}
 		</div>
 	</div>
 {/if}

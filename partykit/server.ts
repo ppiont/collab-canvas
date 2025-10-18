@@ -3,7 +3,7 @@ import { onConnect } from 'y-partykit';
 import * as Y from 'yjs';
 import OpenAI from 'openai';
 import { AI_TOOLS } from './ai/tools';
-import { getCanvasState } from './ai/executors';
+import { executeTool } from './ai/executors';
 import { AI_SYSTEM_PROMPT } from './ai/prompts';
 
 /**
@@ -176,14 +176,17 @@ export default class YjsServer implements Party.Server {
 				);
 			}
 
-			console.log('[PartyKit] OpenAI API key found, calling GPT-4...');
+		console.log('[PartyKit] OpenAI API key found, calling GPT-4...');
 
-			// Access LIVE Yjs document (not from storage - use the live one!)
-			const canvasState = this.yjsDoc
-				? getCanvasState(this.yjsDoc)
-				: getCanvasState(await this.getYDoc());
+		// Access LIVE Yjs document (not from storage - use the live one!)
+		// Filter shapes to viewport for better performance and reduced token usage
+		const ydoc = this.yjsDoc || (await this.getYDoc());
+		const canvasStateResult = await executeTool('getCanvasState', { viewport }, ydoc);
+		const canvasState = canvasStateResult.success
+			? (canvasStateResult.result as unknown as Array<{ id: string; [key: string]: unknown }>)
+			: [];
 
-			console.log('[PartyKit] Canvas state:', canvasState.length, 'shapes');
+		console.log('[PartyKit] Canvas state:', canvasState.length, 'shapes (viewport filtered)');
 
 			// Call OpenAI GPT-4 with function calling
 			const openai = new OpenAI({ apiKey });

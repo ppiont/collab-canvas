@@ -65,23 +65,23 @@ export class ShapeFactory {
 				} as LineShape;
 			}
 
-		case 'text': {
-			const props = baseProps as Partial<TextShape>;
-			return {
-				...base,
-				type: 'text',
-				text: props.text ?? 'Text',
-				fontSize: props.fontSize ?? DEFAULT_SHAPE_DIMENSIONS.text.fontSize,
-				fontFamily: props.fontFamily ?? DEFAULT_SHAPE_DIMENSIONS.text.fontFamily,
-				fontWeight: props.fontWeight ?? 'normal',
-				fontStyle: props.fontStyle ?? 'normal',
-				textDecoration: props.textDecoration ?? 'none',
-				// Use the provided fill color (user's color), default to black if not provided
-				fill: props.fill ?? '#000000',
-				align: props.align ?? 'left',
-				width: props.width
-			} as TextShape;
-		}
+			case 'text': {
+				const props = baseProps as Partial<TextShape>;
+				return {
+					...base,
+					type: 'text',
+					text: props.text ?? 'Text',
+					fontSize: props.fontSize ?? DEFAULT_SHAPE_DIMENSIONS.text.fontSize,
+					fontFamily: props.fontFamily ?? DEFAULT_SHAPE_DIMENSIONS.text.fontFamily,
+					fontWeight: props.fontWeight ?? 'normal',
+					fontStyle: props.fontStyle ?? 'normal',
+					textDecoration: props.textDecoration ?? 'none',
+					// Use the provided fill color (user's color), default to black if not provided
+					fill: props.fill ?? '#000000',
+					align: props.align ?? 'left',
+					width: props.width
+				} as TextShape;
+			}
 
 			case 'polygon': {
 				const props = baseProps as Partial<PolygonShape>;
