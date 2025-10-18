@@ -314,31 +314,21 @@ export class SelectionManager {
 				labelY = shapeY + shapeHeight + 12;
 			}
 
-			// Only show label if dimensions are valid (not NaN, not Infinity, and positive)
-			const isValidDimension = (val: number) => 
-				!isNaN(val) && isFinite(val) && val > 0;
-
-			if (isValidDimension(nodeWidth) && isValidDimension(nodeHeight) && 
-			    isValidDimension(labelX) && isValidDimension(labelY)) {
-				// Update text with actual dimensions
-				const text = this.sizeLabel.findOne('Text') as Konva.Text;
-				if (text) {
-					text.text(`${nodeWidth} × ${nodeHeight}`);
-				}
-
-				this.sizeLabel.position({
-					x: labelX,
-					y: labelY
-				});
-
-				this.sizeLabel.visible(true);
-
-				// Move size label to top so it's always visible
-				this.sizeLabel.moveToTop();
-			} else {
-				// Hide label if dimensions are invalid
-				this.sizeLabel.visible(false);
+			// Update text with actual dimensions
+			const text = this.sizeLabel.findOne('Text') as Konva.Text;
+			if (text) {
+				text.text(`${nodeWidth} × ${nodeHeight}`);
 			}
+
+			this.sizeLabel.position({
+				x: labelX,
+				y: labelY
+			});
+
+			this.sizeLabel.visible(true);
+
+			// Move size label to top so it's always visible
+			this.sizeLabel.moveToTop();
 		}
 	}
 
@@ -392,15 +382,25 @@ export class SelectionManager {
 				const id = node.id();
 				if (!id) return;
 
-				// Get the transformed properties
-				const changes: Record<string, unknown> = {
-					x: node.x(),
-					y: node.y(),
-					rotation: node.rotation()
-				};
-
+				// Get the transformed properties - validate all numeric values
+				const x = node.x();
+				const y = node.y();
+				const rotation = node.rotation();
 				const scaleX = node.scaleX();
 				const scaleY = node.scaleY();
+
+				// Validate all values are finite numbers
+				if (!isFinite(x) || !isFinite(y) || !isFinite(rotation) ||
+					!isFinite(scaleX) || !isFinite(scaleY)) {
+					console.error(`Invalid transform values for shape ${id}:`, { x, y, rotation, scaleX, scaleY });
+					return; // Skip this node, don't save corrupted data
+				}
+
+				const changes: Record<string, unknown> = {
+					x,
+					y,
+					rotation
+				};
 
 				// Flag to determine if we should reset scale to 1
 				let shouldResetScale = true;
@@ -439,13 +439,13 @@ export class SelectionManager {
 						star.innerRadius(newInnerRadius);
 						star.outerRadius(newOuterRadius);
 					}
-			} else if (className === 'Text') {
-				const text = node as Konva.Text;
-				// Enforce minimum width of 20px to prevent NaN and too-small text boxes
-				const newWidth = Math.max(20, Math.round(node.width() * scaleX));
-				changes.width = newWidth;
-				text.width(newWidth);
-			} else if (className === 'Line') {
+				} else if (className === 'Text') {
+					const text = node as Konva.Text;
+					// Enforce minimum width of 20px to prevent NaN and too-small text boxes
+					const newWidth = Math.max(20, Math.round(node.width() * scaleX));
+					changes.width = newWidth;
+					text.width(newWidth);
+				} else if (className === 'Line') {
 					const line = node as Konva.Line;
 					// Polygons have closed=true, lines have closed=false
 					const isClosed = line.closed();

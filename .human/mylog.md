@@ -82,3 +82,9 @@ We've finished our MVP. Now we need to start work on the final product (@PRD-fin
 - MCPs are OP
 - AI powers the ship but I've still gotta steer it. Could have avoided a lot of Supabase confusion, deployment and teardown if I'd spent a bit more time investigating things outside my knowledge zone. I initially thought its persistence was necessary, because I didn't understand PartyKit (Claude just argued convincingly for it).
 - Cursor "add Docs" with links functionality (shown by Zac(?)). Highly efficient. Cursor is inept at finding the most basic documentation online on its own.
+
+
+
+## RANDOM PROMPTS:
+
+One of our problems is that we aren't grouping shapes. Konva has a group functionality. Use the Kanva and Svelte MCPs to identify ways to implement implicit grouping (during multi-select) for performance improvements. Use taskmaster-ai to plan the approach and give me an executive summary for approval/modification.

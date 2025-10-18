@@ -432,6 +432,16 @@ export class ShapeRenderer {
 	 * Create Konva shape based on shape type
 	 */
 	private createKonvaShape(shape: Shape, isDraggedByOther: boolean): Konva.Shape | null {
+		// Validate shape coordinates - skip corrupted shapes
+		if (!isFinite(shape.x) || !isFinite(shape.y)) {
+			console.error(`Skipping shape ${shape.id} with invalid coordinates:`, {
+				x: shape.x,
+				y: shape.y,
+				type: shape.type
+			});
+			return null;
+		}
+
 		const baseConfig = {
 			id: shape.id,
 			name: 'shape',
@@ -652,17 +662,31 @@ export class ShapeRenderer {
 			konvaShape.shadowOffset({ x: 0, y: 0 });
 			this.stage.container().style.cursor = 'move';
 
+			// Get final position and validate
+			const finalX = e.target.x();
+			const finalY = e.target.y();
+
+			// Only save if coordinates are valid
+			if (!isFinite(finalX) || !isFinite(finalY)) {
+				console.error(`Prevented saving invalid drag position for shape ${shapeId}:`, { finalX, finalY });
+				// Reset to last known good position
+				konvaShape.x(currentShape.x);
+				konvaShape.y(currentShape.y);
+				this.shapesLayer.batchDraw();
+				return;
+			}
+
 			// PHASE 5: Persist final position to Yjs (creates ONE undo entry)
 			this.callbacks!.onShapeUpdate(shapeId, {
-				x: e.target.x(),
-				y: e.target.y(),
+				x: finalX,
+				y: finalY,
 				draggedBy: undefined
 			});
 
 			// PHASE 6: Clear from Awareness so other users stop seeing the drag ghost
 			this.callbacks!.onBroadcastShapeDrag(shapeId, {
-				x: e.target.x(),
-				y: e.target.y(),
+				x: finalX,
+				y: finalY,
 				endDrag: true // Signal to clear from Awareness
 			} as { x: number; y: number; endDrag: boolean });
 
