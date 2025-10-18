@@ -31,10 +31,6 @@
 			]
 		},
 		{
-			name: 'AI',
-			shortcuts: [{ action: 'Command Palette', keys: 'Cmd+K' }]
-		},
-		{
 			name: 'Movement',
 			shortcuts: [
 				{ action: 'Nudge Up', keys: '↑' },
@@ -101,9 +97,17 @@
 	>
 		<Dialog.Header class="pb-4">
 			<Dialog.Title class="text-2xl font-bold tracking-tight">Keyboard Shortcuts</Dialog.Title>
-			<Dialog.Description class="text-sm text-slate-600 mt-1"
-				>Hold TAB to view shortcuts</Dialog.Description
-			>
+			<Dialog.Description class="text-sm text-slate-600 mt-1">
+				Hold <kbd
+					class="px-1.5 py-0.5 text-xs font-mono bg-slate-100 border border-slate-300 rounded"
+					>TAB</kbd
+				>
+				to view • Press
+				<kbd
+					class="px-2 py-1 text-sm font-mono font-bold bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded shadow-sm"
+					>⚡ Cmd+K</kbd
+				> for AI Command Palette
+			</Dialog.Description>
 		</Dialog.Header>
 
 		<div class="grid grid-flow-col gap-x-8 gap-y-0 overflow-y-auto auto-rows-max">
