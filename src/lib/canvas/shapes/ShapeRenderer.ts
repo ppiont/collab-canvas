@@ -555,7 +555,8 @@ export class ShapeRenderer {
 					fontStyle: shape.fontStyle || 'normal',
 					textDecoration: shape.textDecoration || '',
 					align: shape.align || 'left',
-					width: shape.width || undefined
+					width: shape.width || undefined,
+					height: shape.height || undefined
 					// NOTE: Intentionally NOT including stroke or strokeWidth
 					// Konva.Text stroke rendering creates visual artifacts
 				});
@@ -702,7 +703,11 @@ export class ShapeRenderer {
 		// Double-click to edit text
 		if (shape.type === 'text') {
 			konvaShape.on('dblclick dbltap', () => {
-				this.enableTextEditing(konvaShape as Konva.Text, shape);
+				// Get current shape data instead of using closure to get latest text content
+				const currentShape = this.callbacks!.getShapeById?.(shapeId) || shape;
+				if (currentShape.type === 'text') {
+					this.enableTextEditing(konvaShape as Konva.Text, currentShape);
+				}
 			});
 		}
 

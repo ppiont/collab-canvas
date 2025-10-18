@@ -76,6 +76,7 @@ export interface TextShape extends BaseShape {
 	padding?: number;
 	align?: 'left' | 'center' | 'right';
 	width?: number; // text box width
+	height?: number; // text box height
 }
 
 /** Polygon shape */

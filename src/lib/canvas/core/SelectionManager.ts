@@ -441,10 +441,13 @@ export class SelectionManager {
 					}
 				} else if (className === 'Text') {
 					const text = node as Konva.Text;
-					// Enforce minimum width of 20px to prevent NaN and too-small text boxes
+					// Enforce minimum width and height to prevent NaN and too-small text boxes
 					const newWidth = Math.max(20, Math.round(node.width() * scaleX));
+					const newHeight = Math.max(20, Math.round(node.height() * scaleY));
 					changes.width = newWidth;
+					changes.height = newHeight;
 					text.width(newWidth);
+					text.height(newHeight);
 				} else if (className === 'Line') {
 					const line = node as Konva.Line;
 					// Polygons have closed=true, lines have closed=false
