@@ -5,14 +5,8 @@
 
 import { writable } from 'svelte/store';
 import type { Shape } from '$lib/types/shapes';
-import { ydoc, getAllShapes } from '$lib/collaboration';
+import { ydoc, shapesMap, getAllShapes } from '$lib/collaboration';
 import type * as Y from 'yjs';
-
-/**
- * Get shapesMap from collaboration module
- * We'll need to update collaboration.ts to export this
- */
-let shapesMap: Y.Map<Shape>;
 
 /**
  * Global shapes store (read-only, synced from Yjs)
@@ -23,9 +17,7 @@ export const shapes = writable<Shape[]>([]);
  * Initialize Yjs observer to sync Y.Map changes to Svelte store
  * Call this once on app initialization
  */
-export function initializeShapesSync(shapeMapInstance: Y.Map<Shape>) {
-	shapesMap = shapeMapInstance;
-
+export function initializeShapesSync(_shapeMapInstance: Y.Map<Shape>) {
 	// Listen to Yjs changes and update Svelte store
 	shapesMap.observe(() => {
 		const allShapes = getAllShapes();
