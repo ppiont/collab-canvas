@@ -441,10 +441,12 @@ export class ShapeRenderer {
 			strokeScaleEnabled: false, // Keep stroke width constant when scaling
 			draggable: (('draggable' in shape ? shape.draggable : true) ?? true) && !isDraggedByOther,
 			opacity: isDraggedByOther ? 0.5 : shape.opacity || 1, // Use stored opacity
-			shadowColor: isDraggedByOther ? '#667eea' : (shape.shadow?.color || ''),
-			shadowBlur: isDraggedByOther ? 8 : (shape.shadow?.blur || 0),
-			shadowOpacity: isDraggedByOther ? 0.6 : (shape.shadow ? 0.5 : 0),
-			shadowOffset: shape.shadow ? { x: shape.shadow.offsetX, y: shape.shadow.offsetY } : { x: 0, y: 0 }
+			shadowColor: isDraggedByOther ? '#667eea' : shape.shadow?.color || '',
+			shadowBlur: isDraggedByOther ? 8 : shape.shadow?.blur || 0,
+			shadowOpacity: isDraggedByOther ? 0.6 : shape.shadow ? 0.5 : 0,
+			shadowOffset: shape.shadow
+				? { x: shape.shadow.offsetX, y: shape.shadow.offsetY }
+				: { x: 0, y: 0 }
 		};
 
 		switch (shape.type) {
@@ -481,7 +483,9 @@ export class ShapeRenderer {
 					shadowColor: polygonShape.shadow?.color || undefined,
 					shadowBlur: polygonShape.shadow?.blur || 0,
 					shadowOpacity: polygonShape.shadow ? 0.5 : 0,
-					shadowOffset: polygonShape.shadow ? { x: polygonShape.shadow.offsetX, y: polygonShape.shadow.offsetY } : { x: 0, y: 0 }
+					shadowOffset: polygonShape.shadow
+						? { x: polygonShape.shadow.offsetX, y: polygonShape.shadow.offsetY }
+						: { x: 0, y: 0 }
 				});
 			}
 
@@ -508,7 +512,9 @@ export class ShapeRenderer {
 					shadowColor: triangleShape.shadow?.color || undefined,
 					shadowBlur: triangleShape.shadow?.blur || 0,
 					shadowOpacity: triangleShape.shadow ? 0.5 : 0,
-					shadowOffset: triangleShape.shadow ? { x: triangleShape.shadow.offsetX, y: triangleShape.shadow.offsetY } : { x: 0, y: 0 }
+					shadowOffset: triangleShape.shadow
+						? { x: triangleShape.shadow.offsetX, y: triangleShape.shadow.offsetY }
+						: { x: 0, y: 0 }
 				});
 			}
 

@@ -126,12 +126,7 @@ export function getOnlineUserCount(): number {
  * PHASE 1, 6: Update live dragged shape position in Awareness
  * Called during dragmove to show other users the shape being dragged
  */
-export function updateDraggedShape(
-	shapeId: string,
-	x: number,
-	y: number,
-	userId: string
-): void {
+export function updateDraggedShape(shapeId: string, x: number, y: number, userId: string): void {
 	if (!_provider) return;
 
 	const currentState = _provider.awareness.getLocalState() || {};

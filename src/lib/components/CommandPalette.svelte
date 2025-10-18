@@ -393,8 +393,8 @@
 							{/if}
 						</div>
 
-						<Button 
-							type="submit" 
+						<Button
+							type="submit"
 							size="lg"
 							disabled={!command.trim() || commandState === 'loading'}
 							class="h-14 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 font-semibold text-white shadow-lg shadow-violet-500/30 hover:brightness-110 hover:scale-105 transition-all disabled:opacity-50"

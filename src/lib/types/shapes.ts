@@ -4,14 +4,7 @@
  */
 
 /** All supported shape types */
-export type ShapeType =
-	| 'rectangle'
-	| 'circle'
-	| 'line'
-	| 'text'
-	| 'polygon'
-	| 'star'
-	| 'triangle';
+export type ShapeType = 'rectangle' | 'circle' | 'line' | 'text' | 'polygon' | 'star' | 'triangle';
 
 /** Blend modes for shape rendering */
 export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten';

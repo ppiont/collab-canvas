@@ -1,6 +1,6 @@
 - Fix canvas. Make the grid "infinity", or make it impossible to drag beyond the grid (into white) by having an elastic bounce-back effect at the edge.
 - Put Shape toolbox at bottom
-- Make Shape toolbox actually pretty 
+- Make Shape toolbox actually pretty
 - Make Properties Panel actually pretty (investigate if something went wrong when initializing shadcn (all of our components are bland as hell)
 - Make collaborator cursors pretty
 - Make user cursor behave properly. E.g. after deselecting a shape, it changes to hand shape (should only be shown when holding down Space to pan)

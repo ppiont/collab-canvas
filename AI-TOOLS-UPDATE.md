@@ -7,12 +7,14 @@ Removed `createEllipse` and `createImage` tools from the AI Canvas Agent impleme
 ### Tools Changed
 
 **Before:** 22 tools
+
 - 8 creation tools: Rectangle, Circle, **Ellipse**, Line, Text, Polygon, Star, **Image**
 - 6 manipulation tools
 - 5 layout tools
 - 3 query tools
 
 **After:** 20 tools
+
 - 6 creation tools: Rectangle, Circle, Line, Text, Polygon, Star, **Triangle** (new)
 - 6 manipulation tools (unchanged)
 - 5 layout tools (unchanged)

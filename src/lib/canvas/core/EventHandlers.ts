@@ -530,7 +530,12 @@ export class CanvasEventHandlers {
 			const isModifierKey = e.metaKey || e.ctrlKey;
 
 			// Cmd+Shift+] - Bring to front (top z-order)
-			if (isModifierKey && e.shiftKey && (e.key === '}' || e.code === 'BracketRight') && !isTyping) {
+			if (
+				isModifierKey &&
+				e.shiftKey &&
+				(e.key === '}' || e.code === 'BracketRight') &&
+				!isTyping
+			) {
 				e.preventDefault();
 				e.stopPropagation();
 				const selectedIds = this.selectionManager.getSelectedIds();

@@ -29,11 +29,5 @@
 		<span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{percentValue}%</span>
 	</div>
 
-	<Slider
-		type="single"
-		bind:value={percentValue}
-		min={0}
-		max={100}
-		step={1}
-	/>
+	<Slider type="single" bind:value={percentValue} min={0} max={100} step={1} />
 </div>

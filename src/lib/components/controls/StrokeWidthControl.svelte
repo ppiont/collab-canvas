@@ -46,13 +46,7 @@
 		<span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{Math.round(sliderValue)}px</span>
 	</div>
 
-	<Slider
-		type="single"
-		bind:value={sliderValue}
-		{min}
-		{max}
-		step={1}
-	/>
+	<Slider type="single" bind:value={sliderValue} {min} {max} step={1} />
 
 	<Input
 		type="number"

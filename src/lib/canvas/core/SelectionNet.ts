@@ -203,7 +203,10 @@ export class SelectionNet {
 
 			case 'star': {
 				// Use radius as bounding box approximation
-				const radius = shape.type === 'star' ? (shape as Extract<Shape, { type: 'star' }>).outerRadius : (shape as Extract<Shape, { type: 'polygon' }>).radius;
+				const radius =
+					shape.type === 'star'
+						? (shape as Extract<Shape, { type: 'star' }>).outerRadius
+						: (shape as Extract<Shape, { type: 'polygon' }>).radius;
 				shapeBounds = {
 					x: shape.x - radius,
 					y: shape.y - radius,
