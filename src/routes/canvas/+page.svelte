@@ -1,12 +1,27 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Toolbar from '$lib/components/Toolbar.svelte';
-	import ConnectionStatus from '$lib/components/ConnectionStatus.svelte';
+	import { page } from '$app/stores';
+	import { shapes, shapeOperations, initializeShapesSync } from '$lib/stores/shapes';
+	import { selectedShapeIds } from '$lib/stores/selection';
+	import { activeTool, isCreateToolActive } from '$lib/stores/tool';
+	import { viewport } from '$lib/stores/viewport';
+	import { history, canUndo, canRedo, initializeUndoManager } from '$lib/stores/history';
+	import { provider, initializeProvider } from '$lib/collaboration';
+	import CanvasEngine from '$lib/canvas/core/CanvasEngine';
+	import ShapeRenderer from '$lib/canvas/shapes/ShapeRenderer';
+	import SelectionManager from '$lib/canvas/core/SelectionManager';
+	import ViewportManager from '$lib/canvas/core/ViewportManager';
+	import CanvasEventHandlers from '$lib/canvas/core/EventHandlers';
+	import CursorManager from '$lib/canvas/collaboration/CursorManager';
+	import { ShapeFactory } from '$lib/canvas/shapes/ShapeFactory';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import KeyboardShortcuts from '$lib/components/KeyboardShortcuts.svelte';
+	import Toolbar from '$lib/components/Toolbar.svelte';
+	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
+	import ConnectionStatus from '$lib/components/ConnectionStatus.svelte';
 	import DebugOverlay from '$lib/components/DebugOverlay.svelte';
 	import Toast from '$lib/components/Toast.svelte';
-	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
+	import { toast, Toaster } from 'svelte-sonner';
 	import { lineManager } from '$lib/canvas/line/LineManager.svelte';
 
 	// Import managers
@@ -54,194 +69,15 @@
 	// Derive reactive values from stores (modern Svelte 5 pattern)
 	let stageScale = $derived($viewport.scale);
 
-	// State for shortcuts hint visibility
-	let showShortcutsHint = $state(true);
-
-	// Helper function to create shapes based on active tool
-	function createShapeAtPosition(x: number, y: number): Shape | null {
-		const tool = $activeTool;
-
-		// Use ShapeFactory for all shape creation
-		if (tool === 'select' || tool === 'pan') {
-			return null;
-		}
-
-		try {
-			return ShapeFactory.create(
-				tool,
-				{
-					x,
-					y,
-					fill: data.userProfile.color, // Use user's color instead of hardcoded blue
-					stroke: darkenColor(data.userProfile.color, 20), // Use a darker version of the user's color for the stroke outline
-					strokeWidth: 2,
-					zIndex: maxZIndex + 1
-				},
-				data.user.id
-			);
-		} catch (error) {
-			console.error('Failed to create shape:', error);
-			return null;
-		}
-	}
-
-	// Helper function to create a line with accumulated points
-	function createLineWithPoints(points: number[]): void {
-		try {
-			const newLine = ShapeFactory.create(
-				'line',
-				{
-					x: 0,
-					y: 0,
-					points,
-					fill: undefined,
-					stroke: darkenColor(data.userProfile.color, 20),
-					strokeWidth: 2,
-					zIndex: maxZIndex + 1
-				},
-				data.user.id
-			);
-			shapeOperations.add(newLine);
-			maxZIndex++;
-			// Switch back to select mode and select the new line
-			activeTool.set('select');
-			selectionManager.select(newLine.id);
-		} catch (error) {
-			console.error('Failed to create line:', error);
-		}
-	}
-
-	// Track last paste position for cumulative offsets
-	let lastPasteOffset = { x: 0, y: 0 };
-
-	// Copy selected shapes to clipboard
-	// Show toast notification
-	function showToast(message: string) {
-		// Clear any existing timeout
-		if (toastTimeout) {
-			clearTimeout(toastTimeout);
-		}
-
-		// Show the toast
-		toastMessage = message;
-		toastVisible = true;
-
-		// Auto-hide after 2 seconds
-		toastTimeout = setTimeout(() => {
-			toastVisible = false;
-		}, 2000);
-	}
-
-	function copySelectedShapes() {
-		if (!selectionManager) return;
-
-		const selectedIds = selectionManager.getSelectedIds();
-		if (selectedIds.length === 0) return;
-
-		// Get the actual shape objects
-		const selectedShapes = selectedIds
-			.map((id) => $shapes.find((s) => s.id === id))
-			.filter((s): s is Shape => s !== undefined);
-
-		clipboardOperations.copy(selectedShapes);
-
-		// Reset paste offset for new copy
-		lastPasteOffset = { x: 0, y: 0 };
-	}
-
-	// Paste shapes from clipboard
-	function pasteShapes() {
-		const clipboardContent = clipboardOperations.getContents();
-		if (clipboardContent.length === 0) return;
-
-		const PASTE_OFFSET = 20; // Offset for pasted shapes
-		const pastedIds: string[] = [];
-
-		// Calculate cumulative offset
-		lastPasteOffset.x += PASTE_OFFSET;
-		lastPasteOffset.y += PASTE_OFFSET;
-
-		clipboardContent.forEach((shape) => {
-			// Create new shape with cumulative offset position
-			const newShape: Shape = {
-				...shape,
-				id: crypto.randomUUID(), // New ID
-				x: shape.x + lastPasteOffset.x,
-				y: shape.y + lastPasteOffset.y,
-				zIndex: maxZIndex + 1,
-				createdBy: data.user.id,
-				createdAt: Date.now(),
-				modifiedAt: Date.now(),
-				draggedBy: undefined // Clear drag state
-			};
-
-			shapeOperations.add(newShape);
-			pastedIds.push(newShape.id);
-			maxZIndex++;
+	onMount(() => {
+		// Show shortcuts hint as a toast
+		toast('Press TAB to view keyboard shortcuts', {
+			duration: 10000
 		});
 
-		// Select the newly pasted shapes
-		if (selectionManager && pastedIds.length > 0) {
-			setTimeout(() => {
-				selectionManager.selectMultiple(pastedIds);
-			}, 50);
-		}
-	}
-
-	// Broadcast cursor when viewport changes (modern Svelte 5 reactivity)
-	$effect(() => {
-		// Track viewport changes to broadcast cursor
-		void $viewport;
-
-		// Broadcast cursor position when viewport changes
-		if (cursorManager) {
-			cursorManager.broadcastCurrentPosition();
-		}
-	});
-
-	// Render shapes when they change or viewport changes
-	$effect(() => {
-		// Access $shapes at top level to ensure Svelte tracks the dependency
-		const currentShapes = $shapes;
-		const viewportState = $viewport; // Track viewport changes too
-
-		if (shapeRenderer && selectionManager && currentShapes) {
-			// Pass viewport for culling optimization (use reactive value, not store)
-			shapeRenderer.renderShapes(currentShapes, viewportState);
-
-			// Update maxZIndex
-			if (currentShapes.length > 0) {
-				maxZIndex = Math.max(...currentShapes.map((s) => s.zIndex || 0), maxZIndex);
-			}
-
-			// Check if selected shapes still exist after render (e.g., after undo delete)
-			// If any selected shape was deleted, clear that selection
-			const selectedIds = selectionManager.getSelectedIds();
-			const shapeIdSet = new Set(currentShapes.map((s) => s.id));
-			const deletedSelectedIds = selectedIds.filter((id) => !shapeIdSet.has(id));
-
-			if (deletedSelectedIds.length > 0) {
-				// Some selected shapes were deleted, remove them from selection
-				deletedSelectedIds.forEach((id) => {
-					selectionManager.removeFromSelection(id);
-				});
-			}
-
-			// CRITICAL: Sync transformer after rendering to ensure it follows Yjs updates
-			// This makes undo/redo work correctly on selected shapes
-			selectionManager.syncTransformerFromYjs();
-		}
-	});
-
-	onMount(() => {
 		// Initialize canvas dimensions
 		const width = window.innerWidth;
 		const height = window.innerHeight;
-
-		// Hide shortcuts hint after 10 seconds
-		const hintTimeout = setTimeout(() => {
-			showShortcutsHint = false;
-		}, 10000);
 
 		// Initialize canvas engine
 		canvasEngine = new CanvasEngine(containerDiv, {
@@ -445,7 +281,6 @@
 			if (toastTimeout) {
 				clearTimeout(toastTimeout);
 			}
-			clearTimeout(hintTimeout);
 		};
 	});
 
@@ -498,14 +333,12 @@
 	<!-- Toast Notification -->
 	<Toast message={toastMessage} visible={toastVisible} />
 
+	<!-- Sonner Toast Provider -->
+	<Toaster />
+
 	<!-- Zoom indicator -->
 	<div class="zoom-indicator">
 		{Math.round(stageScale * 100)}%
-	</div>
-
-	<!-- Keyboard shortcuts hint -->
-	<div class="shortcuts-hint" class:hidden={!showShortcutsHint}>
-		Press <kbd>TAB</kbd> for shortcuts
 	</div>
 
 	<!-- Konva container -->
@@ -545,35 +378,5 @@
 			system-ui,
 			-apple-system,
 			sans-serif;
-	}
-
-	.shortcuts-hint {
-		position: fixed;
-		top: 20px; /* Changed from bottom to top */
-		left: 50%; /* Center horizontally */
-		transform: translateX(-50%); /* Adjust for centering */
-		background: rgba(0, 0, 0, 0.5);
-		color: rgba(255, 255, 255, 0.8);
-		padding: 6px 12px;
-		border-radius: 6px;
-		font-size: 12px;
-		z-index: 999;
-		pointer-events: none;
-		font-family: system-ui, -apple-system, sans-serif;
-		transition: opacity 0.3s ease;
-		opacity: 1;
-	}
-
-	.shortcuts-hint.hidden {
-		opacity: 0;
-		pointer-events: none;
-	}
-
-	.shortcuts-hint kbd {
-		background: rgba(255, 255, 255, 0.15);
-		padding: 2px 6px;
-		border-radius: 3px;
-		font-family: ui-monospace, 'Courier New', monospace;
-		font-weight: 500;
 	}
 </style>
