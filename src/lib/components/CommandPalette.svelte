@@ -58,18 +58,16 @@
 			const controller = new AbortController();
 			const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-			const url = `http://${PUBLIC_PARTYKIT_HOST}/parties/yjs/main/api/ai/command`;
-
-			console.log('[AI] Sending request to:', url);
-			console.log('[AI] Current viewport:', viewport);
+			// Build URL, handling cases where PUBLIC_PARTYKIT_HOST may or may not include protocol
+			const host = PUBLIC_PARTYKIT_HOST || 'localhost:1999';
+			const protocol = host.startsWith('http://') || host.startsWith('https://') ? '' : 'https://';
+			const url = `${protocol}${host}/parties/yjs/main/api/ai/command`;
 
 			// Calculate visible center of viewport
 			const stageWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
 			const stageHeight = typeof window !== 'undefined' ? window.innerHeight : 1080;
 			const visibleCenterX = (-viewport.x + stageWidth / 2) / viewport.scale;
 			const visibleCenterY = (-viewport.y + stageHeight / 2) / viewport.scale;
-
-			console.log('[AI] Visible center:', visibleCenterX, visibleCenterY);
 
 			const response = await fetch(url, {
 				method: 'POST',
@@ -92,9 +90,6 @@
 				signal: controller.signal
 			});
 
-			console.log('[AI] Response status:', response.status, response.statusText);
-			console.log('[AI] Response headers:', Array.from(response.headers.entries()));
-
 			clearTimeout(timeoutId);
 
 			if (!response.ok) {
@@ -104,26 +99,18 @@
 
 			const data = await response.json();
 
-			console.log('[AI Response]', data);
-
 			if (!data.success) {
 				throw new Error(data.error || 'Command failed');
 			}
 
 			// Execute AI tools client-side using our Yjs connection
 			if (data.toolsToExecute && data.toolsToExecute.length > 0) {
-				console.log('[AI] Executing', data.toolsToExecute.length, 'tools:', data.toolsToExecute);
-
 				// Execute tools in parallel for faster performance
 				await Promise.all(
 					data.toolsToExecute.map((tool: { name: string; params: Record<string, unknown> }) =>
 						executeAITool(tool.name, tool.params)
 					)
 				);
-
-				console.log('[AI] All tools executed');
-			} else {
-				console.warn('[AI] No tools to execute in response');
 			}
 
 			commandState = 'success';
@@ -159,30 +146,26 @@
 	 * Execute an AI tool client-side
 	 */
 	async function executeAITool(toolName: string, params: Record<string, unknown>): Promise<void> {
-		console.log('[AI Tool Execution]', toolName, params);
-
 		// Creation tools - use ShapeFactory
 		const creationTools = [
 			'createRectangle',
 			'createCircle',
-			'createEllipse',
 			'createLine',
 			'createText',
 			'createPolygon',
 			'createStar',
-			'createImage'
+			'createTriangle'
 		];
 
 		if (creationTools.includes(toolName)) {
 			const typeMap: Record<string, string> = {
 				createRectangle: 'rectangle',
 				createCircle: 'circle',
-				createEllipse: 'ellipse',
 				createLine: 'line',
 				createText: 'text',
 				createPolygon: 'polygon',
 				createStar: 'star',
-				createImage: 'image'
+				createTriangle: 'triangle'
 			};
 
 			const shapeType = typeMap[toolName];
@@ -212,6 +195,17 @@
 			if (params.fill) updates.fill = params.fill;
 			if (params.stroke) updates.stroke = params.stroke;
 			shapeOperations.update(params.shapeId as string, updates);
+		} else if (toolName === 'updateText') {
+			const updates: Record<string, unknown> = {};
+			if (params.text) updates.text = params.text;
+			if (params.fontSize) updates.fontSize = params.fontSize;
+			if (params.fontFamily) updates.fontFamily = params.fontFamily;
+			if (params.fontWeight) updates.fontWeight = params.fontWeight;
+			if (params.fontStyle) updates.fontStyle = params.fontStyle;
+			if (params.textDecoration) updates.textDecoration = params.textDecoration;
+			if (params.align) updates.align = params.align;
+			if (params.fill) updates.fill = params.fill;
+			shapeOperations.update(params.shapeId as string, updates);
 		} else if (toolName === 'deleteShape') {
 			shapeOperations.delete(params.shapeId as string);
 		} else if (toolName === 'duplicateShape') {
@@ -230,13 +224,9 @@
 		}
 		// Layout tools
 		else if (toolName === 'arrangeHorizontal') {
-			console.log('[Layout] arrangeHorizontal - IDs:', params.shapeIds);
 			const shapes = getShapesForLayout(params.shapeIds as string[]);
 
-			console.log('[Layout] Found', shapes.length, 'shapes:', shapes);
-
 			if (shapes.length === 0) {
-				console.warn('[Layout] No shapes found!');
 				return;
 			}
 
@@ -244,27 +234,11 @@
 			let currentX = (params.startX as number) || 100;
 			const y = (params.startY as number) || (shapes[0].y as number);
 
-			console.log('[Layout] Starting at X:', currentX, 'Y:', y, 'Spacing:', spacing);
-
 			shapes.forEach((shape) => {
 				const width = getShapeWidth(shape);
-				console.log(
-					'[Layout] Shape',
-					shapes.indexOf(shape),
-					'- ID:',
-					shape.id,
-					'Moving to X:',
-					currentX,
-					'Y:',
-					y,
-					'Width:',
-					width
-				);
 				shapeOperations.update(shape.id, { x: currentX, y });
 				currentX += width + spacing;
 			});
-
-			console.log('[Layout] arrangeHorizontal complete');
 		} else if (toolName === 'arrangeVertical') {
 			const shapes = getShapesForLayout(params.shapeIds as string[]);
 
@@ -373,73 +347,152 @@
 
 <Dialog.Root bind:open>
 	<Dialog.Portal>
-		<!-- No overlay - just the floating palette -->
+		<!-- No overlay - keep canvas visible -->
+
+		<!-- Floating palette -->
 		<DialogPrimitive.Content
-			class="fixed left-1/2 top-20 z-50 w-full max-w-2xl -translate-x-1/2 rounded-lg border bg-white/80 p-4 shadow-2xl backdrop-blur-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+			class="fixed left-1/2 top-20 z-50 w-full max-w-2xl -translate-x-1/2 rounded-2xl border-2 border-violet-200 bg-gradient-to-br from-white via-violet-50/50 to-indigo-50/50 shadow-2xl shadow-violet-500/20 backdrop-blur-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-top-[10%] data-[state=open]:slide-in-from-top-[10%]"
 		>
-			<!-- Header -->
-			<div class="mb-3 flex items-center gap-2">
-				<Sparkles class="h-4 w-4 text-primary" />
-				<h2 class="text-sm font-semibold">AI Canvas Assistant</h2>
+			<!-- Gradient header -->
+			<div class="rounded-t-2xl bg-gradient-to-r from-violet-500 to-indigo-600 px-6 py-4">
+				<div class="flex items-center gap-3">
+					<div class="rounded-xl bg-white/20 p-2 backdrop-blur-sm">
+						<Sparkles class="h-6 w-6 text-yellow-300 fill-yellow-300" />
+					</div>
+					<div>
+						<h2 class="text-lg font-bold text-white">AI Canvas Assistant</h2>
+						<p class="text-xs text-violet-100">Powered by GPT-4</p>
+					</div>
+				</div>
 			</div>
 
-			<form
-				onsubmit={(e) => {
-					e.preventDefault();
-					handleSubmit();
-				}}
-				class="space-y-3"
-			>
-				<div class="relative">
-					<Input
-						bind:value={command}
-						placeholder="e.g., Create a red circle at 100, 200"
-						disabled={commandState === 'loading'}
-						class="pr-10"
-						autofocus
-					/>
+			<!-- Content -->
+			<div class="p-6">
+				<form
+					onsubmit={(e) => {
+						e.preventDefault();
+						handleSubmit();
+					}}
+					class="space-y-4"
+				>
+					<div class="flex gap-3">
+						<div class="relative flex-1">
+							<Input
+								bind:value={command}
+								placeholder="Tell me what to create..."
+								disabled={commandState === 'loading'}
+								class="h-14 rounded-xl border-2 border-violet-200 bg-white px-5 text-base shadow-inner focus-visible:border-violet-500 focus-visible:ring-violet-500/20"
+								autofocus
+							/>
+
+							{#if commandState === 'loading'}
+								<div class="absolute right-4 top-1/2 -translate-y-1/2">
+									<Loader2 class="h-5 w-5 animate-spin text-violet-600" />
+								</div>
+							{:else if commandState === 'success'}
+								<div class="absolute right-4 top-1/2 -translate-y-1/2">
+									<div class="rounded-full bg-green-100 p-1">
+										<CheckCircle2 class="h-5 w-5 text-green-600" />
+									</div>
+								</div>
+							{:else if commandState === 'error'}
+								<div class="absolute right-4 top-1/2 -translate-y-1/2">
+									<div class="rounded-full bg-red-100 p-1">
+										<XCircle class="h-5 w-5 text-red-600" />
+									</div>
+								</div>
+							{/if}
+						</div>
+
+						<Button
+							type="submit"
+							size="lg"
+							disabled={!command.trim() || commandState === 'loading'}
+							class="h-14 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 font-semibold text-white shadow-lg shadow-violet-500/30 hover:brightness-110 hover:scale-105 transition-all disabled:opacity-50"
+						>
+							{#if commandState === 'loading'}
+								<Loader2 class="h-4 w-4 animate-spin mr-2" />
+								Processing...
+							{:else}
+								<Sparkles class="h-4 w-4 mr-2 text-yellow-300 fill-yellow-300" />
+								Execute
+							{/if}
+						</Button>
+					</div>
 
 					{#if commandState === 'loading'}
-						<Loader2
-							class="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground"
-						/>
-					{:else if commandState === 'success'}
-						<CheckCircle2
-							class="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-green-500"
-						/>
-					{:else if commandState === 'error'}
-						<XCircle class="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-destructive" />
+						<div class="flex items-center gap-2 rounded-lg bg-violet-100 px-4 py-3">
+							<Loader2 class="h-4 w-4 animate-spin text-violet-600" />
+							<p class="text-sm font-medium text-violet-900">Processing your command...</p>
+						</div>
 					{/if}
-				</div>
 
-				{#if commandState === 'loading'}
-					<p class="text-sm text-muted-foreground">Processing your command...</p>
+					{#if commandState === 'success'}
+						<div class="flex items-center gap-2 rounded-lg bg-green-100 px-4 py-3">
+							<CheckCircle2 class="h-4 w-4 text-green-600" />
+							<p class="text-sm font-medium text-green-900">Command executed successfully! ✨</p>
+						</div>
+					{/if}
+
+					{#if commandState === 'error'}
+						<div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3">
+							<div class="flex items-start gap-2">
+								<XCircle class="h-4 w-4 text-red-600 mt-0.5" />
+								<div>
+									<p class="text-sm font-medium text-red-900">Command failed</p>
+									<p class="text-xs text-red-700 mt-1">{errorMessage || 'Please try again'}</p>
+								</div>
+							</div>
+						</div>
+					{/if}
+				</form>
+
+				<!-- Example commands -->
+				{#if commandState === 'idle'}
+					<div
+						class="mt-4 rounded-xl bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 p-4"
+					>
+						<p class="text-xs font-semibold text-violet-900 mb-2">Try these examples:</p>
+						<div class="flex flex-wrap gap-2">
+							<button
+								type="button"
+								onclick={() => (command = 'Create a red circle')}
+								class="rounded-lg bg-white px-3 py-1.5 text-xs text-slate-700 shadow-sm border border-violet-200 hover:border-violet-400 hover:bg-violet-50 transition-colors"
+							>
+								Create a red circle
+							</button>
+							<button
+								type="button"
+								onclick={() => (command = 'Make a 200x150 blue rectangle')}
+								class="rounded-lg bg-white px-3 py-1.5 text-xs text-slate-700 shadow-sm border border-violet-200 hover:border-violet-400 hover:bg-violet-50 transition-colors"
+							>
+								Make a 200x150 blue rectangle
+							</button>
+							<button
+								type="button"
+								onclick={() => (command = 'Add text that says Hello World')}
+								class="rounded-lg bg-white px-3 py-1.5 text-xs text-slate-700 shadow-sm border border-violet-200 hover:border-violet-400 hover:bg-violet-50 transition-colors"
+							>
+								Add text "Hello World"
+							</button>
+							<button
+								type="button"
+								onclick={() => (command = 'Make all text bold and centered')}
+								class="rounded-lg bg-white px-3 py-1.5 text-xs text-slate-700 shadow-sm border border-violet-200 hover:border-violet-400 hover:bg-violet-50 transition-colors"
+							>
+								Make all text bold and centered
+							</button>
+							<button
+								type="button"
+								onclick={() => (command = 'Create a login form')}
+								class="rounded-lg bg-white px-3 py-1.5 text-xs text-slate-700 shadow-sm border border-violet-200 hover:border-violet-400 hover:bg-violet-50 transition-colors"
+							>
+								Create a login form
+							</button>
+						</div>
+					</div>
 				{/if}
-
-				{#if commandState === 'success'}
-					<p class="text-sm font-medium text-green-600">Command executed successfully!</p>
-				{/if}
-
-				{#if commandState === 'error'}
-					<p class="text-sm text-destructive">{errorMessage || 'Failed to execute command'}</p>
-				{/if}
-
-				<div class="flex items-center justify-between text-xs text-muted-foreground">
-					<span>⌘K to toggle • ESC to close</span>
-					<Button type="submit" size="sm" disabled={!command.trim() || commandState === 'loading'}>
-						{commandState === 'loading' ? 'Processing...' : 'Execute'}
-					</Button>
-				</div>
-			</form>
-
-			<!-- Example commands - compact inline -->
-			{#if commandState === 'idle'}
-				<div class="border-t pt-2">
-					<p class="text-xs text-muted-foreground">
-						Try: "Create a red circle" • "Make a 200x150 rectangle" • "Add text Hello World"
-					</p>
-				</div>
-			{/if}
+			</div>
 		</DialogPrimitive.Content>
 	</Dialog.Portal>
 </Dialog.Root>

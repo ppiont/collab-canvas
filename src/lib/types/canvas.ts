@@ -23,12 +23,11 @@ export type ToolType =
 	| 'select'
 	| 'rectangle'
 	| 'circle'
-	| 'ellipse'
 	| 'line'
 	| 'text'
 	| 'polygon'
 	| 'star'
-	| 'image'
+	| 'triangle'
 	| 'pan';
 
 /** Cursor mode for canvas */

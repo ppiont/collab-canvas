@@ -1,4 +1,13 @@
-# PartyKit Deployment Guide - Task 0.4
+# PartyKit Deployment Guide
+
+## INFO
+
+Use all below sections for future reference. They're not relevant right now, as we've deployed to Cloudflare ourselves due to a PartyKit outage:
+
+```sh
+bunx partykit env add OPENAI_API_KEY
+bunx partykit deploy --domain collab-canvas.piontek0.workers.dev --with-vars
+```
 
 ## Prerequisites
 
@@ -106,7 +115,6 @@ After deployment succeeds:
 2. ✅ Update `.env.local`
 3. ✅ Update Railway environment variables
 4. ✅ Test the connection
-5. ✅ Mark Task 0.4 complete!
 
 ---
 

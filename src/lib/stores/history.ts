@@ -24,8 +24,6 @@ export const redoStackSize = writable(0);
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function initializeUndoManager(shapesMap: Y.Map<any>) {
-	console.log('[History] Initializing UndoManager with clientID:', ydoc.clientID);
-
 	undoManager = new UndoManager(shapesMap, {
 		// Only track transactions with 'user-action' origin
 		// This prevents system changes (like selection updates) from affecting undo/redo
@@ -33,35 +31,25 @@ export function initializeUndoManager(shapesMap: Y.Map<any>) {
 		captureTimeout: 500 // Group rapid changes within 500ms
 	});
 
-	console.log(
-		'[History] UndoManager created, watching shapesMap (tracking user-action origin only)'
-	);
-
 	// Update stack sizes on changes
 	const updateStacks = () => {
 		if (undoManager) {
 			const undoSize = undoManager.undoStack.length;
 			const redoSize = undoManager.redoStack.length;
-			console.log('[History] Stack updated - Undo:', undoSize, 'Redo:', redoSize);
 			undoStackSize.set(undoSize);
 			redoStackSize.set(redoSize);
 		}
 	};
 
 	undoManager.on('stack-item-added', () => {
-		console.log('[History] stack-item-added event fired');
 		updateStacks();
 	});
 	undoManager.on('stack-item-popped', () => {
-		console.log('[History] stack-item-popped event fired');
 		updateStacks();
 	});
 	undoManager.on('stack-cleared', () => {
-		console.log('[History] stack-cleared event fired');
 		updateStacks();
 	});
-
-	console.log('[History] UndoManager initialized successfully');
 }
 
 /**

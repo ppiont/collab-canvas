@@ -43,7 +43,6 @@ export class CursorManager {
 
 	// Cursor tracking
 	private cursorNodes = new Map<number, Konva.Group>();
-	private lastCursorUpdate = 0;
 	private pulseAnimation: Konva.Animation | null = null;
 
 	// Follow mode
@@ -98,15 +97,10 @@ export class CursorManager {
 	}
 
 	/**
-	 * Broadcast local cursor position (throttled)
+	 * Broadcast local cursor position
 	 */
 	broadcastCursor(): void {
 		if (!this.awareness) return;
-
-		const now = Date.now();
-		if (now - this.lastCursorUpdate < CURSOR.THROTTLE_MS) return;
-
-		this.lastCursorUpdate = now;
 
 		const pointer = this.stage.getPointerPosition();
 		if (!pointer) return;

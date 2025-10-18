@@ -20,22 +20,30 @@ export function getShapesForLayout(shapeIds: string[]): Shape[] {
  * Get width of a shape, handling different shape types
  */
 export function getShapeWidth(shape: Shape): number {
-	return (
-		(shape.width as number) ||
-		((shape.radius as number) ? (shape.radius as number) * 2 : 0) ||
-		((shape.outerRadius as number) ? (shape.outerRadius as number) * 2 : 0) ||
-		100
-	);
+	if ('width' in shape && shape.width !== undefined) {
+		return shape.width as number;
+	}
+	if ('radius' in shape && shape.radius !== undefined) {
+		return (shape.radius as number) * 2;
+	}
+	if ('outerRadius' in shape && shape.outerRadius !== undefined) {
+		return (shape.outerRadius as number) * 2;
+	}
+	return 100;
 }
 
 /**
  * Get height of a shape, handling different shape types
  */
 export function getShapeHeight(shape: Shape): number {
-	return (
-		(shape.height as number) ||
-		((shape.radius as number) ? (shape.radius as number) * 2 : 0) ||
-		((shape.outerRadius as number) ? (shape.outerRadius as number) * 2 : 0) ||
-		100
-	);
+	if ('height' in shape && shape.height !== undefined) {
+		return shape.height as number;
+	}
+	if ('radius' in shape && shape.radius !== undefined) {
+		return (shape.radius as number) * 2;
+	}
+	if ('outerRadius' in shape && shape.outerRadius !== undefined) {
+		return (shape.outerRadius as number) * 2;
+	}
+	return 100;
 }

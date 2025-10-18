@@ -90,25 +90,6 @@ export function getShapeBounds(shape: Shape): ShapeBounds {
 			};
 		}
 
-		case 'ellipse': {
-			if (!hasRotation) {
-				return {
-					left: shape.x - shape.radiusX,
-					right: shape.x + shape.radiusX,
-					top: shape.y - shape.radiusY,
-					bottom: shape.y + shape.radiusY
-				};
-			}
-			// Conservative bounds for rotated ellipse
-			const maxRadius = Math.max(shape.radiusX, shape.radiusY);
-			return {
-				left: shape.x - maxRadius,
-				right: shape.x + maxRadius,
-				top: shape.y - maxRadius,
-				bottom: shape.y + maxRadius
-			};
-		}
-
 		case 'line': {
 			// Find min/max of all points
 			const points = shape.points;
@@ -183,22 +164,15 @@ export function getShapeBounds(shape: Shape): ShapeBounds {
 			};
 		}
 
-		case 'image': {
-			if (!hasRotation) {
-				return {
-					left: shape.x,
-					right: shape.x + shape.width,
-					top: shape.y,
-					bottom: shape.y + shape.height
-				};
-			}
-			// Conservative bounds for rotated image
-			const diagonal = Math.sqrt(shape.width ** 2 + shape.height ** 2);
+		case 'triangle': {
+			// Triangle bounds based on width/height
+			const w = shape.width / 2;
+			const h = shape.height / 2;
 			return {
-				left: shape.x - diagonal / 2,
-				right: shape.x + diagonal / 2,
-				top: shape.y - diagonal / 2,
-				bottom: shape.y + diagonal / 2
+				left: shape.x - w,
+				right: shape.x + w,
+				top: shape.y - h,
+				bottom: shape.y + h
 			};
 		}
 

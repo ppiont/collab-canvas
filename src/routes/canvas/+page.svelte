@@ -3,9 +3,11 @@
 	import Toolbar from '$lib/components/Toolbar.svelte';
 	import ConnectionStatus from '$lib/components/ConnectionStatus.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
+	import KeyboardShortcuts from '$lib/components/KeyboardShortcuts.svelte';
 	import DebugOverlay from '$lib/components/DebugOverlay.svelte';
 	import Toast from '$lib/components/Toast.svelte';
 	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
+	import TextFormattingToolbar from '$lib/components/TextFormattingToolbar.svelte';
 
 	// Import managers
 	import { CanvasEngine } from '$lib/canvas/core/CanvasEngine';
@@ -15,10 +17,18 @@
 	import { ShapeRenderer } from '$lib/canvas/shapes/ShapeRenderer';
 	import { ShapeFactory } from '$lib/canvas/shapes/ShapeFactory';
 	import { CanvasEventHandlers } from '$lib/canvas/core/EventHandlers';
+	import { LiveShapeRenderer } from '$lib/canvas/collaboration/LiveShapeRenderer';
 
 	// Import stores and collaboration
 	import { shapes, shapeOperations, initializeShapesSync } from '$lib/stores/shapes';
-	import { initializeProvider, disconnectProvider, provider, shapesMap } from '$lib/collaboration';
+	import {
+		initializeProvider,
+		disconnectProvider,
+		provider,
+		shapesMap,
+		updateDraggedShape,
+		clearDraggedShape
+	} from '$lib/collaboration';
 	import { viewport } from '$lib/stores/canvas';
 	import { CANVAS } from '$lib/constants';
 	import type { Shape } from '$lib/types/shapes';
@@ -36,6 +46,7 @@
 	let selectionManager: SelectionManager;
 	let cursorManager: CursorManager;
 	let shapeRenderer = $state<ShapeRenderer | null>(null);
+	let liveShapeRenderer = $state<LiveShapeRenderer | null>(null);
 	let eventHandlers: CanvasEventHandlers;
 
 	// Component state
@@ -51,6 +62,54 @@
 
 	// Derive reactive values from stores (modern Svelte 5 pattern)
 	let stageScale = $derived($viewport.scale);
+
+	// State for shortcuts hint visibility
+	let showShortcutsHint = $state(true);
+
+	// Text formatting toolbar state
+	let textFormattingVisible = $state(false);
+	let textFormattingPosition = $state({ x: 0, y: 0 });
+	let textFormattingToolbarWidth = $state(0);
+	let editingTextId = $state<string | null>(null);
+	let textFormatState = $state({
+		fontWeight: 'normal' as 'normal' | 'bold',
+		fontStyle: 'normal' as 'normal' | 'italic',
+		textDecoration: 'none',
+		align: 'left' as 'left' | 'center' | 'right',
+		fontSize: 16,
+		fontFamily: 'system-ui'
+	});
+
+	// Sync toolbar state with actual shape properties
+	$effect(() => {
+		if (editingTextId) {
+			const shape = $shapes.find((s) => s.id === editingTextId);
+			if (shape && shape.type === 'text') {
+				const fontWeight = shape.fontWeight;
+				const fontStyle = shape.fontStyle;
+				textFormatState = {
+					fontWeight: fontWeight === 'bold' || fontWeight === 'normal' ? fontWeight : 'normal',
+					fontStyle: fontStyle === 'italic' || fontStyle === 'normal' ? fontStyle : 'normal',
+					textDecoration: shape.textDecoration || 'none',
+					align: shape.align || 'left',
+					fontSize: shape.fontSize,
+					fontFamily: shape.fontFamily || 'system-ui'
+				};
+
+				// Also update the textarea styling immediately
+				if (shapeRenderer) {
+					shapeRenderer.updateTextareaFormatting(shape);
+				}
+			}
+		}
+	});
+
+	// Update ShapeRenderer's toolbar width when it changes
+	$effect(() => {
+		if (shapeRenderer && textFormattingToolbarWidth > 0) {
+			shapeRenderer.setToolbarWidth(textFormattingToolbarWidth);
+		}
+	});
 
 	// Helper function to create shapes based on active tool
 	function createShapeAtPosition(x: number, y: number): Shape | null {
@@ -77,6 +136,32 @@
 		} catch (error) {
 			console.error('Failed to create shape:', error);
 			return null;
+		}
+	}
+
+	// Helper function to create a line with accumulated points
+	function createLineWithPoints(points: number[]): void {
+		try {
+			const newLine = ShapeFactory.create(
+				'line',
+				{
+					x: 0,
+					y: 0,
+					points,
+					fill: undefined,
+					stroke: darkenColor(data.userProfile.color, 20),
+					strokeWidth: 2,
+					zIndex: maxZIndex + 1
+				},
+				data.user.id
+			);
+			shapeOperations.add(newLine);
+			maxZIndex++;
+			// Switch back to select mode and select the new line
+			activeTool.set('select');
+			selectionManager.select(newLine.id);
+		} catch (error) {
+			console.error('Failed to create line:', error);
 		}
 	}
 
@@ -207,6 +292,11 @@
 		const width = window.innerWidth;
 		const height = window.innerHeight;
 
+		// Hide shortcuts hint after 10 seconds
+		const hintTimeout = setTimeout(() => {
+			showShortcutsHint = false;
+		}, 10000);
+
 		// Initialize canvas engine
 		canvasEngine = new CanvasEngine(containerDiv, {
 			width,
@@ -252,24 +342,47 @@
 			getSelectedIds: () => {
 				return selectionManager.getSelectedIds();
 			},
+			getShapeById: (id: string) => {
+				// Look up current shape from store to ensure fresh data in event handlers
+				return $shapes.find((s) => s.id === id);
+			},
 			onBroadcastCursor: () => {
 				cursorManager?.broadcastCursorImmediate();
+			},
+			// PHASE 7: Live shape drag broadcast
+			onBroadcastShapeDrag: (id: string, position: { x: number; y: number; endDrag?: boolean }) => {
+				if ((position as any).endDrag) {
+					// dragend signal - clear from Awareness
+					clearDraggedShape(id);
+				} else {
+					// dragmove - update live position in Awareness
+					updateDraggedShape(id, position.x, position.y, data.user.id);
+				}
 			},
 			getMaxZIndex: () => maxZIndex
 		});
 
 		// Wire transformer to shapeRenderer so it stays on top during renders
 		const transformer = selectionManager.getTransformer();
-		console.log('[Canvas] Wiring transformer to shapeRenderer:', {
-			hasTransformer: !!transformer,
-			hasShapeRenderer: !!shapeRenderer
-		});
 		if (transformer) {
 			shapeRenderer.setTransformer(transformer);
-			console.log('[Canvas] Transformer wired successfully!');
-		} else {
-			console.warn('[Canvas] No transformer found from SelectionManager!');
 		}
+
+		// Set text editing callbacks for formatting toolbar
+		shapeRenderer.setTextEditingCallback(
+			(textId, toolbarPosition, format) => {
+				editingTextId = textId;
+				textFormattingPosition = toolbarPosition;
+				textFormatState = {
+					...format
+				};
+				textFormattingVisible = true;
+			},
+			() => {
+				editingTextId = null;
+				textFormattingVisible = false;
+			}
+		);
 
 		// Initialize cursor manager
 		cursorManager = new CursorManager(stage, layers.cursors);
@@ -287,6 +400,16 @@
 		const unsubscribeProvider = provider.subscribe((providerValue) => {
 			if (providerValue?.awareness && cursorManager) {
 				cursorManager.initialize(providerValue.awareness, data.user.id, width, height);
+
+				// PHASE 7, 3: Initialize live shape renderer for real-time drag feedback
+				if (!liveShapeRenderer) {
+					liveShapeRenderer = new LiveShapeRenderer(
+						layers.shapes,
+						stage,
+						providerValue.awareness,
+						shapesMap
+					);
+				}
 			}
 		});
 
@@ -310,6 +433,9 @@
 					activeTool.set('select');
 					selectionManager.select(newShape.id);
 				}
+			},
+			(points) => {
+				createLineWithPoints(points);
 			},
 			() => $shapes // Get all shapes for drag-net selection
 		);
@@ -385,6 +511,7 @@
 			selectionManager?.destroy();
 			cursorManager?.destroy();
 			shapeRenderer?.destroy();
+			liveShapeRenderer?.destroy();
 			eventHandlers?.destroy();
 			disconnectProvider();
 			unsubscribeProvider();
@@ -394,6 +521,7 @@
 			if (toastTimeout) {
 				clearTimeout(toastTimeout);
 			}
+			clearTimeout(hintTimeout);
 		};
 	});
 
@@ -437,6 +565,53 @@
 	<!-- Command Palette -->
 	<CommandPalette bind:open={commandPaletteOpen} userId={data.user.id} viewport={$viewport} />
 
+	<!-- Text Formatting Toolbar -->
+	<TextFormattingToolbar
+		bind:visible={textFormattingVisible}
+		bind:position={textFormattingPosition}
+		bind:toolbarWidth={textFormattingToolbarWidth}
+		fontWeight={textFormatState.fontWeight}
+		fontStyle={textFormatState.fontStyle}
+		textDecoration={textFormatState.textDecoration}
+		align={textFormatState.align}
+		fontSize={textFormatState.fontSize}
+		fontFamily={textFormatState.fontFamily}
+		onFormatChange={(format) => {
+			if (editingTextId && shapeRenderer) {
+				shapeOperations.update(editingTextId, format);
+
+				// Update local state to reflect changes
+				if (format.fontWeight !== undefined) {
+					textFormatState.fontWeight = format.fontWeight as 'normal' | 'bold';
+				}
+				if (format.fontStyle !== undefined) {
+					textFormatState.fontStyle = format.fontStyle as 'normal' | 'italic';
+				}
+				if (format.textDecoration !== undefined) {
+					textFormatState.textDecoration = format.textDecoration;
+				}
+				if (format.align !== undefined) {
+					textFormatState.align = format.align as 'left' | 'center' | 'right';
+				}
+				if (format.fontSize !== undefined) {
+					textFormatState.fontSize = format.fontSize;
+				}
+				if (format.fontFamily !== undefined) {
+					textFormatState.fontFamily = format.fontFamily;
+				}
+
+				// Get updated shape and apply formatting to textarea immediately
+				const shape = $shapes.find((s) => s.id === editingTextId);
+				if (shape && shape.type === 'text') {
+					shapeRenderer.updateTextareaFormatting(shape);
+				}
+			}
+		}}
+	/>
+
+	<!-- Keyboard Shortcuts (hold TAB) -->
+	<KeyboardShortcuts />
+
 	<!-- Debug Overlay (press ~ to toggle) -->
 	<DebugOverlay {shapeRenderer} shapesCount={$shapes.length} />
 
@@ -446,6 +621,11 @@
 	<!-- Zoom indicator -->
 	<div class="zoom-indicator">
 		{Math.round(stageScale * 100)}%
+	</div>
+
+	<!-- Keyboard shortcuts hint -->
+	<div class="shortcuts-hint" class:hidden={!showShortcutsHint}>
+		Press <kbd>TAB</kbd> for shortcuts
 	</div>
 
 	<!-- Konva container -->
@@ -485,5 +665,38 @@
 			system-ui,
 			-apple-system,
 			sans-serif;
+	}
+
+	.shortcuts-hint {
+		position: fixed;
+		top: 20px; /* Changed from bottom to top */
+		left: 50%; /* Center horizontally */
+		transform: translateX(-50%); /* Adjust for centering */
+		background: rgba(0, 0, 0, 0.5);
+		color: rgba(255, 255, 255, 0.8);
+		padding: 6px 12px;
+		border-radius: 6px;
+		font-size: 12px;
+		z-index: 999;
+		pointer-events: none;
+		font-family:
+			system-ui,
+			-apple-system,
+			sans-serif;
+		transition: opacity 0.3s ease;
+		opacity: 1;
+	}
+
+	.shortcuts-hint.hidden {
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.shortcuts-hint kbd {
+		background: rgba(255, 255, 255, 0.15);
+		padding: 2px 6px;
+		border-radius: 3px;
+		font-family: ui-monospace, 'Courier New', monospace;
+		font-weight: 500;
 	}
 </style>

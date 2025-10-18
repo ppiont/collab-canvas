@@ -11,14 +11,13 @@
 
 	// Icons from lucide-svelte
 	import {
-		MousePointer2,
 		Square,
 		Circle,
-		Disc,
 		Minus,
 		Type,
 		Pentagon,
 		Star,
+		Triangle,
 		Undo,
 		Redo,
 		Sparkles
@@ -35,19 +34,18 @@
 
 	const shapeTools: Array<{ id: ToolType; icon: ComponentType; label: string; shortcut: string }> =
 		[
-			{ id: 'select', icon: MousePointer2, label: 'Select', shortcut: 'V' },
 			{ id: 'rectangle', icon: Square, label: 'Rectangle', shortcut: 'R' },
 			{ id: 'circle', icon: Circle, label: 'Circle', shortcut: 'C' },
-			{ id: 'ellipse', icon: Disc, label: 'Ellipse', shortcut: 'E' },
-			{ id: 'line', icon: Minus, label: 'Line', shortcut: 'L' },
-			{ id: 'text', icon: Type, label: 'Text', shortcut: 'T' },
+			{ id: 'triangle', icon: Triangle, label: 'Triangle', shortcut: 'G' },
 			{ id: 'polygon', icon: Pentagon, label: 'Polygon', shortcut: 'P' },
-			{ id: 'star', icon: Star, label: 'Star', shortcut: 'S' }
+			{ id: 'star', icon: Star, label: 'Star', shortcut: 'S' },
+			{ id: 'line', icon: Minus, label: 'Line', shortcut: 'L' },
+			{ id: 'text', icon: Type, label: 'Text', shortcut: 'T' }
 		];
 </script>
 
 <div
-	class="fixed left-4 top-4 z-10 flex flex-col gap-2 rounded-lg border bg-white/95 p-2 shadow-lg backdrop-blur-sm"
+	class="fixed bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 rounded-2xl border-2 border-slate-200 bg-white/95 px-3 py-2 shadow-2xl backdrop-blur-md"
 >
 	<!-- Shape tools -->
 	{#each shapeTools as tool (tool.id)}
@@ -56,14 +54,18 @@
 			size="icon"
 			onclick={() => activeTool.set(tool.id)}
 			title="{tool.label} ({tool.shortcut})"
-			class="cursor-pointer transition-all hover:scale-110 hover:shadow-md active:scale-95"
+			class={`h-11 w-11 cursor-pointer rounded-xl transition-all hover:scale-105 hover:shadow-lg active:scale-95 ${
+				$activeTool === tool.id
+					? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-500/30'
+					: 'hover:bg-slate-100'
+			}`}
 		>
 			{@const Icon = tool.icon}
-			<Icon class="h-4 w-4" />
+			<Icon class="h-5 w-5" />
 		</Button>
 	{/each}
 
-	<Separator />
+	<Separator orientation="vertical" class="mx-1 h-8 bg-slate-300" />
 
 	<!-- Undo/Redo -->
 	<Button
@@ -75,9 +77,9 @@
 			onUndo?.();
 		}}
 		title="Undo (⌘Z)"
-		class="cursor-pointer"
+		class="h-11 w-11 cursor-pointer rounded-xl hover:bg-slate-100 disabled:opacity-40"
 	>
-		<Undo class="h-4 w-4" />
+		<Undo class="h-5 w-5" />
 	</Button>
 	<Button
 		variant="ghost"
@@ -88,12 +90,12 @@
 			onRedo?.();
 		}}
 		title="Redo (⌘⇧Z)"
-		class="cursor-pointer"
+		class="h-11 w-11 cursor-pointer rounded-xl hover:bg-slate-100 disabled:opacity-40"
 	>
-		<Redo class="h-4 w-4" />
+		<Redo class="h-5 w-5" />
 	</Button>
 
-	<Separator />
+	<Separator orientation="vertical" class="mx-1 h-8 bg-slate-300" />
 
 	<!-- AI Command Palette trigger -->
 	<Button
@@ -101,8 +103,8 @@
 		size="icon"
 		onclick={onCommandPaletteOpen}
 		title="AI Assistant (⌘K)"
-		class="cursor-pointer"
+		class="h-11 w-11 cursor-pointer rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-yellow-300 shadow-lg shadow-violet-500/30 transition-all hover:scale-105 hover:shadow-xl hover:shadow-violet-500/40 active:scale-95"
 	>
-		<Sparkles class="h-4 w-4" />
+		<Sparkles class="h-5 w-5 fill-yellow-300" />
 	</Button>
 </div>

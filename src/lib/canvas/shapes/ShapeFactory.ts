@@ -9,12 +9,11 @@ import type {
 	ShapeType,
 	RectangleShape,
 	CircleShape,
-	EllipseShape,
 	LineShape,
 	TextShape,
 	PolygonShape,
 	StarShape,
-	ImageShape
+	TriangleShape
 } from '$lib/types/shapes';
 import { DEFAULT_BASE_SHAPE, DEFAULT_SHAPE_DIMENSIONS } from '$lib/types/shapes';
 
@@ -55,16 +54,6 @@ export class ShapeFactory {
 				} as CircleShape;
 			}
 
-			case 'ellipse': {
-				const props = baseProps as Partial<EllipseShape>;
-				return {
-					...base,
-					type: 'ellipse',
-					radiusX: props.radiusX ?? DEFAULT_SHAPE_DIMENSIONS.ellipse.radiusX,
-					radiusY: props.radiusY ?? DEFAULT_SHAPE_DIMENSIONS.ellipse.radiusY
-				} as EllipseShape;
-			}
-
 			case 'line': {
 				const props = baseProps as Partial<LineShape>;
 				return {
@@ -84,9 +73,13 @@ export class ShapeFactory {
 					text: props.text ?? 'Text',
 					fontSize: props.fontSize ?? DEFAULT_SHAPE_DIMENSIONS.text.fontSize,
 					fontFamily: props.fontFamily ?? DEFAULT_SHAPE_DIMENSIONS.text.fontFamily,
+					fontWeight: props.fontWeight ?? 'normal',
+					fontStyle: props.fontStyle ?? 'normal',
+					textDecoration: props.textDecoration ?? 'none',
 					// Use the provided fill color (user's color), default to black if not provided
 					fill: props.fill ?? '#000000',
-					align: 'left'
+					align: props.align ?? 'left',
+					width: props.width
 				} as TextShape;
 			}
 
@@ -111,15 +104,14 @@ export class ShapeFactory {
 				} as StarShape;
 			}
 
-			case 'image': {
-				const props = baseProps as Partial<ImageShape>;
+			case 'triangle': {
+				const props = baseProps as Partial<TriangleShape>;
 				return {
 					...base,
-					type: 'image',
-					width: props.width ?? DEFAULT_SHAPE_DIMENSIONS.image.width,
-					height: props.height ?? DEFAULT_SHAPE_DIMENSIONS.image.height,
-					imageUrl: props.imageUrl ?? ''
-				} as ImageShape;
+					type: 'triangle',
+					width: props.width ?? DEFAULT_SHAPE_DIMENSIONS.triangle.width,
+					height: props.height ?? DEFAULT_SHAPE_DIMENSIONS.triangle.height
+				} as TriangleShape;
 			}
 
 			default:

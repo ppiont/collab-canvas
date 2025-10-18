@@ -136,23 +136,14 @@ export class SelectionNet {
 	getIntersectingShapes(bounds: SelectionNetBounds, shapes: Shape[]): string[] {
 		const intersecting: string[] = [];
 
-		console.log('[SelectionNet] Checking intersection with bounds:', bounds);
-		console.log('[SelectionNet] Total shapes to check:', shapes.length);
-
 		for (const shape of shapes) {
 			const doesIntersect = this.shapeIntersectsBounds(shape, bounds);
-			console.log(`[SelectionNet] Shape ${shape.id} (${shape.type}):`, {
-				x: shape.x,
-				y: shape.y,
-				intersects: doesIntersect
-			});
 
 			if (doesIntersect) {
 				intersecting.push(shape.id);
 			}
 		}
 
-		console.log('[SelectionNet] Intersecting shapes:', intersecting);
 		return intersecting;
 	}
 
@@ -164,8 +155,7 @@ export class SelectionNet {
 		let shapeBounds: { x: number; y: number; width: number; height: number };
 
 		switch (shape.type) {
-			case 'rectangle':
-			case 'image': {
+			case 'rectangle': {
 				// Konva.Rect uses top-left positioning by default
 				shapeBounds = {
 					x: shape.x,
@@ -173,7 +163,18 @@ export class SelectionNet {
 					width: shape.width,
 					height: shape.height
 				};
-				console.log(`[SelectionNet] Rectangle bounds:`, shapeBounds);
+				break;
+			}
+
+			case 'triangle': {
+				// Triangles use width and height like rectangles
+				const triangleShape = shape as Extract<Shape, { type: 'triangle' }>;
+				shapeBounds = {
+					x: shape.x,
+					y: shape.y,
+					width: triangleShape.width,
+					height: triangleShape.height
+				};
 				break;
 			}
 
@@ -188,21 +189,24 @@ export class SelectionNet {
 				break;
 			}
 
-			case 'ellipse': {
-				// Ellipses are centered
+			case 'polygon': {
+				const polygonShape = shape as Extract<Shape, { type: 'polygon' }>;
+				// Polygons are now RegularPolygon with radius
 				shapeBounds = {
-					x: shape.x - shape.radiusX,
-					y: shape.y - shape.radiusY,
-					width: shape.radiusX * 2,
-					height: shape.radiusY * 2
+					x: shape.x - polygonShape.radius,
+					y: shape.y - polygonShape.radius,
+					width: polygonShape.radius * 2,
+					height: polygonShape.radius * 2
 				};
 				break;
 			}
 
-			case 'polygon':
 			case 'star': {
 				// Use radius as bounding box approximation
-				const radius = shape.type === 'star' ? shape.outerRadius : shape.radius;
+				const radius =
+					shape.type === 'star'
+						? (shape as Extract<Shape, { type: 'star' }>).outerRadius
+						: (shape as Extract<Shape, { type: 'polygon' }>).radius;
 				shapeBounds = {
 					x: shape.x - radius,
 					y: shape.y - radius,
@@ -253,12 +257,6 @@ export class SelectionNet {
 			shapeBounds.y + shapeBounds.height < bounds.y ||
 			shapeBounds.y > bounds.y + bounds.height
 		);
-
-		console.log(`[SelectionNet] AABB test:`, {
-			shapeBounds,
-			selectionBounds: bounds,
-			intersects
-		});
 
 		return intersects;
 	}

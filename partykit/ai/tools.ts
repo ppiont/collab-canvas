@@ -1,6 +1,6 @@
 /**
  * AI Tool Schema for OpenAI Function Calling
- * Defines 22 tools for canvas manipulation
+ * Defines 22 tools for canvas manipulation (6 creation, 8 manipulation, 5 layout, 3 query)
  */
 
 import type { ChatCompletionTool } from 'openai/resources/chat/completions';
@@ -10,7 +10,7 @@ import type { ChatCompletionTool } from 'openai/resources/chat/completions';
  */
 export const AI_TOOLS: ChatCompletionTool[] = [
 	// ═══════════════════════════════════════════════════════
-	// CREATION TOOLS (8 tools)
+	// CREATION TOOLS (6 tools)
 	// ═══════════════════════════════════════════════════════
 
 	{
@@ -44,26 +44,6 @@ export const AI_TOOLS: ChatCompletionTool[] = [
 					x: { type: 'number', description: 'X position (center)' },
 					y: { type: 'number', description: 'Y position (center)' },
 					radius: { type: 'number', description: 'Radius in pixels (default: 50)' },
-					fill: { type: 'string', description: 'Fill color as hex code' },
-					stroke: { type: 'string', description: 'Stroke color as hex code' }
-				},
-				required: ['x', 'y']
-			}
-		}
-	},
-
-	{
-		type: 'function',
-		function: {
-			name: 'createEllipse',
-			description: 'Create an ellipse shape on the canvas',
-			parameters: {
-				type: 'object',
-				properties: {
-					x: { type: 'number', description: 'X position (center)' },
-					y: { type: 'number', description: 'Y position (center)' },
-					radiusX: { type: 'number', description: 'Horizontal radius (default: 75)' },
-					radiusY: { type: 'number', description: 'Vertical radius (default: 50)' },
 					fill: { type: 'string', description: 'Fill color as hex code' },
 					stroke: { type: 'string', description: 'Stroke color as hex code' }
 				},
@@ -117,7 +97,7 @@ export const AI_TOOLS: ChatCompletionTool[] = [
 		type: 'function',
 		function: {
 			name: 'createPolygon',
-			description: 'Create a regular polygon (triangle, pentagon, hexagon, etc.)',
+			description: 'Create a regular polygon (pentagon, hexagon, etc.)',
 			parameters: {
 				type: 'object',
 				properties: {
@@ -157,20 +137,17 @@ export const AI_TOOLS: ChatCompletionTool[] = [
 	{
 		type: 'function',
 		function: {
-			name: 'createImage',
-			description: 'Create an image placeholder on the canvas',
+			name: 'createTriangle',
+			description: 'Create a triangle shape',
 			parameters: {
 				type: 'object',
 				properties: {
-					x: { type: 'number', description: 'X position' },
-					y: { type: 'number', description: 'Y position' },
-					width: { type: 'number', description: 'Width in pixels (default: 200)' },
-					height: { type: 'number', description: 'Height in pixels (default: 200)' },
-					imageUrl: {
-						type: 'string',
-						description:
-							'Image URL (use placeholder service like https://via.placeholder.com/WIDTHxHEIGHT)'
-					}
+					x: { type: 'number', description: 'X position (center)' },
+					y: { type: 'number', description: 'Y position (center)' },
+					width: { type: 'number', description: 'Width in pixels (default: 100)' },
+					height: { type: 'number', description: 'Height in pixels (default: 100)' },
+					fill: { type: 'string', description: 'Fill color as hex code' },
+					stroke: { type: 'string', description: 'Stroke color as hex code' }
 				},
 				required: ['x', 'y']
 			}
@@ -207,8 +184,8 @@ export const AI_TOOLS: ChatCompletionTool[] = [
 				type: 'object',
 				properties: {
 					shapeId: { type: 'string', description: 'ID of the shape to resize' },
-					width: { type: 'number', description: 'New width (for rectangles, ellipses, images)' },
-					height: { type: 'number', description: 'New height (for rectangles, ellipses, images)' },
+					width: { type: 'number', description: 'New width (for rectangles, triangles)' },
+					height: { type: 'number', description: 'New height (for rectangles, triangles)' },
 					radius: { type: 'number', description: 'New radius (for circles, polygons, stars)' }
 				},
 				required: ['shapeId']
@@ -277,6 +254,96 @@ export const AI_TOOLS: ChatCompletionTool[] = [
 					offsetY: { type: 'number', description: 'Y offset for the duplicate (default: 20)' }
 				},
 				required: ['shapeId']
+			}
+		}
+	},
+
+	{
+		type: 'function',
+		function: {
+			name: 'updateText',
+			description: 'Update text content and/or formatting properties of a text shape',
+			parameters: {
+				type: 'object',
+				properties: {
+					shapeId: { type: 'string', description: 'ID of the text shape to update' },
+					text: { type: 'string', description: 'New text content' },
+					fontSize: { type: 'number', description: 'Font size in pixels (8-144)' },
+					fontFamily: {
+						type: 'string',
+						enum: [
+							'system-ui',
+							'Arial',
+							'Times New Roman',
+							'Courier New',
+							'Georgia',
+							'Verdana',
+							'Comic Sans MS',
+							'Impact'
+						],
+						description: 'Font family'
+					},
+					fontWeight: {
+						type: 'string',
+						enum: ['normal', 'bold'],
+						description: 'Font weight'
+					},
+					fontStyle: {
+						type: 'string',
+						enum: ['normal', 'italic'],
+						description: 'Font style'
+					},
+					textDecoration: {
+						type: 'string',
+						enum: ['none', 'underline'],
+						description: 'Text decoration'
+					},
+					align: {
+						type: 'string',
+						enum: ['left', 'center', 'right'],
+						description: 'Text alignment'
+					},
+					fill: { type: 'string', description: 'Text color as hex code' }
+				},
+				required: ['shapeId']
+			}
+		}
+	},
+
+	{
+		type: 'function',
+		function: {
+			name: 'bringToFront',
+			description: 'Bring one or more shapes to the front (top z-order)',
+			parameters: {
+				type: 'object',
+				properties: {
+					shapeIds: {
+						type: 'array',
+						items: { type: 'string' },
+						description: 'IDs of shapes to bring to front'
+					}
+				},
+				required: ['shapeIds']
+			}
+		}
+	},
+
+	{
+		type: 'function',
+		function: {
+			name: 'sendToBack',
+			description: 'Send one or more shapes to the back (bottom z-order)',
+			parameters: {
+				type: 'object',
+				properties: {
+					shapeIds: {
+						type: 'array',
+						items: { type: 'string' },
+						description: 'IDs of shapes to send to back'
+					}
+				},
+				required: ['shapeIds']
 			}
 		}
 	},
@@ -434,7 +501,7 @@ export const AI_TOOLS: ChatCompletionTool[] = [
 				properties: {
 					type: {
 						type: 'string',
-						enum: ['rectangle', 'circle', 'ellipse', 'line', 'text', 'polygon', 'star', 'image'],
+						enum: ['rectangle', 'circle', 'line', 'text', 'polygon', 'star', 'triangle'],
 						description: 'Shape type to find'
 					}
 				},
@@ -466,19 +533,21 @@ export const TOOL_NAMES = [
 	// Creation
 	'createRectangle',
 	'createCircle',
-	'createEllipse',
 	'createLine',
 	'createText',
 	'createPolygon',
 	'createStar',
-	'createImage',
+	'createTriangle',
 	// Manipulation
 	'moveShape',
 	'resizeShape',
 	'rotateShape',
 	'updateShapeColor',
+	'updateText',
 	'deleteShape',
 	'duplicateShape',
+	'bringToFront',
+	'sendToBack',
 	// Layout
 	'arrangeHorizontal',
 	'arrangeVertical',

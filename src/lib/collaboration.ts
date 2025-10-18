@@ -69,6 +69,9 @@ export function initializeProvider(
 		color: userColor
 	});
 
+	// PHASE 1: Initialize draggedShapes field for live shape sync
+	_provider.awareness.setLocalStateField('draggedShapes', {});
+
 	// Connection status events
 	_provider.on('status', (event: { status: 'connected' | 'connecting' | 'disconnected' }) => {
 		connectionStatus.set(event.status);
@@ -117,4 +120,60 @@ export function getAllShapes(): Shape[] {
  */
 export function getOnlineUserCount(): number {
 	return _provider?.awareness.getStates().size || 1;
+}
+
+/**
+ * PHASE 1, 6: Update live dragged shape position in Awareness
+ * Called during dragmove to show other users the shape being dragged
+ */
+export function updateDraggedShape(shapeId: string, x: number, y: number, userId: string): void {
+	if (!_provider) return;
+
+	const currentState = _provider.awareness.getLocalState() || {};
+	const draggedShapes = currentState.draggedShapes || {};
+
+	_provider.awareness.setLocalStateField('draggedShapes', {
+		...draggedShapes,
+		[shapeId]: {
+			id: shapeId,
+			x,
+			y,
+			userId,
+			timestamp: Date.now()
+		}
+	});
+}
+
+/**
+ * PHASE 6: Clear dragged shape from Awareness
+ * Called on dragend to remove the ghost shape
+ */
+export function clearDraggedShape(shapeId: string): void {
+	if (!_provider) return;
+
+	const currentState = _provider.awareness.getLocalState() || {};
+	const draggedShapes = { ...currentState.draggedShapes };
+
+	delete draggedShapes[shapeId];
+
+	_provider.awareness.setLocalStateField('draggedShapes', draggedShapes);
+}
+
+/**
+ * Get current dragged shapes from all users
+ */
+export function getAllDraggedShapes(): Map<string, any> {
+	const allDragged = new Map();
+
+	if (!_provider) return allDragged;
+
+	_provider.awareness.getStates().forEach((state: any) => {
+		if (state.draggedShapes) {
+			Object.entries(state.draggedShapes).forEach(([shapeId, dragInfo]: [string, any]) => {
+				allDragged.set(`${state.user?.id}-${shapeId}`, dragInfo);
+			});
+		}
+	});
+
+	return allDragged;
 }

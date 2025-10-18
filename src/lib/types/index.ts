@@ -11,30 +11,31 @@ export type {
 	BaseShape,
 	RectangleShape,
 	CircleShape,
-	EllipseShape,
 	LineShape,
 	TextShape,
 	PolygonShape,
 	StarShape,
-	ImageShape,
+	TriangleShape,
 	Shape
 } from './shapes';
 
 export {
 	isRectangle,
 	isCircle,
-	isEllipse,
 	isLine,
 	isText,
 	isPolygon,
 	isStar,
-	isImage,
+	isTriangle,
 	DEFAULT_BASE_SHAPE,
 	DEFAULT_SHAPE_DIMENSIONS
 } from './shapes';
 
 // Canvas types
 export type { CanvasViewport, CanvasConfig, ToolType, CursorMode } from './canvas';
+
+// Collaboration types
+export type { DraggedShape, AwarenessUser } from './collaboration';
 
 // Project types
 export type {
