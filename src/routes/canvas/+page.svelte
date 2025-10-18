@@ -86,12 +86,17 @@
 				const fontWeight = shape.fontWeight;
 				const fontStyle = shape.fontStyle;
 				textFormatState = {
-					fontWeight: (fontWeight === 'bold' || fontWeight === 'normal') ? fontWeight : 'normal',
-					fontStyle: (fontStyle === 'italic' || fontStyle === 'normal') ? fontStyle : 'normal',
+					fontWeight: fontWeight === 'bold' || fontWeight === 'normal' ? fontWeight : 'normal',
+					fontStyle: fontStyle === 'italic' || fontStyle === 'normal' ? fontStyle : 'normal',
 					textDecoration: shape.textDecoration || 'none',
 					align: shape.align || 'left',
 					fontSize: shape.fontSize
 				};
+
+				// Also update the textarea styling immediately
+				if (shapeRenderer) {
+					shapeRenderer.updateTextareaFormatting(shape);
+				}
 			}
 		}
 	});
@@ -557,27 +562,34 @@
 		textDecoration={textFormatState.textDecoration}
 		align={textFormatState.align}
 		fontSize={textFormatState.fontSize}
-		onFormatChange={(format) => {
-			if (editingTextId) {
-				shapeOperations.update(editingTextId, format);
-				// Update local state to reflect changes
-				if (format.fontWeight !== undefined) {
-					textFormatState.fontWeight = format.fontWeight as 'normal' | 'bold';
-				}
-				if (format.fontStyle !== undefined) {
-					textFormatState.fontStyle = format.fontStyle as 'normal' | 'italic';
-				}
-				if (format.textDecoration !== undefined) {
-					textFormatState.textDecoration = format.textDecoration;
-				}
-				if (format.align !== undefined) {
-					textFormatState.align = format.align as 'left' | 'center' | 'right';
-				}
-				if (format.fontSize !== undefined) {
-					textFormatState.fontSize = format.fontSize;
-				}
+	onFormatChange={(format) => {
+		if (editingTextId && shapeRenderer) {
+			shapeOperations.update(editingTextId, format);
+			
+			// Update local state to reflect changes
+			if (format.fontWeight !== undefined) {
+				textFormatState.fontWeight = format.fontWeight as 'normal' | 'bold';
 			}
-		}}
+			if (format.fontStyle !== undefined) {
+				textFormatState.fontStyle = format.fontStyle as 'normal' | 'italic';
+			}
+			if (format.textDecoration !== undefined) {
+				textFormatState.textDecoration = format.textDecoration;
+			}
+			if (format.align !== undefined) {
+				textFormatState.align = format.align as 'left' | 'center' | 'right';
+			}
+			if (format.fontSize !== undefined) {
+				textFormatState.fontSize = format.fontSize;
+			}
+
+			// Get updated shape and apply formatting to textarea immediately
+			const shape = $shapes.find((s) => s.id === editingTextId);
+			if (shape && shape.type === 'text') {
+				shapeRenderer.updateTextareaFormatting(shape);
+			}
+		}
+	}}
 	/>
 
 	<!-- Keyboard Shortcuts (hold TAB) -->

@@ -690,19 +690,22 @@ export class ShapeRenderer {
 	// Callback for text editing integration
 	private textEditingCallback:
 		| ((
-			textId: string,
-			toolbarPosition: { x: number; y: number },
-			format: {
-				fontWeight: 'normal' | 'bold';
-				fontStyle: 'normal' | 'italic';
-				textDecoration: string;
-				align: 'left' | 'center' | 'right';
-				fontSize: number;
-			}
-		) => void)
+				textId: string,
+				toolbarPosition: { x: number; y: number },
+				format: {
+					fontWeight: 'normal' | 'bold';
+					fontStyle: 'normal' | 'italic';
+					textDecoration: string;
+					align: 'left' | 'center' | 'right';
+					fontSize: number;
+				}
+		  ) => void)
 		| null = null;
 
 	private textEditingEndCallback: (() => void) | null = null;
+	
+	// Store reference to active textarea for live updates
+	private activeTextarea: HTMLTextAreaElement | null = null;
 
 	/**
 	 * Set callback for text editing
@@ -723,6 +726,22 @@ export class ShapeRenderer {
 	): void {
 		this.textEditingCallback = onStart;
 		this.textEditingEndCallback = onEnd;
+	}
+
+	/**
+	 * Update the active textarea styling when shape properties change
+	 */
+	updateTextareaFormatting(shape: Extract<Shape, { type: 'text' }>): void {
+		if (!this.activeTextarea || !this.stage) return;
+
+		const scale = this.stage.scaleX();
+		this.activeTextarea.style.fontSize = `${shape.fontSize * scale}px`;
+		this.activeTextarea.style.fontFamily = shape.fontFamily || 'system-ui';
+		this.activeTextarea.style.fontWeight = String(shape.fontWeight || 'normal');
+		this.activeTextarea.style.fontStyle = shape.fontStyle || 'normal';
+		this.activeTextarea.style.textDecoration = shape.textDecoration || 'none';
+		this.activeTextarea.style.textAlign = shape.align || 'left';
+		this.activeTextarea.style.color = shape.fill || '#000000';
 	}
 
 	/**
@@ -761,6 +780,20 @@ export class ShapeRenderer {
 
 		const textarea = document.createElement('textarea');
 		document.body.appendChild(textarea);
+		
+		// Store reference for live updates
+		this.activeTextarea = textarea;
+
+		// Function to update textarea styling based on shape properties
+		const updateTextareaStyle = (currentShape: Extract<Shape, { type: 'text' }>) => {
+			textarea.style.fontSize = `${currentShape.fontSize * scale}px`;
+			textarea.style.fontFamily = currentShape.fontFamily || 'system-ui';
+			textarea.style.fontWeight = String(currentShape.fontWeight || 'normal');
+			textarea.style.fontStyle = currentShape.fontStyle || 'normal';
+			textarea.style.textDecoration = currentShape.textDecoration || 'none';
+			textarea.style.textAlign = currentShape.align || 'left';
+			textarea.style.color = currentShape.fill || '#000000';
+		};
 
 		// Enhanced textarea styling
 		textarea.value = shape.text;
@@ -768,11 +801,6 @@ export class ShapeRenderer {
 		textarea.style.top = `${stageBox.top + textPosition.y * scale}px`;
 		textarea.style.left = `${stageBox.left + textPosition.x * scale}px`;
 		textarea.style.minWidth = `${Math.max(100, textNode.width() * scale)}px`;
-		textarea.style.fontSize = `${shape.fontSize * scale}px`;
-		textarea.style.fontFamily = shape.fontFamily || 'system-ui';
-		textarea.style.fontWeight = String(shape.fontWeight || 'normal');
-		textarea.style.fontStyle = shape.fontStyle || 'normal';
-		textarea.style.textDecoration = shape.textDecoration || 'none';
 		textarea.style.border = '2px solid #a78bfa';
 		textarea.style.borderRadius = '8px';
 		textarea.style.padding = '8px';
@@ -784,10 +812,11 @@ export class ShapeRenderer {
 		textarea.style.resize = 'none';
 		textarea.style.lineHeight = '1.2';
 		textarea.style.transformOrigin = 'left top';
-		textarea.style.textAlign = shape.align || 'left';
-		textarea.style.color = shape.fill || '#000000';
 		textarea.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.2)';
 		textarea.style.zIndex = '1000';
+		
+		// Apply initial formatting
+		updateTextareaStyle(shape);
 
 		// Auto-grow textarea
 		const adjustHeight = () => {
@@ -812,6 +841,7 @@ export class ShapeRenderer {
 
 			// Clear editing state
 			this.locallyEditingId = null;
+			this.activeTextarea = null;
 
 			// Notify text editing end
 			if (this.textEditingEndCallback) {
