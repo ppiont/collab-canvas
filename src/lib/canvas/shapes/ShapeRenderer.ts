@@ -169,7 +169,20 @@ export class ShapeRenderer {
 		sortedShapes.forEach((shape) => {
 			const existingNode = this.shapesLayer.findOne(`#${shape.id}`);
 			const isLocallyDragging = shape.id === this.locallyDraggingId;
+			const isDraggedByOther = !!(shape.draggedBy && shape.draggedBy !== this.localUserId);
 			const isSelected = selectedIds.includes(shape.id);
+
+			// ✅ PHASE 7: Skip rendering shapes being dragged by other users (check FIRST)
+			// This prevents duplicate shapes: remote user sees only the drag ghost from LiveShapeRenderer
+			if (isDraggedByOther) {
+				// Remove the existing shape if it was rendered before draggedBy arrived
+				if (existingNode) {
+					existingNode.destroy();
+				}
+				// The drag ghost from LiveShapeRenderer handles all visual feedback
+				// When drag ends (draggedBy cleared), shape will be recreated with final position
+				return;
+			}
 
 			// CRITICAL FIX: If node exists AND we're not currently dragging it,
 			// UPDATE its properties from Yjs instead of skipping it
@@ -190,7 +203,6 @@ export class ShapeRenderer {
 			}
 
 			// Shape doesn't exist, create it
-			const isDraggedByOther = !!(shape.draggedBy && shape.draggedBy !== this.localUserId);
 			const konvaShape = this.createKonvaShape(shape, isDraggedByOther);
 			if (!konvaShape) {
 				return;

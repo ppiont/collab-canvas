@@ -246,6 +246,11 @@ export class LiveShapeRenderer {
 			ghost.add(shapeNode);
 		}
 
+		// Apply rotation from shape data to match current visual state
+		if (shapeData.rotation) {
+			ghost.rotation(shapeData.rotation);
+		}
+
 		ghost.setAttr('dragKey', key);
 		this.shapesLayer.add(ghost);
 		this.draggedShapeNodes.set(key, ghost);
