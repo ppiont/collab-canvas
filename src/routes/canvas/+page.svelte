@@ -21,7 +21,7 @@
 	import ConnectionStatus from '$lib/components/ConnectionStatus.svelte';
 	import DebugOverlay from '$lib/components/DebugOverlay.svelte';
 	import Toast from '$lib/components/Toast.svelte';
-	import { toast, Toaster } from 'svelte-sonner';
+	import { Toaster, toast } from 'svelte-sonner';
 	import { lineManager } from '$lib/canvas/line/LineManager.svelte';
 
 	// Import managers
@@ -70,7 +70,7 @@
 	let stageScale = $derived($viewport.scale);
 
 	onMount(() => {
-		// Show shortcuts hint as a toast
+		// Show shortcuts hint as a sonner toast
 		toast('Press TAB to view keyboard shortcuts', {
 			duration: 10000
 		});
@@ -278,6 +278,7 @@
 			window.removeEventListener('resize', handleResize);
 			window.removeEventListener('keydown', handleCopyPaste);
 			window.removeEventListener('keydown', handleUndoRedo);
+			// Clear any existing timeout
 			if (toastTimeout) {
 				clearTimeout(toastTimeout);
 			}
