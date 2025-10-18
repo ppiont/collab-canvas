@@ -103,8 +103,8 @@
 		size="icon"
 		onclick={onCommandPaletteOpen}
 		title="AI Assistant (⌘K)"
-		class="h-11 w-11 cursor-pointer rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-500/30 transition-all hover:scale-105 hover:shadow-xl hover:shadow-violet-500/40 active:scale-95"
+		class="h-11 w-11 cursor-pointer rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-yellow-300 shadow-lg shadow-violet-500/30 transition-all hover:scale-105 hover:shadow-xl hover:shadow-violet-500/40 active:scale-95"
 	>
-		<Sparkles class="h-5 w-5" />
+		<Sparkles class="h-5 w-5 fill-yellow-300" />
 	</Button>
 </div>

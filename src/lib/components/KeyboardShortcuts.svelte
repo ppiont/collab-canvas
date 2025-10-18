@@ -104,8 +104,8 @@
 				>
 				to view • Press
 				<kbd
-					class="px-2 py-1 text-sm font-mono font-bold bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded shadow-sm"
-					>⚡ Cmd+K</kbd
+					class="px-2 py-1 text-sm font-mono font-bold bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded shadow-sm inline-flex items-center gap-1"
+					><span class="text-yellow-300">✨</span> Cmd+K</kbd
 				> for AI Command Palette
 			</Dialog.Description>
 		</Dialog.Header>

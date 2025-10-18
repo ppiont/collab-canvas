@@ -337,7 +337,7 @@
 <Dialog.Root bind:open>
 	<Dialog.Portal>
 		<!-- No overlay - keep canvas visible -->
-		
+
 		<!-- Floating palette -->
 		<DialogPrimitive.Content
 			class="fixed left-1/2 top-20 z-50 w-full max-w-2xl -translate-x-1/2 rounded-2xl border-2 border-violet-200 bg-gradient-to-br from-white via-violet-50/50 to-indigo-50/50 shadow-2xl shadow-violet-500/20 backdrop-blur-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-top-[10%] data-[state=open]:slide-in-from-top-[10%]"
@@ -346,7 +346,7 @@
 			<div class="rounded-t-2xl bg-gradient-to-r from-violet-500 to-indigo-600 px-6 py-4">
 				<div class="flex items-center gap-3">
 					<div class="rounded-xl bg-white/20 p-2 backdrop-blur-sm">
-						<Sparkles class="h-6 w-6 text-yellow-300" />
+						<Sparkles class="h-6 w-6 text-yellow-300 fill-yellow-300" />
 					</div>
 					<div>
 						<h2 class="text-lg font-bold text-white">AI Canvas Assistant</h2>
@@ -445,7 +445,7 @@
 								<Loader2 class="h-4 w-4 animate-spin mr-2" />
 								Processing...
 							{:else}
-								<Sparkles class="h-4 w-4 mr-2 text-yellow-300" />
+								<Sparkles class="h-4 w-4 mr-2 text-yellow-300 fill-yellow-300" />
 								Execute
 							{/if}
 						</Button>
