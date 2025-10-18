@@ -273,9 +273,13 @@ export class SelectionManager {
 			// Calculate dimensions
 			let nodeWidth: number;
 			let nodeHeight: number;
-
+			
 			if (isClosedPolygon) {
 				// For polygons, use bounding box dimensions
+				nodeWidth = Math.round(box.width);
+				nodeHeight = Math.round(box.height);
+			} else if (node instanceof Konva.RegularPolygon) {
+				// For regular polygons (triangles), use bounding box dimensions
 				nodeWidth = Math.round(box.width);
 				nodeHeight = Math.round(box.height);
 			} else {
