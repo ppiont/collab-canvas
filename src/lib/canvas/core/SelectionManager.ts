@@ -389,14 +389,6 @@ export class SelectionManager {
 					changes.scaleX = scaleX;
 					changes.scaleY = scaleY;
 					shouldResetScale = false; // Don't reset scale for circles
-				} else if (className === 'Ellipse') {
-					const ellipse = node as Konva.Ellipse;
-					const newRadiusX = ellipse.radiusX() * scaleX;
-					const newRadiusY = ellipse.radiusY() * scaleY;
-					changes.radiusX = newRadiusX;
-					changes.radiusY = newRadiusY;
-					ellipse.radiusX(newRadiusX);
-					ellipse.radiusY(newRadiusY);
 				} else if (className === 'Star') {
 					// For stars, allow independent X/Y scaling
 					const star = node as Konva.Star;
@@ -444,7 +436,7 @@ export class SelectionManager {
 						line.points(scaledPoints);
 					}
 				} else if (className === 'RegularPolygon') {
-					// Triangle - allow independent X/Y scaling like stars
+					// RegularPolygon (triangles and pentagons) - allow independent X/Y scaling
 					changes.scaleX = scaleX;
 					changes.scaleY = scaleY;
 					shouldResetScale = false;

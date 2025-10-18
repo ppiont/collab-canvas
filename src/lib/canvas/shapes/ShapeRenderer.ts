@@ -28,7 +28,7 @@ export interface ShapeEventCallbacks {
 
 /**
  * ShapeRenderer handles rendering shapes to Konva layer
- * Supports all shape types and manages event handlers
+ * Supports all shape types: rectangles, circles, lines, text, polygons, stars, triangles, and images
  */
 export class ShapeRenderer {
 	private shapesLayer: Konva.Layer;

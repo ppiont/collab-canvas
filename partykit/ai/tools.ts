@@ -184,8 +184,8 @@ export const AI_TOOLS: ChatCompletionTool[] = [
 				type: 'object',
 				properties: {
 					shapeId: { type: 'string', description: 'ID of the shape to resize' },
-					width: { type: 'number', description: 'New width (for rectangles, ellipses, images)' },
-					height: { type: 'number', description: 'New height (for rectangles, ellipses, images)' },
+					width: { type: 'number', description: 'New width (for rectangles, triangles, images)' },
+					height: { type: 'number', description: 'New height (for rectangles, triangles, images)' },
 					radius: { type: 'number', description: 'New radius (for circles, polygons, stars)' }
 				},
 				required: ['shapeId']
@@ -449,7 +449,7 @@ export const AI_TOOLS: ChatCompletionTool[] = [
 				properties: {
 					type: {
 						type: 'string',
-						enum: ['rectangle', 'circle', 'ellipse', 'line', 'text', 'polygon', 'star', 'image'],
+						enum: ['rectangle', 'circle', 'line', 'text', 'polygon', 'star', 'triangle', 'image'],
 						description: 'Shape type to find'
 					}
 				},
