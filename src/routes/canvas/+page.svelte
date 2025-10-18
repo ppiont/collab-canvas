@@ -78,6 +78,24 @@
 		fontSize: 16
 	});
 
+	// Sync toolbar state with actual shape properties
+	$effect(() => {
+		if (editingTextId) {
+			const shape = $shapes.find((s) => s.id === editingTextId);
+			if (shape && shape.type === 'text') {
+				const fontWeight = shape.fontWeight;
+				const fontStyle = shape.fontStyle;
+				textFormatState = {
+					fontWeight: (fontWeight === 'bold' || fontWeight === 'normal') ? fontWeight : 'normal',
+					fontStyle: (fontStyle === 'italic' || fontStyle === 'normal') ? fontStyle : 'normal',
+					textDecoration: shape.textDecoration || 'none',
+					align: shape.align || 'left',
+					fontSize: shape.fontSize
+				};
+			}
+		}
+	});
+
 	// Helper function to create shapes based on active tool
 	function createShapeAtPosition(x: number, y: number): Shape | null {
 		const tool = $activeTool;
@@ -527,43 +545,43 @@
 	<!-- Properties Panel -->
 	<PropertiesPanel />
 
-<!-- Command Palette -->
-<CommandPalette bind:open={commandPaletteOpen} userId={data.user.id} viewport={$viewport} />
+	<!-- Command Palette -->
+	<CommandPalette bind:open={commandPaletteOpen} userId={data.user.id} viewport={$viewport} />
 
-<!-- Text Formatting Toolbar -->
-<TextFormattingToolbar
-	bind:visible={textFormattingVisible}
-	bind:position={textFormattingPosition}
-	fontWeight={textFormatState.fontWeight}
-	fontStyle={textFormatState.fontStyle}
-	textDecoration={textFormatState.textDecoration}
-	align={textFormatState.align}
-	fontSize={textFormatState.fontSize}
-	onFormatChange={(format) => {
-		if (editingTextId) {
-			shapeOperations.update(editingTextId, format);
-			// Update local state to reflect changes
-			if (format.fontWeight !== undefined) {
-				textFormatState.fontWeight = format.fontWeight as 'normal' | 'bold';
+	<!-- Text Formatting Toolbar -->
+	<TextFormattingToolbar
+		bind:visible={textFormattingVisible}
+		bind:position={textFormattingPosition}
+		fontWeight={textFormatState.fontWeight}
+		fontStyle={textFormatState.fontStyle}
+		textDecoration={textFormatState.textDecoration}
+		align={textFormatState.align}
+		fontSize={textFormatState.fontSize}
+		onFormatChange={(format) => {
+			if (editingTextId) {
+				shapeOperations.update(editingTextId, format);
+				// Update local state to reflect changes
+				if (format.fontWeight !== undefined) {
+					textFormatState.fontWeight = format.fontWeight as 'normal' | 'bold';
+				}
+				if (format.fontStyle !== undefined) {
+					textFormatState.fontStyle = format.fontStyle as 'normal' | 'italic';
+				}
+				if (format.textDecoration !== undefined) {
+					textFormatState.textDecoration = format.textDecoration;
+				}
+				if (format.align !== undefined) {
+					textFormatState.align = format.align as 'left' | 'center' | 'right';
+				}
+				if (format.fontSize !== undefined) {
+					textFormatState.fontSize = format.fontSize;
+				}
 			}
-			if (format.fontStyle !== undefined) {
-				textFormatState.fontStyle = format.fontStyle as 'normal' | 'italic';
-			}
-			if (format.textDecoration !== undefined) {
-				textFormatState.textDecoration = format.textDecoration;
-			}
-			if (format.align !== undefined) {
-				textFormatState.align = format.align as 'left' | 'center' | 'right';
-			}
-			if (format.fontSize !== undefined) {
-				textFormatState.fontSize = format.fontSize;
-			}
-		}
-	}}
-/>
+		}}
+	/>
 
-<!-- Keyboard Shortcuts (hold TAB) -->
-<KeyboardShortcuts />
+	<!-- Keyboard Shortcuts (hold TAB) -->
+	<KeyboardShortcuts />
 
 	<!-- Debug Overlay (press ~ to toggle) -->
 	<DebugOverlay {shapeRenderer} shapesCount={$shapes.length} />

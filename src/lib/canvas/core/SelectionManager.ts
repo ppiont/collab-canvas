@@ -429,15 +429,15 @@ export class SelectionManager {
 						star.innerRadius(newInnerRadius);
 						star.outerRadius(newOuterRadius);
 					}
-				} else if (className === 'Text') {
-					const text = node as Konva.Text;
-					const newFontSize = text.fontSize() * scaleY;
-					const newWidth = node.width() * scaleX;
-					changes.fontSize = newFontSize;
-					changes.width = newWidth;
-					text.fontSize(newFontSize);
-					text.width(newWidth);
-				} else if (className === 'Line') {
+			} else if (className === 'Text') {
+				const text = node as Konva.Text;
+				const newFontSize = Math.round(text.fontSize() * scaleY);
+				const newWidth = Math.round(node.width() * scaleX);
+				changes.fontSize = newFontSize;
+				changes.width = newWidth;
+				text.fontSize(newFontSize);
+				text.width(newWidth);
+			} else if (className === 'Line') {
 					const line = node as Konva.Line;
 					// Polygons have closed=true, lines have closed=false
 					const isClosed = line.closed();

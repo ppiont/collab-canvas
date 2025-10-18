@@ -357,18 +357,18 @@ export class ShapeRenderer {
 				break;
 			}
 
-		case 'text': {
-			const text = node as Konva.Text;
-			text.text(shape.text);
-			text.fontSize(shape.fontSize);
-			text.fontFamily(shape.fontFamily || 'system-ui');
-			text.setAttr('fontWeight', shape.fontWeight || 'normal');
-			text.setAttr('fontStyle', shape.fontStyle || 'normal');
-			text.setAttr('textDecoration', shape.textDecoration || '');
-			text.setAttr('align', shape.align || 'left');
-			if (shape.width) text.width(shape.width);
-			break;
-		}
+			case 'text': {
+				const text = node as Konva.Text;
+				text.text(shape.text);
+				text.fontSize(shape.fontSize);
+				text.fontFamily(shape.fontFamily || 'system-ui');
+				text.setAttr('fontWeight', shape.fontWeight || 'normal');
+				text.setAttr('fontStyle', shape.fontStyle || 'normal');
+				text.setAttr('textDecoration', shape.textDecoration || '');
+				text.setAttr('align', shape.align || 'left');
+				if (shape.width) text.width(shape.width);
+				break;
+			}
 		}
 	}
 
@@ -690,16 +690,16 @@ export class ShapeRenderer {
 	// Callback for text editing integration
 	private textEditingCallback:
 		| ((
-				textId: string,
-				toolbarPosition: { x: number; y: number },
-				format: {
-					fontWeight: 'normal' | 'bold';
-					fontStyle: 'normal' | 'italic';
-					textDecoration: string;
-					align: 'left' | 'center' | 'right';
-					fontSize: number;
-				}
-		  ) => void)
+			textId: string,
+			toolbarPosition: { x: number; y: number },
+			format: {
+				fontWeight: 'normal' | 'bold';
+				fontStyle: 'normal' | 'italic';
+				textDecoration: string;
+				align: 'left' | 'center' | 'right';
+				fontSize: number;
+			}
+		) => void)
 		| null = null;
 
 	private textEditingEndCallback: (() => void) | null = null;
@@ -839,7 +839,8 @@ export class ShapeRenderer {
 
 		textarea.addEventListener('blur', () => {
 			// Small delay to allow toolbar clicks to process first
-			setTimeout(removeTextarea, 150);
+			// The onmousedown preventDefault on toolbar buttons prevents blur
+			setTimeout(removeTextarea, 100);
 		});
 	}
 

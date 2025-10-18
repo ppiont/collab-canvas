@@ -73,6 +73,7 @@
 				? 'bg-white/30'
 				: ''}"
 			onclick={toggleBold}
+			onmousedown={(e) => e.preventDefault()}
 			title="Bold (⌘B)"
 		>
 			<Bold class="h-4 w-4" />
@@ -85,6 +86,7 @@
 				? 'bg-white/30'
 				: ''}"
 			onclick={toggleItalic}
+			onmousedown={(e) => e.preventDefault()}
 			title="Italic (⌘I)"
 		>
 			<Italic class="h-4 w-4" />
@@ -97,6 +99,7 @@
 				? 'bg-white/30'
 				: ''}"
 			onclick={toggleUnderline}
+			onmousedown={(e) => e.preventDefault()}
 			title="Underline (⌘U)"
 		>
 			<Underline class="h-4 w-4" />
@@ -108,8 +111,11 @@
 		<Button
 			variant="ghost"
 			size="icon"
-			class="h-8 w-8 rounded-lg text-white hover:bg-white/20 {align === 'left' ? 'bg-white/30' : ''}"
+			class="h-8 w-8 rounded-lg text-white hover:bg-white/20 {align === 'left'
+				? 'bg-white/30'
+				: ''}"
 			onclick={() => setAlign('left')}
+			onmousedown={(e) => e.preventDefault()}
 			title="Align Left (⌘⇧L)"
 		>
 			<AlignLeft class="h-4 w-4" />
@@ -122,6 +128,7 @@
 				? 'bg-white/30'
 				: ''}"
 			onclick={() => setAlign('center')}
+			onmousedown={(e) => e.preventDefault()}
 			title="Align Center (⌘⇧E)"
 		>
 			<AlignCenter class="h-4 w-4" />
@@ -134,6 +141,7 @@
 				? 'bg-white/30'
 				: ''}"
 			onclick={() => setAlign('right')}
+			onmousedown={(e) => e.preventDefault()}
 			title="Align Right (⌘⇧R)"
 		>
 			<AlignRight class="h-4 w-4" />
@@ -147,6 +155,7 @@
 			size="icon"
 			class="h-8 w-8 rounded-lg text-white hover:bg-white/20"
 			onclick={() => changeFontSize(-2)}
+			onmousedown={(e) => e.preventDefault()}
 			title="Decrease Font Size"
 		>
 			<Minus class="h-4 w-4" />
@@ -163,10 +172,10 @@
 			size="icon"
 			class="h-8 w-8 rounded-lg text-white hover:bg-white/20"
 			onclick={() => changeFontSize(2)}
+			onmousedown={(e) => e.preventDefault()}
 			title="Increase Font Size"
 		>
 			<Plus class="h-4 w-4" />
 		</Button>
 	</div>
 {/if}
-
