@@ -28,6 +28,7 @@ export class LiveShapeRenderer {
 	private userColors = new Map<string, string>();
 	private lastUpdateTime = 0;
 	private updateInterval = 16; // 60fps update
+	private awarenessChangeHandler: (() => void) | null = null;
 
 	constructor(shapesLayer: Konva.Layer, stage: Konva.Stage, awareness: any, shapesMap: any) {
 		this.shapesLayer = shapesLayer;
@@ -43,10 +44,13 @@ export class LiveShapeRenderer {
 	 * Listen for changes in other users' dragged shapes
 	 */
 	private setupAwarenessListener(): void {
-		// Listen for awareness changes
-		this.awareness.on('change', () => {
+		// Store handler for cleanup
+		this.awarenessChangeHandler = () => {
 			this.updateDraggedShapes();
-		});
+		};
+
+		// Listen for awareness changes
+		this.awareness.on('change', this.awarenessChangeHandler);
 
 		// Initial render
 		this.updateDraggedShapes();
@@ -275,9 +279,10 @@ export class LiveShapeRenderer {
 			this.draggedShapeNodes.delete(key);
 		}
 
-		// Remove listeners
-		if (this.awareness) {
-			this.awareness.off('change', this.updateDraggedShapes);
+		// Remove listeners with correct reference
+		if (this.awareness && this.awarenessChangeHandler) {
+			this.awareness.off('change', this.awarenessChangeHandler);
+			this.awarenessChangeHandler = null;
 		}
 	}
 }
