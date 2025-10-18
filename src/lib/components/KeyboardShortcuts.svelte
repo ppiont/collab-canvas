@@ -12,11 +12,11 @@
 			shortcuts: [
 				{ action: 'Rectangle', keys: 'R' },
 				{ action: 'Circle', keys: 'C' },
-				{ action: 'Line', keys: 'L' },
-				{ action: 'Text', keys: 'T' },
+				{ action: 'Triangle', keys: 'G' },
 				{ action: 'Polygon', keys: 'P' },
 				{ action: 'Star', keys: 'S' },
-				{ action: 'Triangle', keys: 'G' }
+				{ action: 'Line', keys: 'L' },
+				{ action: 'Text', keys: 'T' }
 			]
 		},
 		{
