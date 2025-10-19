@@ -241,7 +241,8 @@ export class ShapeRenderer {
 		// CRITICAL: Use ALL shapes, not just visible ones, for correct z-order
 		// Shapes already sorted by zIndex in store (no need to sort again)
 		// OPTIMIZATION: Only reorder if z-index order has changed (prevents interrupting drags)
-		const currentZIndexOrder = shapes.map(s => s.id).join(',');
+		// FIX: Include zIndex values in comparison, not just IDs, to detect z-index changes
+		const currentZIndexOrder = shapes.map(s => `${s.id}:${s.zIndex}`).join(',');
 		if (currentZIndexOrder !== this.lastZIndexOrder) {
 			this.reorderShapesByZIndex(shapes);
 			this.lastZIndexOrder = currentZIndexOrder;
