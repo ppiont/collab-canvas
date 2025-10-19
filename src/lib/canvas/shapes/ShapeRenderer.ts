@@ -235,39 +235,40 @@ export class ShapeRenderer {
 	 * In Konva, visual stacking order = children array order
 	 */
 	private reorderShapesByZIndex(sortedShapes: Shape[]): void {
-		const allShapeNodes = this.shapesLayer.find('.shape');
-		if (allShapeNodes.length <= 1) return;
-
-		// Get current order from layer
-		const currentOrder = allShapeNodes.map((node) => node.id());
-		const desiredOrder = sortedShapes.map((shape) => shape.id);
-
-		// Check if reordering is needed
-		const needsReordering = !this.arraysEqual(currentOrder, desiredOrder);
-		if (!needsReordering) {
-			return;
-		}
-
-		// Create map of nodes for quick lookup
-		const nodeMap = new Map<string, Konva.Node>();
-		allShapeNodes.forEach((node) => {
-			nodeMap.set(node.id(), node);
-		});
-
-		// Move each shape to its correct position
-		sortedShapes.forEach((shape, targetIndex) => {
-			const node = nodeMap.get(shape.id);
-			if (!node) return;
-
-			const currentIndex = node.getZIndex();
-			if (currentIndex === targetIndex) return; // Already in correct position
-
-			// Move to bottom first, then up to target position
-			node.moveToBottom();
-			for (let i = 0; i < targetIndex; i++) {
-				node.moveUp();
+		// Get all current layer children (including non-shape nodes like transformer)
+		const currentChildren = this.shapesLayer.getChildren();
+		
+		// Create map of shape nodes for quick lookup
+		const shapeNodeMap = new Map<string, Konva.Node>();
+		const nonShapeNodes: Konva.Node[] = [];
+		
+		currentChildren.forEach((node) => {
+			const id = node.id();
+			if (id) {
+				// Has an ID - it's a shape node
+				shapeNodeMap.set(id, node);
+			} else {
+				// No ID - it's a non-shape node (e.g., transformer, selection net)
+				nonShapeNodes.push(node);
 			}
 		});
+
+		// Build new children array in correct order: shapes by zIndex, then non-shapes
+		const reorderedChildren: Konva.Node[] = [];
+		
+		// Add shapes in zIndex order
+		sortedShapes.forEach((shape) => {
+			const node = shapeNodeMap.get(shape.id);
+			if (node) {
+				reorderedChildren.push(node);
+			}
+		});
+		
+		// Add non-shape nodes at the end (they should be on top)
+		reorderedChildren.push(...nonShapeNodes);
+
+		// Apply new order in one operation (O(n) instead of O(n²))
+		this.shapesLayer.setChildren(reorderedChildren);
 	}
 
 	/**
