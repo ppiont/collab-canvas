@@ -25,7 +25,6 @@
 		AccordionItem,
 		AccordionTrigger
 	} from '$lib/components/ui/accordion';
-	import PanelHeader from './PanelHeader.svelte';
 	import DimensionsSection from './sections/DimensionsSection.svelte';
 	import AppearanceSection from './sections/AppearanceSection.svelte';
 	import EffectsSection from './sections/EffectsSection.svelte';
@@ -41,22 +40,6 @@
 
 	// Reactive state
 	const selectionCount = $derived(selectedItems.length);
-	const selectionType = $derived.by(() => {
-		if (selectionCount === 0) return '';
-		if (selectionCount === 1) return selectedItems[0].type;
-
-		// Check if all selected items have the same type
-		const firstType = selectedItems[0].type;
-		const allSameType = selectedItems.every((item) => item.type === firstType);
-
-		// If all same type, use that type; otherwise use generic "shape"
-		return allSameType ? firstType : 'shape';
-	});
-
-	// Handle clear selection
-	function handleClearSelection() {
-		onUpdateItems([]);
-	}
 
 	// Handle shape updates
 	function handleUpdateItems(updatedItems: Shape[]) {
@@ -74,11 +57,8 @@
 	class="w-full h-full bg-gradient-to-b from-white to-slate-50 text-slate-900 border-l-2 border-slate-200 flex flex-col shadow-lg"
 	data-testid="properties-panel"
 >
-	<ScrollArea class="flex-1">
+	<ScrollArea class="flex-1 h-full">
 		<div class="p-4 space-y-6">
-			<!-- Header with selection info and clear button -->
-			<PanelHeader {selectionCount} {selectionType} onClearSelection={handleClearSelection} />
-
 			{#if selectionCount > 0}
 				<!-- Accordion sections for different property groups -->
 				<Accordion

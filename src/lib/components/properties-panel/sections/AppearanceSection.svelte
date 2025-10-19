@@ -9,7 +9,7 @@
 	 * - Between controls: 12px (space-y-3)
 	 * - Within controls: 8px (space-y-2) for label/picker
 	 * - Gap between elements: 8px (gap-2)
-	 * 
+	 *
 	 * Features:
 	 * - Fill color picker with enable/disable toggle
 	 * - Stroke color picker with enable/disable toggle
@@ -125,7 +125,12 @@
 	<!-- Fill Color -->
 	<div class="space-y-2">
 		<div class="flex items-center justify-between">
-			<label class="text-xs font-medium text-muted-foreground" for="fill-enabled"> Fill </label>
+			<label
+				class="text-xs font-semibold text-slate-700 uppercase tracking-wide"
+				for="fill-enabled"
+			>
+				Fill
+			</label>
 			<div class="flex items-center gap-2">
 				{#if appearance.hasMixedFillEnabled}
 					<span class="text-xs text-muted-foreground italic">Mixed</span>
@@ -151,10 +156,15 @@
 		{/if}
 	</div>
 
-	<!-- Stroke Color -->
+	<!-- Stroke Color and Width -->
 	<div class="space-y-2">
 		<div class="flex items-center justify-between">
-			<label class="text-xs font-medium text-muted-foreground" for="stroke-enabled"> Stroke </label>
+			<label
+				class="text-xs font-semibold text-slate-700 uppercase tracking-wide"
+				for="stroke-enabled"
+			>
+				Stroke
+			</label>
 			<div class="flex items-center gap-2">
 				{#if appearance.hasMixedStrokeEnabled}
 					<span class="text-xs text-muted-foreground italic">Mixed</span>
@@ -169,42 +179,43 @@
 		</div>
 
 		{#if appearance.strokeEnabled || appearance.hasMixedStrokeEnabled}
-			<FormField id="stroke-color" label="" isMixed={appearance.hasMixedStroke}>
-				<ColorPickerField
-					color={appearance.stroke}
-					label="Stroke"
-					onChange={updateStroke}
-					bind:recentColors
-				/>
-			</FormField>
+			<div class="grid grid-cols-[1fr_110px] gap-2">
+				<!-- Stroke Color -->
+				<FormField id="stroke-color" label="" isMixed={appearance.hasMixedStroke}>
+					<ColorPickerField
+						color={appearance.stroke}
+						label="Stroke"
+						onChange={updateStroke}
+						bind:recentColors
+					/>
+				</FormField>
+
+				<!-- Stroke Width -->
+				<FormField id="stroke-width" label="Width" isMixed={appearance.hasMixedStrokeWidth}>
+					<div class="relative">
+						<Input
+							id="stroke-width"
+							type="number"
+							value={appearance.hasMixedStrokeWidth ? '' : appearance.strokeWidth}
+							placeholder={appearance.hasMixedStrokeWidth ? '—' : ''}
+							onchange={(e) => updateStrokeWidth(e.currentTarget.value)}
+							onfocus={handleFocus}
+							onkeydown={handleKeyDown}
+							class="text-sm pr-8"
+							min={0}
+							step={0.5}
+							aria-label="Stroke width in pixels"
+						/>
+						<span
+							class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none"
+						>
+							px
+						</span>
+					</div>
+				</FormField>
+			</div>
 		{/if}
 	</div>
-
-	<!-- Stroke Width -->
-	{#if appearance.strokeEnabled || appearance.hasMixedStrokeEnabled}
-		<FormField id="stroke-width" label="Stroke Width" isMixed={appearance.hasMixedStrokeWidth}>
-			<div class="relative">
-				<Input
-					id="stroke-width"
-					type="number"
-					value={appearance.hasMixedStrokeWidth ? '' : appearance.strokeWidth}
-					placeholder={appearance.hasMixedStrokeWidth ? '—' : ''}
-					onchange={(e) => updateStrokeWidth(e.currentTarget.value)}
-					onfocus={handleFocus}
-					onkeydown={handleKeyDown}
-					class="text-sm pr-8"
-					min={0}
-					step={0.5}
-					aria-label="Stroke width in pixels"
-				/>
-				<span
-					class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none"
-				>
-					px
-				</span>
-			</div>
-		</FormField>
-	{/if}
 </div>
 
 <!--

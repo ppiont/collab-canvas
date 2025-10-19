@@ -675,7 +675,7 @@
 
 	.properties-panel-container {
 		position: fixed;
-		top: 48px; /* Below toolbar */
+		top: 0;
 		left: 0;
 		bottom: 0;
 		width: 320px; /* Sidebar width */
