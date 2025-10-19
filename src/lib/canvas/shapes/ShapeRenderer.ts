@@ -479,7 +479,11 @@ export class ShapeRenderer {
 			shadowOpacity: isDraggedByOther ? 0.6 : shape.shadow ? 0.5 : 0,
 			shadowOffset: shape.shadow
 				? { x: shape.shadow.offsetX, y: shape.shadow.offsetY }
-				: { x: 0, y: 0 }
+				: { x: 0, y: 0 },
+			// Performance optimizations
+			perfectDrawEnabled: false, // Faster rendering at cost of minor accuracy
+			hitStrokeWidth: 0, // Simpler hit detection
+			shadowForStrokeEnabled: false // Skip shadow calculations for strokes
 		};
 
 		switch (shape.type) {
