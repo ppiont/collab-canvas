@@ -1,13 +1,13 @@
 <script lang="ts">
 	/**
 	 * Panel Header Component
-	 * 
+	 *
 	 * Displays selection count and type with clear button.
-	 * 
+	 *
 	 * Typography: 16px headers, weight 600 (text-base font-semibold)
 	 * Spacing: 16px bottom padding (pb-4)
 	 * Touch targets: 44x44px minimum (h-11 w-11)
-	 * 
+	 *
 	 * Features:
 	 * - Smart pluralization for selection text
 	 * - Clear button with X icon
@@ -15,30 +15,30 @@
 	 * - WCAG AA compliant
 	 * - Keyboard accessible
 	 */
-	
+
 	import { Button } from '$lib/components/ui/button';
 	import { X } from 'lucide-svelte';
-	
+
 	// Props
-	let { 
+	let {
 		selectionCount = 0,
 		selectionType = '',
 		onClearSelection = () => {}
-	}: { 
+	}: {
 		selectionCount: number;
 		selectionType: string;
 		onClearSelection: () => void;
 	} = $props();
-	
+
 	// Compute selection text with smart pluralization
 	const selectionText = $derived(
-		selectionCount > 1 
-			? `${selectionCount} ${selectionType}s selected` 
+		selectionCount > 1
+			? `${selectionCount} ${selectionType}s selected`
 			: selectionCount === 1
-			? `1 ${selectionType} selected`
-			: 'No selection'
+				? `1 ${selectionType} selected`
+				: 'No selection'
 	);
-	
+
 	// Show clear button only when there's a selection
 	const showClearButton = $derived(selectionCount > 0);
 </script>
@@ -52,12 +52,12 @@
 	<h2 class="text-base font-semibold truncate flex-1 mr-2">
 		{selectionText}
 	</h2>
-	
+
 	<!-- Clear selection button (44x44px touch target) -->
 	{#if showClearButton}
-		<Button 
-			variant="ghost" 
-			size="icon" 
+		<Button
+			variant="ghost"
+			size="icon"
 			onclick={onClearSelection}
 			aria-label="Clear selection"
 			class="h-11 w-11 shrink-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -111,4 +111,3 @@ USAGE EXAMPLES:
   onClearSelection={clearSelection}
 />
 -->
-
