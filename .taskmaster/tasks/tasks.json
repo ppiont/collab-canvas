@@ -145,7 +145,7 @@
         "description": "Sort shapes once in store instead of twice per render",
         "details": "**File:** `src/lib/stores/shapes.ts:22-28`\n\n**Problem:** Shapes sorted twice per render (O(n log n) x 2)\n\n**Steps:**\n1. In initializeShapesSync(), sort shapes before setting store\n2. Remove sorting from ShapeRenderer.renderShapes()\n\n**Impact:** 50% less sorting operations, 5-10ms saved with 500 shapes",
         "testStrategy": "",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [
           "3"
         ],
@@ -241,7 +241,7 @@
         "description": "Move hardcoded values to CANVAS/HISTORY/AI constants",
         "details": "**Files:** Multiple\n\n**Values to Extract:**\n- LiveShapeRenderer updateInterval (16) → CANVAS.FRAME_TIME_MS\n- EventHandlers drag threshold (5) → CANVAS.DRAG_NET_THRESHOLD\n- SelectionManager min size (5) → SHAPES.MIN_SIZE (already exists!)\n- CommandPalette timeout (30000) → AI.COMMAND_TIMEOUT_MS\n- History captureTimeout (500) → HISTORY.CAPTURE_TIMEOUT_MS\n\n**Impact:** Better maintainability, easier tuning",
         "testStrategy": "",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -252,7 +252,7 @@
         "description": "Consistent error handling with user feedback for user-initiated operations",
         "details": "**Files:** Multiple stores and managers\n\n**Pattern to Implement:**\n- User-initiated operations: console.error + toast notification\n- Internal/programmer errors: throw Error with descriptive message\n- Optional operations: return false on failure\n\n**Impact:** Better debugging, better UX",
         "testStrategy": "",
-        "status": "pending",
+        "status": "deferred",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -307,7 +307,7 @@
         "description": "Wrap all ydoc.transact() calls in try/catch for error handling",
         "details": "**File:** `src/lib/stores/shapes.ts` (all shapeOperations methods)\n\n**Steps:**\n1. Add try/catch around all transact() calls\n2. Return boolean success/failure\n3. Consider showing user toast on failure\n\n**Impact:** Graceful error handling, better UX",
         "testStrategy": "",
-        "status": "pending",
+        "status": "deferred",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -382,7 +382,7 @@
     "metadata": {
       "created": "2025-10-18T23:26:21.703Z",
       "description": "Default tasks context",
-      "updated": "2025-10-19T00:46:01.357Z"
+      "updated": "2025-10-19T00:49:43.337Z"
     }
   }
 }

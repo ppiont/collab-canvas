@@ -21,11 +21,15 @@ export function initializeShapesSync(_shapeMapInstance: Y.Map<Shape>) {
 	// Listen to Yjs changes and update Svelte store
 	shapesMap.observe(() => {
 		const allShapes = getAllShapes();
-		shapes.set(allShapes);
+		// Pre-sort by zIndex to avoid duplicate sorting in renderer
+		const sortedShapes = allShapes.sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+		shapes.set(sortedShapes);
 	});
 
 	// Initial load
-	shapes.set(getAllShapes());
+	const allShapes = getAllShapes();
+	const sortedShapes = allShapes.sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+	shapes.set(sortedShapes);
 }
 
 /**

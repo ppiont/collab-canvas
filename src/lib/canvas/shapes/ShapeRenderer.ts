@@ -163,10 +163,8 @@ export class ShapeRenderer {
 			}
 		});
 
-		// Sort by zIndex before rendering (lower zIndex = bottom)
-		const sortedShapes = [...shapesToRender].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
-
-		sortedShapes.forEach((shape) => {
+		// Shapes already sorted by zIndex in store (no need to sort again)
+		shapesToRender.forEach((shape) => {
 			const existingNode = this.shapesLayer.findOne(`#${shape.id}`);
 			const isLocallyDragging = shape.id === this.locallyDraggingId;
 			const isDraggedByOther = !!(shape.draggedBy && shape.draggedBy !== this.localUserId);
@@ -220,8 +218,8 @@ export class ShapeRenderer {
 		// Reorder shapes in layer based on zIndex
 		// This ensures visual stacking matches data (bottom to top order)
 		// CRITICAL: Use ALL shapes, not just visible ones, for correct z-order
-		const allShapesSorted = [...shapes].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
-		this.reorderShapesByZIndex(allShapesSorted);
+		// Shapes already sorted by zIndex in store (no need to sort again)
+		this.reorderShapesByZIndex(shapes);
 
 		// CRITICAL: Move transformer to top after rendering shapes
 		// This ensures the transformer is always visible above shapes
