@@ -529,11 +529,11 @@ export class CanvasEventHandlers {
 			// Layer management shortcuts
 			const isModifierKey = e.metaKey || e.ctrlKey;
 
-			// Cmd+Shift+] OR Cmd+Shift+Up - Bring to front (top z-order)
+			// Cmd+Shift+Up - Bring to front (top z-order)
 			if (
 				isModifierKey &&
 				e.shiftKey &&
-				((e.key === '}' || e.code === 'BracketRight') || e.key === 'ArrowUp') &&
+				e.key === 'ArrowUp' &&
 				!isTyping
 			) {
 				e.preventDefault();
@@ -550,11 +550,11 @@ export class CanvasEventHandlers {
 				return;
 			}
 
-			// Cmd+Shift+[ OR Cmd+Shift+Down - Send to back (bottom z-order)
+			// Cmd+Shift+Down - Send to back (bottom z-order)
 			if (
 				isModifierKey &&
 				e.shiftKey &&
-				((e.key === '{' || e.code === 'BracketLeft') || e.key === 'ArrowDown') &&
+				e.key === 'ArrowDown' &&
 				!isTyping
 			) {
 				e.preventDefault();
