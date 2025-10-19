@@ -6,7 +6,7 @@
 	import KeyboardShortcuts from '$lib/components/KeyboardShortcuts.svelte';
 	import DebugOverlay from '$lib/components/DebugOverlay.svelte';
 	import Toast from '$lib/components/Toast.svelte';
-	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
+	import PropertiesPanel from '$lib/components/properties-panel/PropertiesPanel.svelte';
 	import TextFormattingToolbar from '$lib/components/TextFormattingToolbar.svelte';
 
 	// Import managers
@@ -579,7 +579,14 @@
 	<ConnectionStatus currentUserId={data.user.id} onUserClick={handleUserClick} />
 
 	<!-- Properties Panel -->
-	<PropertiesPanel />
+	<PropertiesPanel 
+		selectedItems={$shapes.filter(s => $selectedShapeIds.has(s.id))}
+		onUpdateItems={(updatedItems) => {
+			updatedItems.forEach(item => {
+				shapeOperations.update(item.id, item);
+			});
+		}}
+	/>
 
 	<!-- Command Palette -->
 	<CommandPalette bind:open={commandPaletteOpen} userId={data.user.id} viewport={$viewport} />
