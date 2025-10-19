@@ -211,14 +211,18 @@
 				);
 			}
 
-			// For text, use width from drag as text box width
+			// For text, calculate font size based on dragged height
 			if (tool === 'text') {
+				// Use height to determine font size (with reasonable bounds)
+				// Rough estimate: text height ≈ fontSize * 1.2 (line height)
+				const fontSize = Math.max(8, Math.min(144, Math.round(height * 0.7)));
 				return ShapeFactory.create(
 					tool,
 					{
 						x,
 						y,
 						width, // Use dragged width for text box
+						fontSize, // Use calculated font size from height
 						fill: data.userProfile.color,
 						strokeWidth: 2,
 						zIndex: maxZIndex + 1

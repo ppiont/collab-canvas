@@ -59,7 +59,7 @@ export class CanvasEventHandlers {
 	private linePreviewGroup: Konva.Group | null = null; // Group for preview line and points
 	private isDrawingShape = false; // Track if currently dragging to create a shape
 	private shapeStartPos: { x: number; y: number } | null = null; // Start position for shape drag
-	private shapePreviewNode: Konva.Shape | null = null; // Preview node for shape being drawn
+	private shapePreviewNode: Konva.Shape | Konva.Group | null = null; // Preview node for shape being drawn
 
 	constructor(
 		stage: Konva.Stage,
@@ -875,8 +875,11 @@ export class CanvasEventHandlers {
 				listening: false
 			});
 		} else if (activeToolValue === 'text') {
-			// Show text preview as a dashed rectangle
-			this.shapePreviewNode = new Konva.Rect({
+			// Show text preview as a dashed rectangle with "T" indicator
+			const group = new Konva.Group({ listening: false });
+			
+			// Dashed rectangle
+			const rect = new Konva.Rect({
 				x,
 				y,
 				width,
@@ -886,6 +889,24 @@ export class CanvasEventHandlers {
 				dash: [5, 5],
 				listening: false
 			});
+			group.add(rect);
+			
+			// Calculate font size preview (matching creation logic)
+			const fontSize = Math.max(8, Math.min(144, Math.round(height * 0.7)));
+			
+			// "T" indicator to show text size
+			const textPreview = new Konva.Text({
+				x: x + 5,
+				y: y + 5,
+				text: 'T',
+				fontSize,
+				fill: '#667eea',
+				opacity: 0.5,
+				listening: false
+			});
+			group.add(textPreview);
+			
+			this.shapePreviewNode = group;
 		} else if (activeToolValue === 'triangle') {
 			// Show triangle preview using RegularPolygon with 3 sides
 			const radius = Math.max(width, height) / 2;
