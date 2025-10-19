@@ -1,0 +1,20 @@
+# Task ID: 9
+# Title: HIGH: Optimize Layer Reordering Algorithm
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Replace O(n²) moveUp() loop with O(n) setChildren()
+# Details:
+**File:** `src/lib/canvas/shapes/ShapeRenderer.ts:258-271`
+
+**Problem:** Using moveToBottom() + moveUp() loop causes up to 250,000 operations with 500 shapes
+
+**Steps:**
+1. Replace moveUp loop with direct children array manipulation
+2. Build new children array in correct order
+3. Call layer.setChildren(reorderedNodes) once
+
+**Impact:** 80-90% faster layer reordering
+
+# Test Strategy:
+

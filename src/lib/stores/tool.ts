@@ -11,6 +11,14 @@ export type { ToolType } from '$lib/types/canvas';
 
 /**
  * Currently active tool
+ * 
+ * NOTE: Using Svelte stores instead of runes because:
+ * 1. Global tool state shared across Toolbar, EventHandlers, CanvasEngine
+ * 2. Multiple derived stores (isSelectToolActive, isCreateToolActive, etc.) depend on this
+ * 3. Keyboard shortcuts require consistent subscription API for tool switching
+ * 4. Store pattern allows atomic tool state changes with validation
+ * 
+ * This is an acceptable pattern for global singleton state.
  */
 export const activeTool = writable<ToolType>('select');
 

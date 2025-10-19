@@ -1,0 +1,24 @@
+# Task ID: 32
+# Title: MED: Remove Unused Parameter from initializeShapesSync
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Delete unused _shapeMapInstance parameter
+# Details:
+**File:** `src/lib/stores/shapes.ts:20`
+
+**Change:**
+```typescript
+// Before:
+export function initializeShapesSync(_shapeMapInstance: Y.Map<Shape>) {
+
+// After:
+export function initializeShapesSync() {
+```
+
+Update call site in canvas/+page.svelte:391
+
+**Impact:** Cleaner API
+
+# Test Strategy:
+

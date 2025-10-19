@@ -7,6 +7,7 @@ import { writable, derived } from 'svelte/store';
 import { UndoManager } from 'yjs';
 import { ydoc } from '$lib/collaboration';
 import type * as Y from 'yjs';
+import { HISTORY } from '$lib/constants';
 
 /**
  * Undo manager instance
@@ -14,25 +15,53 @@ import type * as Y from 'yjs';
 let undoManager: UndoManager | null = null;
 
 /**
+ * Event handler reference for cleanup
+ */
+let stackUpdateHandler: (() => void) | null = null;
+
+/**
  * Stack sizes for reactive updates
+ * 
+ * NOTE: Using Svelte stores instead of runes because:
+ * 1. Global history state shared across EventHandlers, Toolbar, KeyboardShortcuts
+ * 2. Multiple derived stores (canUndo, canRedo, historyInfo) depend on these
+ * 3. Yjs UndoManager integration requires stable event listener callbacks
+ * 4. Store pattern provides consistent API for history UI updates
+ * 
+ * This is an acceptable pattern for global singleton state that integrates with Yjs.
  */
 export const undoStackSize = writable(0);
 export const redoStackSize = writable(0);
+
+/**
+ * Cleanup existing undo manager listeners
+ */
+function cleanupUndoManagerListeners() {
+	if (undoManager && stackUpdateHandler) {
+		undoManager.off('stack-item-added', stackUpdateHandler);
+		undoManager.off('stack-item-popped', stackUpdateHandler);
+		undoManager.off('stack-cleared', stackUpdateHandler);
+		stackUpdateHandler = null;
+	}
+}
 
 /**
  * Initialize undo manager
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function initializeUndoManager(shapesMap: Y.Map<any>) {
+	// Cleanup old listeners if re-initializing (HMR)
+	cleanupUndoManagerListeners();
+
 	undoManager = new UndoManager(shapesMap, {
 		// Only track transactions with 'user-action' origin
 		// This prevents system changes (like selection updates) from affecting undo/redo
 		trackedOrigins: new Set(['user-action']),
-		captureTimeout: 500 // Group rapid changes within 500ms
+		captureTimeout: HISTORY.CAPTURE_TIMEOUT_MS
 	});
 
-	// Update stack sizes on changes
-	const updateStacks = () => {
+	// Create and store handler reference for cleanup
+	stackUpdateHandler = () => {
 		if (undoManager) {
 			const undoSize = undoManager.undoStack.length;
 			const redoSize = undoManager.redoStack.length;
@@ -41,15 +70,23 @@ export function initializeUndoManager(shapesMap: Y.Map<any>) {
 		}
 	};
 
-	undoManager.on('stack-item-added', () => {
-		updateStacks();
-	});
-	undoManager.on('stack-item-popped', () => {
-		updateStacks();
-	});
-	undoManager.on('stack-cleared', () => {
-		updateStacks();
-	});
+	// Attach event listeners
+	undoManager.on('stack-item-added', stackUpdateHandler);
+	undoManager.on('stack-item-popped', stackUpdateHandler);
+	undoManager.on('stack-cleared', stackUpdateHandler);
+}
+
+/**
+ * Destroy undo manager and cleanup listeners
+ */
+export function destroyUndoManager() {
+	cleanupUndoManagerListeners();
+	if (undoManager) {
+		undoManager.clear();
+		undoManager = null;
+	}
+	undoStackSize.set(0);
+	redoStackSize.set(0);
 }
 
 /**

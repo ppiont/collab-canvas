@@ -100,9 +100,9 @@ export class SelectionManager {
 			new Konva.Tag({
 				fill: '#667eea',
 				cornerRadius: 4,
-				pointerDirection: 'up',
-				pointerWidth: 8,
-				pointerHeight: 6
+				pointerDirection: 'none',
+				pointerWidth: 0,
+				pointerHeight: 0
 			})
 		);
 
@@ -237,6 +237,8 @@ export class SelectionManager {
 
 	/**
 	 * Update size label position and text
+	 * Shows dimensions below transformer, centered horizontally
+	 * Maintains constant visual size at any zoom level via inverse scaling
 	 */
 	private updateSizeLabel(): void {
 		if (!this.sizeLabel || !this.transformer) return;
@@ -251,85 +253,50 @@ export class SelectionManager {
 		const isLine = node instanceof Konva.Line;
 		const isClosedPolygon = isLine && (node as Konva.Line).closed();
 
+		// Get SHAPE bounding box (not transformer which includes rotation handle)
+		const shapeBox = node.getClientRect();
+		const stageScale = this.stage.scaleX();
+		const stagePos = this.stage.position();
+
+		// Convert screen coordinates to canvas coordinates
+		const canvasX = (shapeBox.x - stagePos.x) / stageScale;
+		const canvasY = (shapeBox.y - stagePos.y) / stageScale;
+		const canvasWidth = shapeBox.width / stageScale;
+		const canvasHeight = shapeBox.height / stageScale;
+
+		const LABEL_OFFSET = 12; // Distance below shape in canvas pixels
+
+		// Update label text based on shape type
+		const text = this.sizeLabel.findOne('Text') as Konva.Text;
 		if (isLine && !isClosedPolygon) {
-			// For open lines only, calculate and show length
+			// For lines: show length
 			const line = node as Konva.Line;
 			const points = line.points();
-
 			if (points.length >= 4) {
-				// Calculate distance between first and last point
-				const x1 = points[0];
-				const y1 = points[1];
-				const x2 = points[2];
-				const y2 = points[3];
-
-				const dx = x2 - x1;
-				const dy = y2 - y1;
+				const dx = points[2] - points[0];
+				const dy = points[3] - points[1];
 				const length = Math.round(Math.sqrt(dx * dx + dy * dy));
-
-				// Update text
-				const text = this.sizeLabel.findOne('Text') as Konva.Text;
-				if (text) {
-					text.text(`${length}px`);
-				}
-
-				// Position near the line midpoint in layer space
-				const midX = (x1 + x2) / 2 + line.x();
-				const midY = (y1 + y2) / 2 + line.y();
-
-				this.sizeLabel.position({
-					x: midX + 12,
-					y: midY - 12
-				});
-
-				this.sizeLabel.visible(true);
-				this.sizeLabel.moveToTop();
+				if (text) text.text(`${length}px`);
 			}
 		} else {
-			// For regular shapes and closed polygons, show dimensions
-			// Work entirely in layer space using local shape properties
-			let nodeWidth: number;
-			let nodeHeight: number;
-			let labelX: number;
-			let labelY: number;
-
-			if (isClosedPolygon || node instanceof Konva.RegularPolygon) {
-				// For polygons, use bounding box dimensions
-				const box = node.getClientRect({ relativeTo: this.layer });
-				nodeWidth = Math.round(box.width);
-				nodeHeight = Math.round(box.height);
-				labelX = box.x + box.width / 2;
-				labelY = box.y + box.height + 12;
-			} else {
-				// For regular shapes, use local position + dimensions
-				nodeWidth = Math.round(node.width() * node.scaleX());
-				nodeHeight = Math.round(node.height() * node.scaleY());
-
-				const shapeX = node.x();
-				const shapeY = node.y();
-				const shapeWidth = node.width() * node.scaleX();
-				const shapeHeight = node.height() * node.scaleY();
-
-				labelX = shapeX + shapeWidth / 2;
-				labelY = shapeY + shapeHeight + 12;
-			}
-
-			// Update text with actual dimensions
-			const text = this.sizeLabel.findOne('Text') as Konva.Text;
-			if (text) {
-				text.text(`${nodeWidth} × ${nodeHeight}`);
-			}
-
-			this.sizeLabel.position({
-				x: labelX,
-				y: labelY
-			});
-
-			this.sizeLabel.visible(true);
-
-			// Move size label to top so it's always visible
-			this.sizeLabel.moveToTop();
+			// For shapes: show dimensions
+			const nodeWidth = Math.round(node.width() * node.scaleX());
+			const nodeHeight = Math.round(node.height() * node.scaleY());
+			if (text) text.text(`${nodeWidth} × ${nodeHeight}`);
 		}
+
+		// Apply inverse scale to maintain constant visual size
+		this.sizeLabel.offsetX(0);
+		this.sizeLabel.offsetY(0);
+		this.sizeLabel.scaleX(1 / stageScale);
+		this.sizeLabel.scaleY(1 / stageScale);
+		this.sizeLabel.visible(true);
+
+		// Center label horizontally under transformer
+		const labelWidth = this.sizeLabel.getClientRect().width / stageScale;
+		this.sizeLabel.x(canvasX + canvasWidth / 2 - labelWidth / 2);
+		this.sizeLabel.y(canvasY + canvasHeight + LABEL_OFFSET / stageScale);
+		this.sizeLabel.moveToTop();
 	}
 
 	/**
@@ -358,9 +325,29 @@ export class SelectionManager {
 			isTransforming = true;
 		});
 
-		// Listen for transform events to update visuals in real-time
+		// Listen for transform events to update visuals and rotation in real-time
 		this.transformer.on('transform', () => {
 			this.updateVisuals();
+
+			// Update rotation in real-time for Properties Panel slider
+			// Only for single shape selection to avoid interfering with group rotation
+			const updateCallback = this.onShapeUpdate;
+			if (updateCallback) {
+				const nodes = this.transformer.nodes();
+
+				// Only update rotation for single-shape selection
+				if (nodes.length === 1) {
+					const node = nodes[0];
+					const id = node.id();
+					if (!id) return;
+
+					const rotation = node.rotation();
+					if (isFinite(rotation)) {
+						// Only update rotation during transform for real-time feedback
+						updateCallback(id, { rotation });
+					}
+				}
+			}
 		});
 
 		// Listen for transform end to save changes

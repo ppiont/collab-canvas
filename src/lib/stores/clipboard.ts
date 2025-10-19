@@ -8,6 +8,14 @@ import type { Shape } from '$lib/types/shapes';
 
 /**
  * Clipboard state - stores copied shapes
+ * 
+ * NOTE: Using Svelte stores instead of runes because:
+ * 1. Global clipboard state shared across EventHandlers, Toolbar
+ * 2. Keyboard shortcuts (Cmd+C/V) require consistent subscription API
+ * 3. Store pattern provides clear API for copy/paste operations
+ * 4. Deep copy logic is cleaner with store.set() than rune mutations
+ * 
+ * This is an acceptable pattern for global singleton state.
  */
 export const clipboard = writable<Shape[]>([]);
 

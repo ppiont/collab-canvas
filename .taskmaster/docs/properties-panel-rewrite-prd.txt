@@ -1,0 +1,171 @@
+# Properties Panel Rewrite PRD
+
+## Overview
+Complete rewrite of the Properties Panel component to eliminate visual design issues, improve accessibility, optimize performance, and follow modern Svelte 5 + ShadCN best practices.
+
+## Current Problems
+
+### Critical Issues
+1. **Box-itis**: Excessive borders and nested containers creating visual imprisonment
+2. **Poor Visual Hierarchy**: Everything looks equally important, impossible to scan
+3. **Inconsistent Spacing**: Random pixel values (no 8pt grid system)
+4. **Accessibility Violations**: Low contrast, missing focus indicators, poor keyboard navigation
+5. **Performance Issues**: Inefficient reactive patterns, no debouncing
+6. **Poor Mixed Selection Handling**: No clear indication of mixed values across multiple selections
+
+### Current File Analysis
+- File: `src/lib/components/PropertiesPanel.svelte` (195 lines)
+- Uses hardcoded styles with Tailwind utility classes
+- Multiple bg-gray-50 containers with borders
+- No proper spacing system
+- Missing accessibility features
+- No proper color picker component
+- Inefficient reactive updates
+
+## Goals
+
+### Primary Goals
+1. Eliminate 80% of borders, use spacing-first separation
+2. Implement strict 8pt grid spacing system
+3. Establish clear visual hierarchy with proper typography scale
+4. Achieve WCAG AA compliance (4.5:1 contrast minimum)
+5. Add proper keyboard navigation and focus indicators
+6. Implement professional color picker with contrast checking
+7. Handle mixed selections like Figma (em dash for different values)
+8. Optimize performance with proper $derived usage and debouncing
+
+### Success Metrics
+- All text meets WCAG AA contrast (4.5:1)
+- All interactive elements 44x44px minimum
+- Full keyboard navigation support
+- No more than 3 borders in entire panel
+- All spacing uses 8pt grid (4px increments)
+- Zero accessibility violations in Axe DevTools
+- 60fps interaction performance
+
+## Technical Requirements
+
+### Component Architecture
+```
+src/lib/components/properties-panel/
+├── PropertiesPanel.svelte          # Main container with accordion
+├── PanelHeader.svelte              # Selection info and clear button
+├── FormField.svelte                # Reusable field wrapper with label
+└── sections/
+    ├── DimensionsSection.svelte    # Width, height, position, rotation
+    ├── AppearanceSection.svelte    # Fill, stroke, stroke width
+    ├── EffectsSection.svelte       # Opacity, blend mode
+    └── ColorPickerField.svelte     # Professional color picker
+```
+
+### Design System
+
+#### Typography Scale
+- Panel headers: 16px, weight 600 (text-base font-semibold)
+- Section labels: 14px, weight 500 (text-sm font-medium)
+- Field labels: 12px, weight 500 (text-xs font-medium text-muted-foreground)
+- Input values: 14px, weight 400 (text-sm)
+- Helper text: 11px, weight 400 (text-xs text-muted-foreground)
+
+#### Spacing System (8pt grid)
+- Within components: 4-8px (space-y-2)
+- Between related fields: 12px (space-y-3)
+- Between form sections: 16-24px (space-y-4 or space-y-6)
+- Panel padding: 16px (p-4)
+
+#### Color System
+- Use semantic tokens: foreground, muted-foreground, background, muted, border
+- All text must meet WCAG AA (4.5:1 contrast)
+- Focus rings: 2px solid ring color with offset
+
+### Color Picker Requirements
+- 2D color area for saturation/brightness (HSB color space)
+- Separate hue slider
+- Separate alpha slider
+- Format switcher (HEX, RGB, HSL, HSB)
+- Copy to clipboard button
+- Recent colors (last 10)
+- Contrast ratio checker with AA/AAA indicators
+- 44x44px minimum touch targets
+- Proper keyboard navigation
+
+### Mixed Selection Handling
+- Show em dash (—) placeholder when values differ
+- Display selection count in header
+- Add "Mixed values" helper text
+- Apply value to all selected when user types
+- Use $derived.by() for efficient mixed state computation
+
+### Accessibility Requirements
+- All inputs have proper label associations (for/id)
+- Focus indicators on all interactive elements (focus-visible:ring-2)
+- Minimum 4.5:1 contrast for all text
+- aria-label for unlabeled inputs
+- aria-describedby for error messages
+- 44x44px minimum touch targets
+- Arrow keys work in numeric inputs (up/down to increment/decrement)
+- Full keyboard navigation (Tab, Enter, Escape)
+
+### Performance Requirements
+- Use $derived for computed values
+- Use $derived.by() for complex derivations
+- Debounce expensive operations (300ms)
+- No new objects/arrays in render path
+- Use $effect for side effects only
+- Profile with Chrome DevTools to ensure 60fps
+
+## Implementation Plan
+
+### Phase 1: Foundation (Week 1)
+1. Create new component structure with proper file organization
+2. Implement 8pt grid spacing system
+3. Remove 80% of borders, use spacing-first separation
+4. Establish typography scale
+5. Fix contrast ratios to meet WCAG AA
+6. Add proper focus indicators
+
+### Phase 2: Components (Week 2)
+1. Build reusable FormField component
+2. Create PanelHeader with selection info
+3. Implement DimensionsSection with mixed value handling
+4. Implement AppearanceSection
+5. Implement EffectsSection
+6. Build professional ColorPickerField component
+
+### Phase 3: Polish (Week 3)
+1. Add keyboard navigation (arrow keys, Tab)
+2. Optimize performance with $derived and debouncing
+3. Test with screen readers
+4. Run Axe DevTools audit
+5. Profile performance with Chrome DevTools
+6. Test on mobile devices (touch targets)
+
+## Technical Stack
+- Svelte 5 (runes: $state, $derived, $derived.by(), $effect, $props, $bindable)
+- ShadCN Svelte components: Accordion, Input, Label, Button, ScrollArea, Popover, Select
+- Tailwind CSS with 8pt grid
+- Bits-UI for accessible primitives
+
+## Migration Strategy
+1. Create new components in parallel (don't break existing)
+2. Test new panel thoroughly
+3. Swap out old PropertiesPanel.svelte with new version
+4. Delete old component after verification
+
+## Testing Requirements
+- Visual regression testing (before/after screenshots)
+- Accessibility audit with Axe DevTools
+- Keyboard-only navigation testing
+- Screen reader testing
+- Performance profiling (Chrome DevTools)
+- Mobile device testing (touch targets)
+- Mixed selection testing (2+ shapes with different values)
+
+## Success Criteria
+- Zero Axe DevTools violations
+- All text passes WebAIM Contrast Checker
+- Full keyboard navigation works
+- 60fps interaction performance
+- Professional appearance matching Figma quality
+- Positive user feedback on usability
+

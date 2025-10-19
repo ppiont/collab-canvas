@@ -6,6 +6,9 @@
 
 import Konva from 'konva';
 import type { Shape } from '$lib/types/shapes';
+import type { Awareness } from 'y-protocols/awareness';
+import type * as Y from 'yjs';
+import { CANVAS } from '$lib/constants';
 
 interface DraggedShapeInfo {
 	id: string;
@@ -15,6 +18,15 @@ interface DraggedShapeInfo {
 	timestamp: number;
 }
 
+interface AwarenessStateData {
+	user?: {
+		id: string;
+		name: string;
+		color: string;
+	};
+	draggedShapes?: Record<string, DraggedShapeInfo>;
+}
+
 /**
  * LiveShapeRenderer displays ACTUAL shapes being dragged by other users
  * Renders real shapes (rectangles, circles, etc.) semi-transparently
@@ -22,47 +34,40 @@ interface DraggedShapeInfo {
 export class LiveShapeRenderer {
 	private shapesLayer: Konva.Layer;
 	private stage: Konva.Stage;
-	private awareness: any;
-	private shapesMap: any; // Reference to Yjs shapes map
+	private awareness: Awareness;
+	private shapesMap: Y.Map<Shape>;
+	private localUserId: string;
 	private draggedShapeNodes = new Map<string, Konva.Group>();
 	private userColors = new Map<string, string>();
 	private lastUpdateTime = 0;
-	private updateInterval = 16; // 60fps update
+	private updateInterval = CANVAS.FRAME_TIME_MS; // 60fps update
+	private awarenessChangeHandler: (() => void) | null = null;
 
-	constructor(shapesLayer: Konva.Layer, stage: Konva.Stage, awareness: any, shapesMap: any) {
+	constructor(shapesLayer: Konva.Layer, stage: Konva.Stage, awareness: Awareness, shapesMap: Y.Map<Shape>, localUserId: string) {
 		this.shapesLayer = shapesLayer;
 		this.stage = stage;
 		this.awareness = awareness;
 		this.shapesMap = shapesMap;
+		this.localUserId = localUserId;
 
 		// Listen for Awareness state changes
 		this.setupAwarenessListener();
-
-		// Schedule periodic updates
-		this.scheduleUpdates();
 	}
 
 	/**
 	 * Listen for changes in other users' dragged shapes
 	 */
 	private setupAwarenessListener(): void {
-		// Listen for awareness changes
-		this.awareness.on('change', () => {
+		// Store handler for cleanup
+		this.awarenessChangeHandler = () => {
 			this.updateDraggedShapes();
-		});
+		};
+
+		// Listen for awareness changes
+		this.awareness.on('change', this.awarenessChangeHandler);
 
 		// Initial render
 		this.updateDraggedShapes();
-	}
-
-	/**
-	 * Schedule periodic updates for smooth animation
-	 */
-	private scheduleUpdates(): void {
-		const updateLoop = () => {
-			requestAnimationFrame(updateLoop);
-		};
-		updateLoop();
 	}
 
 	/**
@@ -76,14 +81,21 @@ export class LiveShapeRenderer {
 		const allDraggedShapes = new Map<string, DraggedShapeInfo>();
 		const seenKeys = new Set<string>();
 
-		// Collect all dragged shapes from all users
-		this.awareness.getStates().forEach((state: any) => {
+		// Collect all dragged shapes from OTHER users (exclude local user)
+		this.awareness.getStates().forEach((state: AwarenessStateData) => {
 			if (state.draggedShapes && state.user) {
-				const userColor = state.user.color || '#3b82f6';
-				this.userColors.set(state.user.id, userColor);
+				const user = state.user; // Store in const to satisfy TypeScript
 
-				Object.entries(state.draggedShapes).forEach(([shapeId, dragInfo]: [string, any]) => {
-					const key = `${state.user.id}-${shapeId}`;
+				// Skip local user - don't render ghosts for own drags
+				if (user.id === this.localUserId) {
+					return;
+				}
+
+				const userColor = user.color || '#3b82f6';
+				this.userColors.set(user.id, userColor);
+
+				Object.entries(state.draggedShapes).forEach(([shapeId, dragInfo]) => {
+					const key = `${user.id}-${shapeId}`;
 					seenKeys.add(key);
 
 					// Check for stale dragged shapes (older than 5 seconds)
@@ -93,7 +105,7 @@ export class LiveShapeRenderer {
 							id: shapeId,
 							x: dragInfo.x,
 							y: dragInfo.y,
-							userId: state.user.id,
+							userId: user.id,
 							timestamp: dragInfo.timestamp
 						});
 					}
@@ -111,7 +123,7 @@ export class LiveShapeRenderer {
 		});
 
 		// Remove ghosts for drags that ended
-		for (const [key, node] of this.draggedShapeNodes.entries()) {
+		for (const [key] of this.draggedShapeNodes.entries()) {
 			if (!seenKeys.has(key)) {
 				this.removeDragGhost(key);
 			}
@@ -142,7 +154,7 @@ export class LiveShapeRenderer {
 
 		switch (shapeData.type) {
 			case 'rectangle': {
-				const rect = shapeData as any;
+				const rect = shapeData as Extract<Shape, { type: 'rectangle' }>;
 				shapeNode = new Konva.Rect({
 					width: rect.width,
 					height: rect.height,
@@ -155,9 +167,11 @@ export class LiveShapeRenderer {
 			}
 
 			case 'circle': {
-				const circle = shapeData as any;
+				const circle = shapeData as Extract<Shape, { type: 'circle' }>;
 				shapeNode = new Konva.Circle({
 					radius: circle.radius,
+					scaleX: circle.scaleX || 1,
+					scaleY: circle.scaleY || 1,
 					fill: circle.fill || userColor,
 					stroke: circle.stroke,
 					strokeWidth: circle.strokeWidth,
@@ -167,10 +181,12 @@ export class LiveShapeRenderer {
 			}
 
 			case 'triangle': {
-				const triangle = shapeData as any;
+				const triangle = shapeData as Extract<Shape, { type: 'triangle' }>;
 				shapeNode = new Konva.RegularPolygon({
 					sides: 3,
 					radius: Math.max(triangle.width, triangle.height) / 2,
+					scaleX: triangle.scaleX || 1,
+					scaleY: triangle.scaleY || 1,
 					fill: triangle.fill || userColor,
 					stroke: triangle.stroke,
 					strokeWidth: triangle.strokeWidth,
@@ -180,10 +196,12 @@ export class LiveShapeRenderer {
 			}
 
 			case 'polygon': {
-				const polygon = shapeData as any;
+				const polygon = shapeData as Extract<Shape, { type: 'polygon' }>;
 				shapeNode = new Konva.RegularPolygon({
-					sides: 5, // Default pentagon
+					sides: polygon.sides || 5,
 					radius: polygon.radius,
+					scaleX: polygon.scaleX || 1,
+					scaleY: polygon.scaleY || 1,
 					fill: polygon.fill || userColor,
 					stroke: polygon.stroke,
 					strokeWidth: polygon.strokeWidth,
@@ -193,11 +211,13 @@ export class LiveShapeRenderer {
 			}
 
 			case 'star': {
-				const star = shapeData as any;
+				const star = shapeData as Extract<Shape, { type: 'star' }>;
 				shapeNode = new Konva.Star({
 					numPoints: star.numPoints || 5,
 					innerRadius: star.innerRadius || 20,
 					outerRadius: star.outerRadius || 50,
+					scaleX: star.scaleX || 1,
+					scaleY: star.scaleY || 1,
 					fill: star.fill || userColor,
 					stroke: star.stroke,
 					strokeWidth: star.strokeWidth,
@@ -207,7 +227,7 @@ export class LiveShapeRenderer {
 			}
 
 			case 'line': {
-				const line = shapeData as any;
+				const line = shapeData as Extract<Shape, { type: 'line' }>;
 				shapeNode = new Konva.Line({
 					points: line.points,
 					stroke: line.stroke || userColor,
@@ -220,7 +240,7 @@ export class LiveShapeRenderer {
 			}
 
 			case 'text': {
-				const text = shapeData as any;
+				const text = shapeData as Extract<Shape, { type: 'text' }>;
 				shapeNode = new Konva.Text({
 					text: text.text,
 					fontSize: text.fontSize,
@@ -243,7 +263,7 @@ export class LiveShapeRenderer {
 		}
 
 		if (shapeNode) {
-			ghost.add(shapeNode);
+			ghost.add(shapeNode as Konva.Shape);
 		}
 
 		// Apply rotation from shape data to match current visual state
@@ -288,9 +308,10 @@ export class LiveShapeRenderer {
 			this.draggedShapeNodes.delete(key);
 		}
 
-		// Remove listeners
-		if (this.awareness) {
-			this.awareness.off('change', this.updateDraggedShapes);
+		// Remove listeners with correct reference
+		if (this.awareness && this.awarenessChangeHandler) {
+			this.awareness.off('change', this.awarenessChangeHandler);
+			this.awarenessChangeHandler = null;
 		}
 	}
 }

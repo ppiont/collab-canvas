@@ -1,0 +1,19 @@
+# Task ID: 23
+# Title: LOW: Fix Writable-Derived Anti-Pattern
+# Status: pending
+# Dependencies: None
+# Priority: low
+# Description: Simplify StrokeWidthControl and ColorPicker prop syncing
+# Details:
+**Files:**
+- `src/lib/components/controls/StrokeWidthControl.svelte`
+- `src/lib/components/ui/ColorPicker.svelte`
+
+**Problem:** Two $effect blocks fighting each other, eslint rules disabled
+
+**Solution:** Use explicit change handlers instead of reactive effects
+
+**Impact:** Cleaner code, easier to maintain
+
+# Test Strategy:
+

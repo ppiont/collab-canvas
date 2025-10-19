@@ -1,0 +1,15 @@
+# Task ID: 15
+# Title: MED: Lower Viewport Culling Threshold
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Activate culling at 20 shapes instead of 50 for earlier performance gains
+# Details:
+**File:** `src/lib/utils/viewport-culling.ts:220`
+
+**Change:** `if (shapes.length < 20)` instead of `< 50`
+
+**Impact:** Better performance with 20-50 shapes
+
+# Test Strategy:
+

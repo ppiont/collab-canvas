@@ -11,10 +11,31 @@
  */
 
 import Konva from 'konva';
-import type { Shape } from '$lib/types/shapes';
+import type { Shape, BlendMode } from '$lib/types/shapes';
 import type { CanvasViewport } from '$lib/types/canvas';
 import { SHAPES } from '$lib/constants';
 import { filterVisibleShapes, getCullingStats } from '$lib/utils/viewport-culling';
+
+/**
+ * Map blend modes to Konva's globalCompositeOperation values
+ */
+function getGlobalCompositeOperation(blendMode?: BlendMode): GlobalCompositeOperation {
+	switch (blendMode) {
+		case 'multiply':
+			return 'multiply';
+		case 'screen':
+			return 'screen';
+		case 'overlay':
+			return 'overlay';
+		case 'darken':
+			return 'darken';
+		case 'lighten':
+			return 'lighten';
+		case 'normal':
+		default:
+			return 'source-over';
+	}
+}
 
 /** Event callbacks for shape interactions */
 export interface ShapeEventCallbacks {
@@ -163,10 +184,8 @@ export class ShapeRenderer {
 			}
 		});
 
-		// Sort by zIndex before rendering (lower zIndex = bottom)
-		const sortedShapes = [...shapesToRender].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
-
-		sortedShapes.forEach((shape) => {
+		// Shapes already sorted by zIndex in store (no need to sort again)
+		shapesToRender.forEach((shape) => {
 			const existingNode = this.shapesLayer.findOne(`#${shape.id}`);
 			const isLocallyDragging = shape.id === this.locallyDraggingId;
 			const isDraggedByOther = !!(shape.draggedBy && shape.draggedBy !== this.localUserId);
@@ -219,7 +238,14 @@ export class ShapeRenderer {
 
 		// Reorder shapes in layer based on zIndex
 		// This ensures visual stacking matches data (bottom to top order)
-		this.reorderShapesByZIndex(sortedShapes);
+		// CRITICAL: Use ALL shapes, not just visible ones, for correct z-order
+		// Shapes already sorted by zIndex in store (no need to sort again)
+		// OPTIMIZATION: Only reorder if z-index order has changed (prevents interrupting drags)
+		const currentZIndexOrder = shapes.map(s => s.id).join(',');
+		if (currentZIndexOrder !== this.lastZIndexOrder) {
+			this.reorderShapesByZIndex(shapes);
+			this.lastZIndexOrder = currentZIndexOrder;
+		}
 
 		// CRITICAL: Move transformer to top after rendering shapes
 		// This ensures the transformer is always visible above shapes
@@ -235,39 +261,37 @@ export class ShapeRenderer {
 	 * In Konva, visual stacking order = children array order
 	 */
 	private reorderShapesByZIndex(sortedShapes: Shape[]): void {
-		const allShapeNodes = this.shapesLayer.find('.shape');
-		if (allShapeNodes.length <= 1) return;
+		// Get all current layer children (including non-shape nodes like transformer)
+		const currentChildren = this.shapesLayer.getChildren().slice(); // Clone array
 
-		// Get current order from layer
-		const currentOrder = allShapeNodes.map((node) => node.id());
-		const desiredOrder = sortedShapes.map((shape) => shape.id);
+		// Create map of shape nodes for quick lookup
+		const shapeNodeMap = new Map<string, Konva.Node>();
+		const nonShapeNodes: Konva.Node[] = [];
 
-		// Check if reordering is needed
-		const needsReordering = !this.arraysEqual(currentOrder, desiredOrder);
-		if (!needsReordering) {
-			return;
-		}
-
-		// Create map of nodes for quick lookup
-		const nodeMap = new Map<string, Konva.Node>();
-		allShapeNodes.forEach((node) => {
-			nodeMap.set(node.id(), node);
-		});
-
-		// Move each shape to its correct position
-		sortedShapes.forEach((shape, targetIndex) => {
-			const node = nodeMap.get(shape.id);
-			if (!node) return;
-
-			const currentIndex = node.getZIndex();
-			if (currentIndex === targetIndex) return; // Already in correct position
-
-			// Move to bottom first, then up to target position
-			node.moveToBottom();
-			for (let i = 0; i < targetIndex; i++) {
-				node.moveUp();
+		currentChildren.forEach((node) => {
+			const id = node.id();
+			if (id) {
+				// Has an ID - it's a shape node
+				shapeNodeMap.set(id, node);
+			} else {
+				// No ID - it's a non-shape node (e.g., transformer, selection net)
+				nonShapeNodes.push(node);
 			}
 		});
+
+		// Remove all children from layer
+		currentChildren.forEach((child) => child.remove());
+
+		// Re-add shapes in zIndex order
+		sortedShapes.forEach((shape) => {
+			const node = shapeNodeMap.get(shape.id);
+			if (node) {
+				this.shapesLayer.add(node as Konva.Shape);
+			}
+		});
+
+		// Add non-shape nodes at the end (they should be on top)
+		nonShapeNodes.forEach((node) => this.shapesLayer.add(node as Konva.Shape));
 	}
 
 	/**
@@ -314,29 +338,37 @@ export class ShapeRenderer {
 
 		konvaShape.opacity(shape.opacity ?? 1);
 
-		// Apply shadow if configured
-		if (shape.shadow) {
-			konvaShape.shadowColor(shape.shadow.color);
-			konvaShape.shadowBlur(shape.shadow.blur);
-			konvaShape.shadowOffset({ x: shape.shadow.offsetX, y: shape.shadow.offsetY });
-			konvaShape.shadowOpacity(0.5); // Default shadow opacity
-		} else {
-			// Clear shadow if not configured
-			konvaShape.shadowColor('');
-			konvaShape.shadowBlur(0);
-			konvaShape.shadowOpacity(0);
-		}
+		// Apply blend mode
+		konvaShape.globalCompositeOperation(getGlobalCompositeOperation(shape.blendMode));
 
 		// Update shape-specific properties based on type
 		switch (shape.type) {
-			case 'rectangle':
-				(node as Konva.Rect).width(shape.width);
-				(node as Konva.Rect).height(shape.height);
+			case 'rectangle': {
+				const rect = node as Konva.Rect;
+				rect.width(shape.width);
+				rect.height(shape.height);
+				// Update offset to keep rotation pivot at center
+				rect.offsetX(shape.width / 2);
+				rect.offsetY(shape.height / 2);
 				break;
+			}
 
 			case 'circle':
 				(node as Konva.Circle).radius(shape.radius);
+				// Apply scale for resizing (ellipse effect)
+				(node as Konva.Circle).scaleX(shape.scaleX || 1);
+				(node as Konva.Circle).scaleY(shape.scaleY || 1);
 				break;
+
+			case 'polygon': {
+				const polygon = node as Konva.RegularPolygon;
+				polygon.sides(shape.sides);
+				polygon.radius(shape.radius);
+				// Apply scale for resizing
+				polygon.scaleX(shape.scaleX || 1);
+				polygon.scaleY(shape.scaleY || 1);
+				break;
+			}
 
 			case 'line':
 				(node as Konva.Line).points(shape.points);
@@ -347,6 +379,9 @@ export class ShapeRenderer {
 				star.numPoints(shape.numPoints);
 				star.innerRadius(shape.innerRadius);
 				star.outerRadius(shape.outerRadius);
+				// Apply scale for resizing
+				star.scaleX(shape.scaleX || 1);
+				star.scaleY(shape.scaleY || 1);
 				break;
 			}
 
@@ -354,6 +389,9 @@ export class ShapeRenderer {
 				const triangle = node as Konva.RegularPolygon;
 				triangle.sides(3);
 				triangle.radius(Math.max(shape.width, shape.height) / 2);
+				// Apply scale for resizing
+				triangle.scaleX(shape.scaleX || 1);
+				triangle.scaleY(shape.scaleY || 1);
 				break;
 			}
 
@@ -367,6 +405,9 @@ export class ShapeRenderer {
 				text.setAttr('textDecoration', shape.textDecoration || '');
 				text.setAttr('align', shape.align || 'left');
 				if (shape.width) text.width(shape.width);
+				// Update offset to keep rotation pivot at center
+				text.offsetX(text.width() / 2);
+				text.offsetY(text.height() / 2);
 				break;
 			}
 		}
@@ -387,10 +428,6 @@ export class ShapeRenderer {
 				konvaShape.strokeWidth(2);
 			}
 			konvaShape.dash([]); // Solid line
-			// No shadow - just clean outline
-			konvaShape.shadowColor('');
-			konvaShape.shadowBlur(0);
-			konvaShape.shadowOpacity(0);
 		} else {
 			// Restore original values from shape data
 			// EXCEPTION: Text shapes should never have stroke
@@ -399,9 +436,6 @@ export class ShapeRenderer {
 				konvaShape.strokeWidth(shapeData.strokeWidth);
 			}
 			konvaShape.dash([]);
-			konvaShape.shadowColor('');
-			konvaShape.shadowBlur(0);
-			konvaShape.shadowOpacity(0);
 		}
 	}
 
@@ -454,12 +488,14 @@ export class ShapeRenderer {
 			strokeScaleEnabled: false, // Keep stroke width constant when scaling
 			draggable: (('draggable' in shape ? shape.draggable : true) ?? true) && !isDraggedByOther,
 			opacity: isDraggedByOther ? 0.5 : shape.opacity || 1, // Use stored opacity
-			shadowColor: isDraggedByOther ? '#667eea' : shape.shadow?.color || '',
-			shadowBlur: isDraggedByOther ? 8 : shape.shadow?.blur || 0,
-			shadowOpacity: isDraggedByOther ? 0.6 : shape.shadow ? 0.5 : 0,
-			shadowOffset: shape.shadow
-				? { x: shape.shadow.offsetX, y: shape.shadow.offsetY }
-				: { x: 0, y: 0 }
+			globalCompositeOperation: getGlobalCompositeOperation(shape.blendMode), // Apply blend mode
+			shadowColor: isDraggedByOther ? '#667eea' : '',
+			shadowBlur: isDraggedByOther ? 8 : 0,
+			shadowOpacity: isDraggedByOther ? 0.6 : 0,
+			shadowOffset: { x: 0, y: 0 },
+			// Performance optimizations
+			perfectDrawEnabled: false, // Faster rendering at cost of minor accuracy
+			hitStrokeWidth: 0 // Simpler hit detection
 		};
 
 		switch (shape.type) {
@@ -467,13 +503,17 @@ export class ShapeRenderer {
 				return new Konva.Rect({
 					...baseConfig,
 					width: shape.width,
-					height: shape.height
+					height: shape.height,
+					offsetX: shape.width / 2,
+					offsetY: shape.height / 2
 				});
 
 			case 'circle':
 				return new Konva.Circle({
 					...baseConfig,
-					radius: shape.radius
+					radius: shape.radius,
+					scaleX: shape.scaleX || 1,
+					scaleY: shape.scaleY || 1
 				});
 
 			case 'line':
@@ -489,16 +529,12 @@ export class ShapeRenderer {
 					...baseConfig,
 					sides: polygonShape.sides,
 					radius: polygonShape.radius,
+					scaleX: polygonShape.scaleX || 1,
+					scaleY: polygonShape.scaleY || 1,
 					fill: polygonShape.fill || undefined,
 					stroke: polygonShape.stroke || undefined,
 					strokeWidth: polygonShape.strokeWidth || 0,
-					strokeEnabled: polygonShape.strokeEnabled !== false,
-					shadowColor: polygonShape.shadow?.color || undefined,
-					shadowBlur: polygonShape.shadow?.blur || 0,
-					shadowOpacity: polygonShape.shadow ? 0.5 : 0,
-					shadowOffset: polygonShape.shadow
-						? { x: polygonShape.shadow.offsetX, y: polygonShape.shadow.offsetY }
-						: { x: 0, y: 0 }
+					strokeEnabled: polygonShape.strokeEnabled !== false
 				});
 			}
 
@@ -508,7 +544,9 @@ export class ShapeRenderer {
 					...baseConfig,
 					numPoints: starShape.numPoints,
 					innerRadius: starShape.innerRadius,
-					outerRadius: starShape.outerRadius
+					outerRadius: starShape.outerRadius,
+					scaleX: starShape.scaleX || 1,
+					scaleY: starShape.scaleY || 1
 				});
 			}
 
@@ -518,23 +556,19 @@ export class ShapeRenderer {
 					...baseConfig,
 					sides: 3,
 					radius: Math.max(triangleShape.width, triangleShape.height) / 2,
+					scaleX: triangleShape.scaleX || 1,
+					scaleY: triangleShape.scaleY || 1,
 					fill: triangleShape.fill || undefined,
 					stroke: triangleShape.stroke || undefined,
 					strokeWidth: triangleShape.strokeWidth || 0,
-					strokeEnabled: triangleShape.strokeEnabled !== false,
-					shadowColor: triangleShape.shadow?.color || undefined,
-					shadowBlur: triangleShape.shadow?.blur || 0,
-					shadowOpacity: triangleShape.shadow ? 0.5 : 0,
-					shadowOffset: triangleShape.shadow
-						? { x: triangleShape.shadow.offsetX, y: triangleShape.shadow.offsetY }
-						: { x: 0, y: 0 }
+					strokeEnabled: triangleShape.strokeEnabled !== false
 				});
 			}
 
-			case 'text':
+			case 'text': {
 				// Text shapes need special config: exclude stroke properties entirely
 				// Konva.Text doesn't support stroke rendering properly - it creates artifacts
-				return new Konva.Text({
+				const textNode = new Konva.Text({
 					// Common properties that text supports
 					id: shape.id,
 					name: 'shape',
@@ -543,6 +577,7 @@ export class ShapeRenderer {
 					rotation: shape.rotation || 0,
 					opacity: isDraggedByOther ? 0.5 : shape.opacity || 1,
 					fill: shape.fill || '#000000',
+					globalCompositeOperation: getGlobalCompositeOperation(shape.blendMode), // Apply blend mode
 					shadowColor: isDraggedByOther ? '#667eea' : '',
 					shadowBlur: isDraggedByOther ? 8 : 0,
 					shadowOpacity: isDraggedByOther ? 0.6 : 0,
@@ -560,6 +595,14 @@ export class ShapeRenderer {
 					// NOTE: Intentionally NOT including stroke or strokeWidth
 					// Konva.Text stroke rendering creates visual artifacts
 				});
+				
+				// Set rotation pivot to center of text
+				// Use actual rendered dimensions
+				textNode.offsetX(textNode.width() / 2);
+				textNode.offsetY(textNode.height() / 2);
+				
+				return textNode;
+			}
 
 			default:
 				return null;
@@ -619,10 +662,6 @@ export class ShapeRenderer {
 
 			// Visual feedback
 			konvaShape.opacity(0.7);
-			konvaShape.shadowColor('black');
-			konvaShape.shadowBlur(10);
-			konvaShape.shadowOffset({ x: 5, y: 5 });
-			konvaShape.shadowOpacity(0.3);
 			this.stage.container().style.cursor = 'grabbing';
 
 			// Broadcast cursor
@@ -657,10 +696,6 @@ export class ShapeRenderer {
 
 			// Reset visual feedback to original shape properties (from current state)
 			konvaShape.opacity(currentShape.opacity ?? 1);
-			konvaShape.shadowColor('');
-			konvaShape.shadowBlur(0);
-			konvaShape.shadowOpacity(0);
-			konvaShape.shadowOffset({ x: 0, y: 0 });
 			this.stage.container().style.cursor = 'move';
 
 			// Get final position and validate
@@ -738,6 +773,9 @@ export class ShapeRenderer {
 
 	// Store reference to active textarea for live updates
 	private activeTextarea: HTMLTextAreaElement | null = null;
+
+	// Track last z-index order to avoid unnecessary reordering
+	private lastZIndexOrder: string = '';
 
 	/**
 	 * Set callback for text editing
@@ -940,6 +978,18 @@ export class ShapeRenderer {
 	 * Clean up resources
 	 */
 	destroy(): void {
+		// Clean up active textarea if exists
+		if (this.activeTextarea) {
+			this.activeTextarea.remove();
+			this.activeTextarea = null;
+		}
+
+		// Call text editing end callback if exists
+		if (this.textEditingEndCallback) {
+			this.textEditingEndCallback();
+			this.textEditingEndCallback = null;
+		}
+
 		this.callbacks = null;
 		this.stage = null;
 	}

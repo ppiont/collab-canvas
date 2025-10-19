@@ -9,6 +9,14 @@ import type { Shape } from '$lib/types/shapes';
 
 /**
  * Selected shape IDs (multi-select support)
+ * 
+ * NOTE: Using Svelte stores instead of runes because:
+ * 1. Global selection state shared across SelectionManager, EventHandlers, PropertiesPanel
+ * 2. Multiple derived stores (selectedShapes, hasSelection, selectedCount) depend on this
+ * 3. Set-based operations are easier with store.update() pattern
+ * 4. Konva Transformer requires stable subscription for reactive selection updates
+ * 
+ * This is an acceptable pattern for global singleton state.
  */
 export const selectedShapeIds = writable<Set<string>>(new Set());
 

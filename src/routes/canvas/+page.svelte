@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import Konva from 'konva';
 	import Toolbar from '$lib/components/Toolbar.svelte';
 	import ConnectionStatus from '$lib/components/ConnectionStatus.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import KeyboardShortcuts from '$lib/components/KeyboardShortcuts.svelte';
 	import DebugOverlay from '$lib/components/DebugOverlay.svelte';
 	import Toast from '$lib/components/Toast.svelte';
-	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
+	import PropertiesPanel from '$lib/components/properties-panel/PropertiesPanel.svelte';
 	import TextFormattingToolbar from '$lib/components/TextFormattingToolbar.svelte';
 
 	// Import managers
@@ -37,6 +38,7 @@
 	import { initializeUndoManager, history } from '$lib/stores/history';
 	import { darkenColor } from '$lib/user-utils';
 	import { selectedShapeIds } from '$lib/stores/selection';
+	import * as alignmentUtils from '$lib/utils/alignment';
 
 	let { data } = $props();
 
@@ -48,6 +50,7 @@
 	let shapeRenderer = $state<ShapeRenderer | null>(null);
 	let liveShapeRenderer = $state<LiveShapeRenderer | null>(null);
 	let eventHandlers: CanvasEventHandlers;
+	let shapesLayer: Konva.Layer | null = null;
 
 	// Component state
 	let containerDiv: HTMLDivElement;
@@ -55,10 +58,14 @@
 	let maxZIndex = $state(0);
 	let commandPaletteOpen = $state(false);
 
+	// O(1) shape lookup map for performance (avoids O(n) find() in hot paths)
+	let shapesByIdMap = $derived(new Map($shapes.map((s) => [s.id, s])));
+
 	// Toast notification state
 	let toastVisible = $state(false);
 	let toastMessage = $state('');
 	let toastTimeout: ReturnType<typeof setTimeout> | null = null;
+	let selectionTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	// Derive reactive values from stores (modern Svelte 5 pattern)
 	let stageScale = $derived($viewport.scale);
@@ -139,6 +146,136 @@
 		}
 	}
 
+	function createShapeWithSize(x: number, y: number, width: number, height: number): Shape | null {
+		const tool = $activeTool;
+
+		// Use ShapeFactory for all shape creation
+		if (tool === 'select' || tool === 'pan' || tool === 'line') {
+			return null;
+		}
+
+		try {
+			// For circles, use the dragged dimensions to calculate radius
+			// Position at center of dragged area (not top-left)
+			if (tool === 'circle') {
+				const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
+				return ShapeFactory.create(
+					tool,
+					{
+						x: x + width / 2, // Center of drag box
+						y: y + height / 2,
+						radius,
+						fill: data.userProfile.color,
+						stroke: darkenColor(data.userProfile.color, 20),
+						strokeWidth: 2,
+						zIndex: maxZIndex + 1
+					},
+					data.user.id
+				);
+			}
+
+			// For polygon, use radius from dragged size
+			// Position at center of dragged area (not top-left)
+			if (tool === 'polygon') {
+				const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
+				return ShapeFactory.create(
+					tool,
+					{
+						x: x + width / 2, // Center of drag box
+						y: y + height / 2,
+						radius,
+						fill: data.userProfile.color,
+						stroke: darkenColor(data.userProfile.color, 20),
+						strokeWidth: 2,
+						zIndex: maxZIndex + 1
+					},
+					data.user.id
+				);
+			}
+
+			// For star, use radius from dragged size for both inner and outer radius
+			// Position at center of dragged area (not top-left)
+			if (tool === 'star') {
+				const outerRadius = Math.sqrt(width ** 2 + height ** 2) / 2;
+				const innerRadius = outerRadius / 2;
+				return ShapeFactory.create(
+					tool,
+					{
+						x: x + width / 2, // Center of drag box
+						y: y + height / 2,
+						outerRadius,
+						innerRadius,
+						fill: data.userProfile.color,
+						stroke: darkenColor(data.userProfile.color, 20),
+						strokeWidth: 2,
+						zIndex: maxZIndex + 1
+					},
+					data.user.id
+				);
+			}
+
+			// For text, calculate font size based on dragged height
+			if (tool === 'text') {
+				// Use height to determine font size (with reasonable bounds)
+				// Rough estimate: text height ≈ fontSize * 1.2 (line height)
+				const fontSize = Math.max(8, Math.min(144, Math.round(height * 0.7)));
+				// Text rotates around center, so adjust position to account for offset
+				// Estimate text height as fontSize * 1.2 for positioning
+				const estimatedHeight = fontSize * 1.2;
+				return ShapeFactory.create(
+					tool,
+					{
+						x: x + width / 2, // Adjust for center offset
+						y: y + estimatedHeight / 2, // Adjust for center offset
+						width, // Use dragged width for text box
+						fontSize, // Use calculated font size from height
+						fill: data.userProfile.color,
+						strokeWidth: 2,
+						zIndex: maxZIndex + 1
+					},
+					data.user.id
+				);
+			}
+
+			// For triangle, use width/height but center position
+			if (tool === 'triangle') {
+				return ShapeFactory.create(
+					tool,
+					{
+						x: x + width / 2, // Center the triangle
+						y: y + height / 2,
+						width,
+						height,
+						fill: data.userProfile.color,
+						stroke: darkenColor(data.userProfile.color, 20),
+						strokeWidth: 2,
+						zIndex: maxZIndex + 1
+					},
+					data.user.id
+				);
+			}
+
+			// For rectangle, adjust position to account for center rotation pivot
+			return ShapeFactory.create(
+				tool,
+				{
+					x: x + width / 2, // Adjust for center offset
+					y: y + height / 2, // Adjust for center offset
+					width,
+					height,
+					fill: data.userProfile.color,
+					stroke: darkenColor(data.userProfile.color, 20),
+					strokeWidth: 2,
+					zIndex: maxZIndex + 1
+				},
+				data.user.id
+			);
+		} catch (error) {
+			console.error('Failed to create shape with size:', error);
+			return null;
+		}
+	}
+
 	// Helper function to create a line with accumulated points
 	function createLineWithPoints(points: number[]): void {
 		try {
@@ -162,6 +299,83 @@
 			selectionManager.select(newLine.id);
 		} catch (error) {
 			console.error('Failed to create line:', error);
+		}
+	}
+
+	/**
+	 * Handle alignment operations from Properties Panel
+	 * Gets Konva shapes from the layer, calls alignment utilities, and updates shapes
+	 */
+	function handleAlign(operation: string, shapeIds: string[]): void {
+		if (!shapesLayer || shapeIds.length < 2) return;
+
+		try {
+			// Get Konva shapes from the layer
+			const konvaShapes = shapeIds
+				.map((id) => shapesLayer!.findOne(`#${id}`))
+				.filter((shape): shape is Konva.Shape => shape !== null);
+
+			if (konvaShapes.length < 2) {
+				console.warn('Not enough valid shapes found for alignment');
+				return;
+			}
+
+			// Call the appropriate alignment function
+			let positionUpdates: { id: string; x: number; y: number }[] = [];
+
+			switch (operation) {
+				case 'alignLeft':
+					positionUpdates = alignmentUtils.alignLeft(konvaShapes);
+					break;
+				case 'alignCenter':
+					positionUpdates = alignmentUtils.alignCenter(konvaShapes);
+					break;
+				case 'alignRight':
+					positionUpdates = alignmentUtils.alignRight(konvaShapes);
+					break;
+				case 'alignTop':
+					positionUpdates = alignmentUtils.alignTop(konvaShapes);
+					break;
+				case 'alignMiddle':
+					positionUpdates = alignmentUtils.alignMiddle(konvaShapes);
+					break;
+				case 'alignBottom':
+					positionUpdates = alignmentUtils.alignBottom(konvaShapes);
+					break;
+				case 'distributeHorizontally':
+					if (konvaShapes.length < 3) {
+						console.warn('Need at least 3 shapes for distribution');
+						return;
+					}
+					positionUpdates = alignmentUtils.distributeHorizontally(konvaShapes);
+					break;
+				case 'distributeVertically':
+					if (konvaShapes.length < 3) {
+						console.warn('Need at least 3 shapes for distribution');
+						return;
+					}
+					positionUpdates = alignmentUtils.distributeVertically(konvaShapes);
+					break;
+				default:
+					console.warn('Unknown alignment operation:', operation);
+					return;
+			}
+
+			// Apply position updates to shapes using absolutePosition
+			positionUpdates.forEach((update) => {
+				const shape = shapesLayer!.findOne(`#${update.id}`);
+				if (shape) {
+					// Set absolutePosition, then read back the actual position
+					shape.absolutePosition({ x: update.x, y: update.y });
+					const finalPos = shape.position();
+					shapeOperations.update(update.id, {
+						x: finalPos.x,
+						y: finalPos.y
+					});
+				}
+			});
+		} catch (error) {
+			console.error('Alignment operation failed:', error);
 		}
 	}
 
@@ -236,7 +450,7 @@
 
 		// Select the newly pasted shapes
 		if (selectionManager && pastedIds.length > 0) {
-			setTimeout(() => {
+			selectionTimeout = setTimeout(() => {
 				selectionManager.selectMultiple(pastedIds);
 			}, 50);
 		}
@@ -244,12 +458,17 @@
 
 	// Broadcast cursor when viewport changes (modern Svelte 5 reactivity)
 	$effect(() => {
-		// Track viewport changes to broadcast cursor
+		// Track viewport changes to broadcast cursor and redraw grid
 		void $viewport;
 
 		// Broadcast cursor position when viewport changes
 		if (cursorManager) {
 			cursorManager.broadcastCurrentPosition();
+		}
+
+		// Redraw grid for infinite viewport-based rendering
+		if (canvasEngine) {
+			canvasEngine.drawGrid();
 		}
 	});
 
@@ -263,22 +482,28 @@
 			// Pass viewport for culling optimization (use reactive value, not store)
 			shapeRenderer.renderShapes(currentShapes, viewportState);
 
-			// Update maxZIndex
+			// Keep maxZIndex in sync (needed for keyboard shortcuts like Bring To Front)
+			// Use Math.max with current value to handle both additions and z-index changes
 			if (currentShapes.length > 0) {
-				maxZIndex = Math.max(...currentShapes.map((s) => s.zIndex || 0), maxZIndex);
+				const currentMaxZ = Math.max(...currentShapes.map((s) => s.zIndex || 0));
+				maxZIndex = Math.max(maxZIndex, currentMaxZ);
 			}
 
 			// Check if selected shapes still exist after render (e.g., after undo delete)
-			// If any selected shape was deleted, clear that selection
 			const selectedIds = selectionManager.getSelectedIds();
-			const shapeIdSet = new Set(currentShapes.map((s) => s.id));
-			const deletedSelectedIds = selectedIds.filter((id) => !shapeIdSet.has(id));
 
-			if (deletedSelectedIds.length > 0) {
-				// Some selected shapes were deleted, remove them from selection
-				deletedSelectedIds.forEach((id) => {
-					selectionManager.removeFromSelection(id);
-				});
+			// Early exit if no selection to check
+			if (selectedIds.length > 0) {
+				// Check if any selected shape was deleted using efficient lookup
+				const hasDeletedSelection = selectedIds.some((id) => !shapesByIdMap.has(id));
+
+				if (hasDeletedSelection) {
+					// Filter to valid IDs only
+					const validIds = selectedIds.filter((id) => shapesByIdMap.has(id));
+					if (validIds.length !== selectedIds.length) {
+						selectionManager.selectMultiple(validIds);
+					}
+				}
 			}
 
 			// CRITICAL: Sync transformer after rendering to ensure it follows Yjs updates
@@ -307,6 +532,9 @@
 		});
 
 		const { stage, layers } = canvasEngine.initialize();
+
+		// Store reference to shapes layer for alignment operations
+		shapesLayer = layers.shapes;
 
 		// Initialize viewport manager (writes to store automatically)
 		viewportManager = new ViewportManager(stage);
@@ -343,8 +571,8 @@
 				return selectionManager.getSelectedIds();
 			},
 			getShapeById: (id: string) => {
-				// Look up current shape from store to ensure fresh data in event handlers
-				return $shapes.find((s) => s.id === id);
+				// O(1) Map lookup instead of O(n) array find
+				return shapesByIdMap.get(id);
 			},
 			onBroadcastCursor: () => {
 				cursorManager?.broadcastCursorImmediate();
@@ -388,15 +616,12 @@
 		cursorManager = new CursorManager(stage, layers.cursors);
 
 		// Initialize Yjs sync
-		initializeShapesSync(shapesMap);
+		initializeShapesSync();
 
 		// Initialize undo/redo (captures ALL shapesMap modifications)
 		initializeUndoManager(shapesMap);
 
-		// Initialize provider
-		initializeProvider(data.user.id, data.userProfile.displayName, data.userProfile.color);
-
-		// Wait for provider to be ready, then initialize cursor manager
+		// Subscribe to provider BEFORE initializing to prevent race condition
 		const unsubscribeProvider = provider.subscribe((providerValue) => {
 			if (providerValue?.awareness && cursorManager) {
 				cursorManager.initialize(providerValue.awareness, data.user.id, width, height);
@@ -407,11 +632,15 @@
 						layers.shapes,
 						stage,
 						providerValue.awareness,
-						shapesMap
+						shapesMap,
+						data.user.id
 					);
 				}
 			}
 		});
+
+		// Initialize provider AFTER subscribing
+		initializeProvider(data.user.id, data.userProfile.displayName, data.userProfile.color);
 
 		// Initialize event handlers
 		eventHandlers = new CanvasEventHandlers(
@@ -425,7 +654,19 @@
 				return $isCreateToolActive;
 			},
 			(x, y) => {
+				// Used for text creation (click to place)
 				const newShape = createShapeAtPosition(x, y);
+				if (newShape) {
+					shapeOperations.add(newShape);
+					maxZIndex++;
+					// Switch back to select mode and select the new shape
+					activeTool.set('select');
+					selectionManager.select(newShape.id);
+				}
+			},
+			(x, y, width, height) => {
+				// Used for drag-to-size shape creation
+				const newShape = createShapeWithSize(x, y, width, height);
 				if (newShape) {
 					shapeOperations.add(newShape);
 					maxZIndex++;
@@ -521,6 +762,9 @@
 			if (toastTimeout) {
 				clearTimeout(toastTimeout);
 			}
+			if (selectionTimeout) {
+				clearTimeout(selectionTimeout);
+			}
 			clearTimeout(hintTimeout);
 		};
 	});
@@ -559,8 +803,20 @@
 	<!-- Connection Status -->
 	<ConnectionStatus currentUserId={data.user.id} onUserClick={handleUserClick} />
 
-	<!-- Properties Panel -->
-	<PropertiesPanel />
+	<!-- Properties Panel (right sidebar, only visible when items selected) -->
+	{#if $selectedShapeIds.size > 0}
+		<div class="properties-panel-container">
+			<PropertiesPanel
+				selectedItems={$shapes.filter((s) => $selectedShapeIds.has(s.id))}
+				onUpdateItems={(updatedItems) => {
+					updatedItems.forEach((item) => {
+						shapeOperations.update(item.id, item);
+					});
+				}}
+				onAlign={handleAlign}
+			/>
+		</div>
+	{/if}
 
 	<!-- Command Palette -->
 	<CommandPalette bind:open={commandPaletteOpen} userId={data.user.id} viewport={$viewport} />
@@ -641,6 +897,22 @@
 		height: 100vh;
 		overflow: hidden;
 		background: #ffffff;
+	}
+
+	.properties-panel-container {
+		position: fixed;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		width: 320px; /* Sidebar width */
+		background: linear-gradient(to bottom, #ffffff, #f5f7fa);
+		border-right: 2px solid #e2e8f0;
+		overflow: hidden;
+		z-index: 100;
+		display: flex;
+		flex-direction: column;
+		box-shadow: 8px 0 16px rgba(0, 0, 0, 0.08);
+		border-radius: 0 16px 16px 0;
 	}
 
 	:global(body) {

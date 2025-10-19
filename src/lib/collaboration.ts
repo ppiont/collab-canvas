@@ -108,18 +108,8 @@ export function disconnectProvider() {
  * Get all shapes from Yjs map as array
  */
 export function getAllShapes(): Shape[] {
-	const shapesList: Shape[] = [];
-	shapesMap.forEach((shape, id) => {
-		shapesList.push({ ...shape, id });
-	});
-	return shapesList;
-}
-
-/**
- * Get online user count from awareness
- */
-export function getOnlineUserCount(): number {
-	return _provider?.awareness.getStates().size || 1;
+	// Shapes already have id property - no need to clone or add it
+	return Array.from(shapesMap.values());
 }
 
 /**
@@ -157,23 +147,4 @@ export function clearDraggedShape(shapeId: string): void {
 	delete draggedShapes[shapeId];
 
 	_provider.awareness.setLocalStateField('draggedShapes', draggedShapes);
-}
-
-/**
- * Get current dragged shapes from all users
- */
-export function getAllDraggedShapes(): Map<string, any> {
-	const allDragged = new Map();
-
-	if (!_provider) return allDragged;
-
-	_provider.awareness.getStates().forEach((state: any) => {
-		if (state.draggedShapes) {
-			Object.entries(state.draggedShapes).forEach(([shapeId, dragInfo]: [string, any]) => {
-				allDragged.set(`${state.user?.id}-${shapeId}`, dragInfo);
-			});
-		}
-	});
-
-	return allDragged;
 }

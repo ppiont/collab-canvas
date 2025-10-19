@@ -1,0 +1,26 @@
+# Task ID: 5
+# Title: HIGH: Delete Dead Code Files (8 files)
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Remove 8 completely unused files reducing bundle by ~15KB
+# Details:
+**Files to DELETE:**
+1. `src/lib/components/index.ts` - Empty placeholder
+2. `src/lib/utils/index.ts` - Empty placeholder
+3. `src/lib/index.ts` - Empty
+4. `src/lib/canvas/shapes/BaseShape.ts` - Never used
+5. `src/lib/canvas/core/LayerManager.ts` - Never imported
+6. `src/lib/types/project.ts` - Never imported (47 lines)
+7. `src/lib/types/collaboration.ts` - Never imported (44 lines)
+8. `src/lib/types/ai.ts` - Never imported in src/ (only in partykit/)
+
+**Steps:**
+1. Delete all 8 files
+2. Update `src/lib/types/index.ts` to remove exports for deleted types
+3. Run `bun run check` to verify no broken imports
+
+**Impact:** 15KB bundle reduction, cleaner codebase
+
+# Test Strategy:
+

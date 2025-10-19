@@ -60,7 +60,7 @@
 	}
 
 	function changeFontSize(delta: number) {
-		const newSize = Math.max(8, Math.min(72, fontSize + delta));
+		const newSize = Math.max(8, Math.min(144, fontSize + delta));
 		onFormatChange({ fontSize: newSize });
 	}
 
@@ -87,20 +87,12 @@
 		fontFamilies.find((f) => f.value === fontFamily)?.label ?? fontFamily
 	);
 
-	// Local state for select binding
-	let selectedFontFamily = $state(fontFamily);
-
-	// Sync selectedFontFamily with prop changes
-	$effect(() => {
-		selectedFontFamily = fontFamily;
-	});
-
-	// Update when selection changes
-	$effect(() => {
-		if (selectedFontFamily !== fontFamily) {
-			setFontFamily(selectedFontFamily);
+	// Handle font family change with explicit callback
+	function handleFontFamilyChange(newValue: string | undefined) {
+		if (newValue && newValue !== fontFamily) {
+			setFontFamily(newValue);
 		}
-	});
+	}
 
 	// Update toolbar width when visible or element changes
 	$effect(() => {
@@ -125,7 +117,7 @@
 		tabindex="0"
 	>
 		<!-- Font Family -->
-		<Select.Root type="single" bind:value={selectedFontFamily}>
+		<Select.Root type="single" value={fontFamily} onValueChange={handleFontFamilyChange}>
 			<Select.Trigger
 				class="h-8 w-32 rounded-lg bg-white/10 px-2 text-sm text-white border border-white/20 hover:bg-white/20 data-[state=open]:bg-white/20"
 			>

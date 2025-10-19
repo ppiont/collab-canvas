@@ -217,7 +217,7 @@ export function filterVisibleShapes(
 	padding: number = 100
 ): Shape[] {
 	// If very few shapes, don't bother culling (overhead not worth it)
-	if (shapes.length < 50) {
+	if (shapes.length < 20) {
 		return shapes;
 	}
 

@@ -6,7 +6,7 @@
 /** Canvas configuration constants */
 export const CANVAS = {
 	GRID_SIZE: 50,
-	GRID_COLOR: '#e2e8f0',
+	GRID_COLOR: '#f1f5f9', // Lighter grid (slate-100)
 	BACKGROUND_COLOR: '#ffffff',
 	MIN_ZOOM: 0.1,
 	MAX_ZOOM: 5,
@@ -16,7 +16,10 @@ export const CANVAS = {
 	// Viewport culling settings
 	ENABLE_CULLING: true, // Enable viewport culling for performance
 	CULLING_PADDING: 100, // Extra pixels to render off-screen
-	CULLING_THRESHOLD: 50 // Min shapes before culling activates
+	CULLING_THRESHOLD: 50, // Min shapes before culling activates
+	// Performance and interaction
+	FRAME_TIME_MS: 16, // 60fps update interval
+	DRAG_NET_THRESHOLD: 5 // Min pixels to start drag-net selection
 } as const;
 
 /** Cursor and presence constants */
@@ -45,7 +48,7 @@ export const SHAPES = {
 export const AI = {
 	MAX_COMMANDS_PER_MINUTE: 10,
 	RATE_LIMIT_WINDOW_MS: 60000,
-	COMMAND_TIMEOUT_MS: 10000,
+	COMMAND_TIMEOUT_MS: 30000, // User-facing command timeout (30s)
 	MAX_SHAPES_PER_COMMAND: 50,
 	MODEL: 'gpt-4-turbo'
 } as const;
@@ -85,4 +88,9 @@ export const COLLABORATION = {
 	SYNC_DEBOUNCE_MS: 50,
 	RECONNECT_TIMEOUT_MS: 3000,
 	MAX_RECONNECT_ATTEMPTS: 5
+} as const;
+
+/** History/Undo constants */
+export const HISTORY = {
+	CAPTURE_TIMEOUT_MS: 500 // Group rapid changes within 500ms
 } as const;

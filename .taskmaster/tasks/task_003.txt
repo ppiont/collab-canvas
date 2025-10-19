@@ -1,0 +1,18 @@
+# Task ID: 3
+# Title: CRITICAL: Fix Syntax Error in shapes.ts
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Missing closing brace causing build failure
+# Details:
+**File:** `src/lib/stores/shapes.ts:25`
+
+**Problem:** Missing `});` after `shapes.set(allShapes);`
+
+**Steps:**
+1. Add closing brace and parenthesis after line 24: `});`
+
+**Impact:** Code compiles and runs correctly
+
+# Test Strategy:
+

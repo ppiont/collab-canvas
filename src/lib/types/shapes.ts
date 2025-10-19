@@ -9,14 +9,6 @@ export type ShapeType = 'rectangle' | 'circle' | 'line' | 'text' | 'polygon' | '
 /** Blend modes for shape rendering */
 export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten';
 
-/** Shadow configuration */
-export interface ShadowConfig {
-	color: string;
-	blur: number;
-	offsetX: number;
-	offsetY: number;
-}
-
 /** Base properties all shapes share */
 export interface BaseShape {
 	id: string;
@@ -32,7 +24,6 @@ export interface BaseShape {
 	strokeEnabled?: boolean; // Whether stroke is active (true by default if stroke is set)
 	strokeWidth?: number;
 	blendMode?: BlendMode;
-	shadow?: ShadowConfig;
 	createdBy: string;
 	createdAt: number;
 	modifiedAt?: number;
@@ -52,6 +43,8 @@ export interface RectangleShape extends BaseShape {
 export interface CircleShape extends BaseShape {
 	type: 'circle';
 	radius: number;
+	scaleX?: number; // For non-uniform scaling (ellipse effect)
+	scaleY?: number;
 }
 
 /** Line/polyline shape */
@@ -84,6 +77,8 @@ export interface PolygonShape extends BaseShape {
 	type: 'polygon';
 	sides: number; // 3-12
 	radius: number;
+	scaleX?: number; // For non-uniform scaling
+	scaleY?: number;
 }
 
 /** Star shape */
@@ -92,6 +87,8 @@ export interface StarShape extends BaseShape {
 	numPoints: number; // 5-12
 	innerRadius: number;
 	outerRadius: number;
+	scaleX?: number; // For non-uniform scaling
+	scaleY?: number;
 }
 
 /** Triangle shape */
@@ -99,6 +96,8 @@ export interface TriangleShape extends BaseShape {
 	type: 'triangle';
 	width: number;
 	height: number;
+	scaleX?: number; // For non-uniform scaling
+	scaleY?: number;
 }
 
 /** Union type for all shapes */
@@ -110,35 +109,6 @@ export type Shape =
 	| PolygonShape
 	| StarShape
 	| TriangleShape;
-
-/** Type guards for discriminated unions */
-export function isRectangle(shape: Shape): shape is RectangleShape {
-	return shape.type === 'rectangle';
-}
-
-export function isCircle(shape: Shape): shape is CircleShape {
-	return shape.type === 'circle';
-}
-
-export function isLine(shape: Shape): shape is LineShape {
-	return shape.type === 'line';
-}
-
-export function isText(shape: Shape): shape is TextShape {
-	return shape.type === 'text';
-}
-
-export function isPolygon(shape: Shape): shape is PolygonShape {
-	return shape.type === 'polygon';
-}
-
-export function isStar(shape: Shape): shape is StarShape {
-	return shape.type === 'star';
-}
-
-export function isTriangle(shape: Shape): shape is TriangleShape {
-	return shape.type === 'triangle';
-}
 
 /** Default values for base shape properties */
 export const DEFAULT_BASE_SHAPE: Omit<

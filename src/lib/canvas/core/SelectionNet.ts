@@ -234,17 +234,18 @@ export class SelectionNet {
 				break;
 			}
 
-			case 'text': {
-				// Text bounds (approximate based on font size)
-				const textWidth = (shape.text?.length || 1) * (shape.fontSize || 16) * 0.6;
-				shapeBounds = {
-					x: shape.x,
-					y: shape.y,
-					width: textWidth,
-					height: shape.fontSize || 16
-				};
-				break;
-			}
+		case 'text': {
+			// Use actual width/height if available, otherwise estimate from font size
+			const textWidth = shape.width || (shape.text?.length || 1) * (shape.fontSize || 16) * 0.6;
+			const textHeight = shape.height || (shape.fontSize || 16) * 1.2;
+			shapeBounds = {
+				x: shape.x,
+				y: shape.y,
+				width: textWidth,
+				height: textHeight
+			};
+			break;
+		}
 
 			default:
 				return false;

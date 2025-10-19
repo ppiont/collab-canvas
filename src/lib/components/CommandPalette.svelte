@@ -13,6 +13,7 @@
 	import { PUBLIC_PARTYKIT_HOST } from '$env/static/public';
 	import { ShapeFactory } from '$lib/canvas/shapes/ShapeFactory';
 	import { shapeOperations } from '$lib/stores/shapes';
+	import { AI } from '$lib/constants';
 	import { getShapesForLayout, getShapeWidth, getShapeHeight } from '$lib/utils/layout-helpers';
 
 	import type { CanvasViewport } from '$lib/types/canvas';
@@ -56,7 +57,7 @@
 
 		try {
 			const controller = new AbortController();
-			const timeoutId = setTimeout(() => controller.abort(), 30000);
+			const timeoutId = setTimeout(() => controller.abort(), AI.COMMAND_TIMEOUT_MS);
 
 			// Build URL, handling cases where PUBLIC_PARTYKIT_HOST may or may not include protocol
 			const host = PUBLIC_PARTYKIT_HOST || 'localhost:1999';

@@ -1,0 +1,15 @@
+# Task ID: 26
+# Title: LOW: Fix SVG Asset Dark Mode Support
+# Status: pending
+# Dependencies: None
+# Priority: low
+# Description: Use currentColor instead of hardcoded black in logout.svg
+# Details:
+**File:** `src/lib/assets/logout.svg:1`
+
+**Change:** `stroke="#000000"` to `stroke="currentColor"`
+
+**Impact:** Logout icon adapts to theme
+
+# Test Strategy:
+

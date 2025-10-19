@@ -1,0 +1,18 @@
+# Task ID: 22
+# Title: MED: Standardize Error Handling Patterns
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Consistent error handling with user feedback for user-initiated operations
+# Details:
+**Files:** Multiple stores and managers
+
+**Pattern to Implement:**
+- User-initiated operations: console.error + toast notification
+- Internal/programmer errors: throw Error with descriptive message
+- Optional operations: return false on failure
+
+**Impact:** Better debugging, better UX
+
+# Test Strategy:
+

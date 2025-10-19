@@ -1,0 +1,16 @@
+# Task ID: 14
+# Title: MED: Optimize getAllShapes - Remove Unnecessary Clone
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Use Array.from instead of forEach + spread for better performance
+# Details:
+**File:** `src/lib/collaboration.ts:110-115`
+
+**Current:** Creates new object for each shape  
+**Solution:** `return Array.from(shapesMap.values());`
+
+**Impact:** 20-30% faster shape sync updates
+
+# Test Strategy:
+

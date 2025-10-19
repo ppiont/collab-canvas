@@ -1,0 +1,20 @@
+# Task ID: 17
+# Title: MED: Fix Textarea Cleanup on Unmount
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Clean up active textarea in ShapeRenderer.destroy()
+# Details:
+**File:** `src/lib/canvas/shapes/ShapeRenderer.ts:942-945`
+
+**Problem:** If component unmounts during text editing, textarea remains in DOM
+
+**Steps:**
+1. In destroy(), check if activeTextarea exists
+2. Call activeTextarea.remove()
+3. Call textEditingEndCallback if exists
+
+**Impact:** Prevents DOM pollution from orphaned textareas
+
+# Test Strategy:
+

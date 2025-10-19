@@ -49,17 +49,6 @@
 			]
 		},
 		{
-			name: 'Text Editing',
-			shortcuts: [
-				{ action: 'Bold', keys: 'Cmd+B' },
-				{ action: 'Italic', keys: 'Cmd+I' },
-				{ action: 'Underline', keys: 'Cmd+U' },
-				{ action: 'Align Left', keys: 'Cmd+⇧+L' },
-				{ action: 'Align Center', keys: 'Cmd+⇧+E' },
-				{ action: 'Align Right', keys: 'Cmd+⇧+R' }
-			]
-		},
-		{
 			name: 'Navigation',
 			shortcuts: [
 				{ action: 'Pan Canvas', keys: 'Space+Drag' },
@@ -70,8 +59,8 @@
 		{
 			name: 'Z-Order Management',
 			shortcuts: [
-				{ action: 'Bring to Front', keys: 'Cmd+Shift+]' },
-				{ action: 'Send to Back', keys: 'Cmd+Shift+[' }
+				{ action: 'Bring to Front', keys: 'Cmd+Shift+↑' },
+				{ action: 'Send to Back', keys: 'Cmd+Shift+↓' }
 			]
 		}
 	];

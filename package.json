@@ -22,8 +22,8 @@
 	"devDependencies": {
 		"@eslint/compat": "^1.4.0",
 		"@eslint/js": "^9.38.0",
-		"@internationalized/date": "^3.10.0",
-		"@lucide/svelte": "^0.546.0",
+		"@internationalized/date": "^3.8.1",
+		"@lucide/svelte": "^0.544.0",
 		"@sveltejs/adapter-auto": "^7.0.0",
 		"@sveltejs/kit": "^2.47.1",
 		"@sveltejs/vite-plugin-svelte": "^6.2.1",
@@ -60,7 +60,6 @@
 		"konva": "^10.0.2",
 		"lucide-svelte": "^0.546.0",
 		"openai": "^6.5.0",
-		"svelte-konva": "^1.0.1",
 		"tailwind-merge": "^3.3.1",
 		"y-partykit": "^0.0.33",
 		"yjs": "^13.6.27"

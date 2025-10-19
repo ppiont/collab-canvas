@@ -32,24 +32,17 @@
 		'#d1d5db'
 	];
 
+	// Derive RGB values from prop
+	let rgb = $derived(hexToRgb(value || '') || { r: 0, g: 0, b: 0 });
+	let rValue = $derived(rgb.r);
+	let gValue = $derived(rgb.g);
+	let bValue = $derived(rgb.b);
+	
+	// Derive hex input display from prop
+	let hexInput = $derived(value?.toUpperCase().replace('#', '') || '');
+	
 	// Component state
-	// eslint-disable-next-line svelte/prefer-writable-derived
-	let hexInput = $state(value?.toUpperCase() || '');
-	let rValue = $state(0);
-	let gValue = $state(0);
-	let bValue = $state(0);
 	let recentColors = $state<string[]>([]);
-
-	// Update RGB values when hex changes
-	$effect(() => {
-		const rgb = hexToRgb(value || '');
-		if (rgb) {
-			rValue = rgb.r;
-			gValue = rgb.g;
-			bValue = rgb.b;
-		}
-		hexInput = value?.toUpperCase() || '';
-	});
 
 	// Load recent colors from localStorage
 	$effect.pre(() => {
@@ -59,17 +52,10 @@
 		}
 	});
 
-	// Update hex input when value changes externally
-	$effect(() => {
-		hexInput = value?.toUpperCase() || '';
-	});
-
 	// Handle hex input change
 	function handleHexChange(e: Event) {
 		const target = e.target as HTMLInputElement;
 		let input = target.value.toUpperCase().replace('#', '');
-
-		hexInput = input;
 
 		// Only update if valid hex (allow partial input while typing)
 		if (isValidHex(input)) {
@@ -78,8 +64,8 @@
 	}
 
 	// Handle RGB slider changes
-	function handleRgbChange() {
-		const newHex = rgbToHex(rValue, gValue, bValue);
+	function handleRgbChange(r: number, g: number, b: number) {
+		const newHex = rgbToHex(r, g, b);
 		updateColor(newHex);
 	}
 
@@ -161,9 +147,9 @@
 				<span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{rValue}</span>
 			</div>
 			<Slider
-				bind:value={rValue}
+				value={rValue}
 				type="single"
-				onchange={handleRgbChange}
+				onchange={(r) => handleRgbChange(r, gValue, bValue)}
 				min={0}
 				max={255}
 				step={1}
@@ -177,9 +163,9 @@
 				<span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{gValue}</span>
 			</div>
 			<Slider
-				bind:value={gValue}
+				value={gValue}
 				type="single"
-				onchange={handleRgbChange}
+				onchange={(g) => handleRgbChange(rValue, g, bValue)}
 				min={0}
 				max={255}
 				step={1}
@@ -193,9 +179,9 @@
 				<span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{bValue}</span>
 			</div>
 			<Slider
-				bind:value={bValue}
+				value={bValue}
 				type="single"
-				onchange={handleRgbChange}
+				onchange={(b) => handleRgbChange(rValue, gValue, b)}
 				min={0}
 				max={255}
 				step={1}
