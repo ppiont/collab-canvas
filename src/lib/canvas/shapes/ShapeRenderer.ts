@@ -343,10 +343,15 @@ export class ShapeRenderer {
 
 		// Update shape-specific properties based on type
 		switch (shape.type) {
-			case 'rectangle':
-				(node as Konva.Rect).width(shape.width);
-				(node as Konva.Rect).height(shape.height);
+			case 'rectangle': {
+				const rect = node as Konva.Rect;
+				rect.width(shape.width);
+				rect.height(shape.height);
+				// Update offset to keep rotation pivot at center
+				rect.offsetX(shape.width / 2);
+				rect.offsetY(shape.height / 2);
 				break;
+			}
 
 			case 'circle':
 				(node as Konva.Circle).radius(shape.radius);
@@ -400,6 +405,9 @@ export class ShapeRenderer {
 				text.setAttr('textDecoration', shape.textDecoration || '');
 				text.setAttr('align', shape.align || 'left');
 				if (shape.width) text.width(shape.width);
+				// Update offset to keep rotation pivot at center
+				text.offsetX(text.width() / 2);
+				text.offsetY(text.height() / 2);
 				break;
 			}
 		}
@@ -495,7 +503,9 @@ export class ShapeRenderer {
 				return new Konva.Rect({
 					...baseConfig,
 					width: shape.width,
-					height: shape.height
+					height: shape.height,
+					offsetX: shape.width / 2,
+					offsetY: shape.height / 2
 				});
 
 			case 'circle':
@@ -555,10 +565,10 @@ export class ShapeRenderer {
 				});
 			}
 
-			case 'text':
+			case 'text': {
 				// Text shapes need special config: exclude stroke properties entirely
 				// Konva.Text doesn't support stroke rendering properly - it creates artifacts
-				return new Konva.Text({
+				const textNode = new Konva.Text({
 					// Common properties that text supports
 					id: shape.id,
 					name: 'shape',
@@ -585,6 +595,14 @@ export class ShapeRenderer {
 					// NOTE: Intentionally NOT including stroke or strokeWidth
 					// Konva.Text stroke rendering creates visual artifacts
 				});
+				
+				// Set rotation pivot to center of text
+				// Use actual rendered dimensions
+				textNode.offsetX(textNode.width() / 2);
+				textNode.offsetY(textNode.height() / 2);
+				
+				return textNode;
+			}
 
 			default:
 				return null;

@@ -216,11 +216,14 @@
 				// Use height to determine font size (with reasonable bounds)
 				// Rough estimate: text height ≈ fontSize * 1.2 (line height)
 				const fontSize = Math.max(8, Math.min(144, Math.round(height * 0.7)));
+				// Text rotates around center, so adjust position to account for offset
+				// Estimate text height as fontSize * 1.2 for positioning
+				const estimatedHeight = fontSize * 1.2;
 				return ShapeFactory.create(
 					tool,
 					{
-						x,
-						y,
+						x: x + width / 2, // Adjust for center offset
+						y: y + estimatedHeight / 2, // Adjust for center offset
 						width, // Use dragged width for text box
 						fontSize, // Use calculated font size from height
 						fill: data.userProfile.color,
@@ -249,12 +252,12 @@
 				);
 			}
 
-			// For rectangle, use width/height with top-left position
+			// For rectangle, adjust position to account for center rotation pivot
 			return ShapeFactory.create(
 				tool,
 				{
-					x,
-					y,
+					x: x + width / 2, // Adjust for center offset
+					y: y + height / 2, // Adjust for center offset
 					width,
 					height,
 					fill: data.userProfile.color,
