@@ -27,8 +27,8 @@
 <div class="space-y-2">
 	<Label for="blend-mode-select">Blend Mode</Label>
 	<select {value} onchange={handleChange} class="w-full px-2 py-1 border rounded text-sm bg-white">
-		{#each blendModes as mode (mode)}
-			<option value={mode}>{mode}</option>
+		{#each blendModes as mode (mode.id)}
+			<option value={mode.id}>{mode.label}</option>
 		{/each}
 	</select>
 </div>

@@ -11,10 +11,31 @@
  */
 
 import Konva from 'konva';
-import type { Shape } from '$lib/types/shapes';
+import type { Shape, BlendMode } from '$lib/types/shapes';
 import type { CanvasViewport } from '$lib/types/canvas';
 import { SHAPES } from '$lib/constants';
 import { filterVisibleShapes, getCullingStats } from '$lib/utils/viewport-culling';
+
+/**
+ * Map blend modes to Konva's globalCompositeOperation values
+ */
+function getGlobalCompositeOperation(blendMode?: BlendMode): GlobalCompositeOperation {
+	switch (blendMode) {
+		case 'multiply':
+			return 'multiply';
+		case 'screen':
+			return 'screen';
+		case 'overlay':
+			return 'overlay';
+		case 'darken':
+			return 'darken';
+		case 'lighten':
+			return 'lighten';
+		case 'normal':
+		default:
+			return 'source-over';
+	}
+}
 
 /** Event callbacks for shape interactions */
 export interface ShapeEventCallbacks {
@@ -317,18 +338,8 @@ export class ShapeRenderer {
 
 		konvaShape.opacity(shape.opacity ?? 1);
 
-		// Apply shadow if configured
-		if (shape.shadow) {
-			konvaShape.shadowColor(shape.shadow.color);
-			konvaShape.shadowBlur(shape.shadow.blur);
-			konvaShape.shadowOffset({ x: shape.shadow.offsetX, y: shape.shadow.offsetY });
-			konvaShape.shadowOpacity(0.5); // Default shadow opacity
-		} else {
-			// Clear shadow if not configured
-			konvaShape.shadowColor('');
-			konvaShape.shadowBlur(0);
-			konvaShape.shadowOpacity(0);
-		}
+		// Apply blend mode
+		konvaShape.globalCompositeOperation(getGlobalCompositeOperation(shape.blendMode));
 
 		// Update shape-specific properties based on type
 		switch (shape.type) {
@@ -409,10 +420,6 @@ export class ShapeRenderer {
 				konvaShape.strokeWidth(2);
 			}
 			konvaShape.dash([]); // Solid line
-			// No shadow - just clean outline
-			konvaShape.shadowColor('');
-			konvaShape.shadowBlur(0);
-			konvaShape.shadowOpacity(0);
 		} else {
 			// Restore original values from shape data
 			// EXCEPTION: Text shapes should never have stroke
@@ -421,9 +428,6 @@ export class ShapeRenderer {
 				konvaShape.strokeWidth(shapeData.strokeWidth);
 			}
 			konvaShape.dash([]);
-			konvaShape.shadowColor('');
-			konvaShape.shadowBlur(0);
-			konvaShape.shadowOpacity(0);
 		}
 	}
 
@@ -476,16 +480,14 @@ export class ShapeRenderer {
 			strokeScaleEnabled: false, // Keep stroke width constant when scaling
 			draggable: (('draggable' in shape ? shape.draggable : true) ?? true) && !isDraggedByOther,
 			opacity: isDraggedByOther ? 0.5 : shape.opacity || 1, // Use stored opacity
-			shadowColor: isDraggedByOther ? '#667eea' : shape.shadow?.color || '',
-			shadowBlur: isDraggedByOther ? 8 : shape.shadow?.blur || 0,
-			shadowOpacity: isDraggedByOther ? 0.6 : shape.shadow ? 0.5 : 0,
-			shadowOffset: shape.shadow
-				? { x: shape.shadow.offsetX, y: shape.shadow.offsetY }
-				: { x: 0, y: 0 },
+			globalCompositeOperation: getGlobalCompositeOperation(shape.blendMode), // Apply blend mode
+			shadowColor: isDraggedByOther ? '#667eea' : '',
+			shadowBlur: isDraggedByOther ? 8 : 0,
+			shadowOpacity: isDraggedByOther ? 0.6 : 0,
+			shadowOffset: { x: 0, y: 0 },
 			// Performance optimizations
 			perfectDrawEnabled: false, // Faster rendering at cost of minor accuracy
-			hitStrokeWidth: 0, // Simpler hit detection
-			shadowForStrokeEnabled: false // Skip shadow calculations for strokes
+			hitStrokeWidth: 0 // Simpler hit detection
 		};
 
 		switch (shape.type) {
@@ -522,13 +524,7 @@ export class ShapeRenderer {
 					fill: polygonShape.fill || undefined,
 					stroke: polygonShape.stroke || undefined,
 					strokeWidth: polygonShape.strokeWidth || 0,
-					strokeEnabled: polygonShape.strokeEnabled !== false,
-					shadowColor: polygonShape.shadow?.color || undefined,
-					shadowBlur: polygonShape.shadow?.blur || 0,
-					shadowOpacity: polygonShape.shadow ? 0.5 : 0,
-					shadowOffset: polygonShape.shadow
-						? { x: polygonShape.shadow.offsetX, y: polygonShape.shadow.offsetY }
-						: { x: 0, y: 0 }
+					strokeEnabled: polygonShape.strokeEnabled !== false
 				});
 			}
 
@@ -555,13 +551,7 @@ export class ShapeRenderer {
 					fill: triangleShape.fill || undefined,
 					stroke: triangleShape.stroke || undefined,
 					strokeWidth: triangleShape.strokeWidth || 0,
-					strokeEnabled: triangleShape.strokeEnabled !== false,
-					shadowColor: triangleShape.shadow?.color || undefined,
-					shadowBlur: triangleShape.shadow?.blur || 0,
-					shadowOpacity: triangleShape.shadow ? 0.5 : 0,
-					shadowOffset: triangleShape.shadow
-						? { x: triangleShape.shadow.offsetX, y: triangleShape.shadow.offsetY }
-						: { x: 0, y: 0 }
+					strokeEnabled: triangleShape.strokeEnabled !== false
 				});
 			}
 
@@ -577,6 +567,7 @@ export class ShapeRenderer {
 					rotation: shape.rotation || 0,
 					opacity: isDraggedByOther ? 0.5 : shape.opacity || 1,
 					fill: shape.fill || '#000000',
+					globalCompositeOperation: getGlobalCompositeOperation(shape.blendMode), // Apply blend mode
 					shadowColor: isDraggedByOther ? '#667eea' : '',
 					shadowBlur: isDraggedByOther ? 8 : 0,
 					shadowOpacity: isDraggedByOther ? 0.6 : 0,
@@ -653,10 +644,6 @@ export class ShapeRenderer {
 
 			// Visual feedback
 			konvaShape.opacity(0.7);
-			konvaShape.shadowColor('black');
-			konvaShape.shadowBlur(10);
-			konvaShape.shadowOffset({ x: 5, y: 5 });
-			konvaShape.shadowOpacity(0.3);
 			this.stage.container().style.cursor = 'grabbing';
 
 			// Broadcast cursor
@@ -691,10 +678,6 @@ export class ShapeRenderer {
 
 			// Reset visual feedback to original shape properties (from current state)
 			konvaShape.opacity(currentShape.opacity ?? 1);
-			konvaShape.shadowColor('');
-			konvaShape.shadowBlur(0);
-			konvaShape.shadowOpacity(0);
-			konvaShape.shadowOffset({ x: 0, y: 0 });
 			this.stage.container().style.cursor = 'move';
 
 			// Get final position and validate
@@ -772,7 +755,7 @@ export class ShapeRenderer {
 
 	// Store reference to active textarea for live updates
 	private activeTextarea: HTMLTextAreaElement | null = null;
-	
+
 	// Track last z-index order to avoid unnecessary reordering
 	private lastZIndexOrder: string = '';
 

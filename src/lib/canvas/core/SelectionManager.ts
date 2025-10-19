@@ -100,9 +100,9 @@ export class SelectionManager {
 			new Konva.Tag({
 				fill: '#667eea',
 				cornerRadius: 4,
-				pointerDirection: 'up',
-				pointerWidth: 8,
-				pointerHeight: 6
+				pointerDirection: 'none',
+				pointerWidth: 0,
+				pointerHeight: 0
 			})
 		);
 
@@ -237,7 +237,8 @@ export class SelectionManager {
 
 	/**
 	 * Update size label position and text
-	 * Positions label at fixed distance below transformer's lowest point, centered horizontally
+	 * Shows dimensions below transformer, centered horizontally
+	 * Maintains constant visual size at any zoom level via inverse scaling
 	 */
 	private updateSizeLabel(): void {
 		if (!this.sizeLabel || !this.transformer) return;
@@ -252,66 +253,50 @@ export class SelectionManager {
 		const isLine = node instanceof Konva.Line;
 		const isClosedPolygon = isLine && (node as Konva.Line).closed();
 
-		// Get transformer's bounding box (includes rotation and scale)
-		const transformerBox = this.transformer.getClientRect();
+		// Get SHAPE bounding box (not transformer which includes rotation handle)
+		const shapeBox = node.getClientRect();
+		const stageScale = this.stage.scaleX();
+		const stagePos = this.stage.position();
 
-		// Fixed distance below transformer
-		const LABEL_OFFSET = 12;
+		// Convert screen coordinates to canvas coordinates
+		const canvasX = (shapeBox.x - stagePos.x) / stageScale;
+		const canvasY = (shapeBox.y - stagePos.y) / stageScale;
+		const canvasWidth = shapeBox.width / stageScale;
+		const canvasHeight = shapeBox.height / stageScale;
 
+		const LABEL_OFFSET = 12; // Distance below shape in canvas pixels
+
+		// Update label text based on shape type
+		const text = this.sizeLabel.findOne('Text') as Konva.Text;
 		if (isLine && !isClosedPolygon) {
-			// For open lines only, calculate and show length
+			// For lines: show length
 			const line = node as Konva.Line;
 			const points = line.points();
-
 			if (points.length >= 4) {
-				// Calculate distance between first and last point
-				const x1 = points[0];
-				const y1 = points[1];
-				const x2 = points[2];
-				const y2 = points[3];
-
-				const dx = x2 - x1;
-				const dy = y2 - y1;
+				const dx = points[2] - points[0];
+				const dy = points[3] - points[1];
 				const length = Math.round(Math.sqrt(dx * dx + dy * dy));
-
-				// Update text
-				const text = this.sizeLabel.findOne('Text') as Konva.Text;
-				if (text) {
-					text.text(`${length}px`);
-				}
-
-				// Position below transformer, centered horizontally
-				this.sizeLabel.position({
-					x: transformerBox.x + transformerBox.width / 2,
-					y: transformerBox.y + transformerBox.height + LABEL_OFFSET
-				});
-
-				this.sizeLabel.visible(true);
-				this.sizeLabel.moveToTop();
+				if (text) text.text(`${length}px`);
 			}
 		} else {
-			// For all other shapes, show actual shape dimensions (not bounding box)
-			// Use shape's width/height with scale applied (doesn't change during rotation)
+			// For shapes: show dimensions
 			const nodeWidth = Math.round(node.width() * node.scaleX());
 			const nodeHeight = Math.round(node.height() * node.scaleY());
-
-			// Update text with actual dimensions
-			const text = this.sizeLabel.findOne('Text') as Konva.Text;
-			if (text) {
-				text.text(`${nodeWidth} × ${nodeHeight}`);
-			}
-
-			// Position below transformer, centered horizontally
-			this.sizeLabel.position({
-				x: transformerBox.x + transformerBox.width / 2,
-				y: transformerBox.y + transformerBox.height + LABEL_OFFSET
-			});
-
-			this.sizeLabel.visible(true);
-
-			// Move size label to top so it's always visible
-			this.sizeLabel.moveToTop();
+			if (text) text.text(`${nodeWidth} × ${nodeHeight}`);
 		}
+
+		// Apply inverse scale to maintain constant visual size
+		this.sizeLabel.offsetX(0);
+		this.sizeLabel.offsetY(0);
+		this.sizeLabel.scaleX(1 / stageScale);
+		this.sizeLabel.scaleY(1 / stageScale);
+		this.sizeLabel.visible(true);
+
+		// Center label horizontally under transformer
+		const labelWidth = this.sizeLabel.getClientRect().width / stageScale;
+		this.sizeLabel.x(canvasX + canvasWidth / 2 - labelWidth / 2);
+		this.sizeLabel.y(canvasY + canvasHeight + LABEL_OFFSET / stageScale);
+		this.sizeLabel.moveToTop();
 	}
 
 	/**

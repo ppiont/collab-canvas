@@ -7,7 +7,6 @@
 export type {
 	ShapeType,
 	BlendMode,
-	ShadowConfig,
 	BaseShape,
 	RectangleShape,
 	CircleShape,

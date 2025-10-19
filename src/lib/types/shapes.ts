@@ -9,14 +9,6 @@ export type ShapeType = 'rectangle' | 'circle' | 'line' | 'text' | 'polygon' | '
 /** Blend modes for shape rendering */
 export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten';
 
-/** Shadow configuration */
-export interface ShadowConfig {
-	color: string;
-	blur: number;
-	offsetX: number;
-	offsetY: number;
-}
-
 /** Base properties all shapes share */
 export interface BaseShape {
 	id: string;
@@ -32,7 +24,6 @@ export interface BaseShape {
 	strokeEnabled?: boolean; // Whether stroke is active (true by default if stroke is set)
 	strokeWidth?: number;
 	blendMode?: BlendMode;
-	shadow?: ShadowConfig;
 	createdBy: string;
 	createdAt: number;
 	modifiedAt?: number;

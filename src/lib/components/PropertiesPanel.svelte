@@ -6,7 +6,6 @@
 	import StrokeWidthControl from './controls/StrokeWidthControl.svelte';
 	import OpacityControl from './controls/OpacityControl.svelte';
 	import BlendModeControl from './controls/BlendModeControl.svelte';
-	import ShadowControl from './controls/ShadowControl.svelte';
 	import RotationControl from './controls/RotationControl.svelte';
 	import { Input } from './ui/input';
 	import { Label } from './ui/label';
@@ -37,7 +36,6 @@
 	const strokeWidth = $derived(getUniformValue('strokeWidth'));
 	const opacity = $derived(getUniformValue('opacity'));
 	const blendMode = $derived(getUniformValue('blendMode'));
-	const shadow = $derived(getUniformValue('shadow'));
 	const rotation = $derived(getUniformValue('rotation'));
 	const x = $derived(
 		(() => {
@@ -188,15 +186,6 @@
 								shapeOperations.update(id, { blendMode: mode as BlendMode });
 							});
 						}}
-					/>
-				{/if}
-
-				{#if shadow !== 'mixed'}
-					<ShadowControl
-						value={shadow as
-							| { color: string; blur: number; offsetX: number; offsetY: number }
-							| undefined}
-						onchange={(s) => updateSelected('shadow', s)}
 					/>
 				{/if}
 			</div>
