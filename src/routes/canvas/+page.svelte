@@ -27,8 +27,7 @@
 		provider,
 		shapesMap,
 		updateDraggedShape,
-		clearDraggedShape,
-		updateTransformedShape
+		clearDraggedShape
 	} from '$lib/collaboration';
 	import { viewport } from '$lib/stores/canvas';
 	import { CANVAS } from '$lib/constants';
@@ -322,27 +321,22 @@
 		// Initialize viewport manager (writes to store automatically)
 		viewportManager = new ViewportManager(stage);
 
-	// Initialize selection manager
-	selectionManager = new SelectionManager(stage, layers.shapes);
-	selectionManager.setUserId(data.user.id);
-	selectionManager.setOnSelectionChange((selectedIds) => {
-		// Sync with the selectedShapeIds store for UI components like PropertiesPanel
-		selectedShapeIds.set(new Set(selectedIds));
-		// Update selection styling immediately
-		if (shapeRenderer) {
-			shapeRenderer.updateSelectionStyling(selectedIds, $shapes);
-		}
-	});
-	selectionManager.setOnDelete((ids) => {
-		ids.forEach((id) => shapeOperations.delete(id));
-	});
-	selectionManager.setOnShapeUpdate((id, changes) => {
-		shapeOperations.update(id, changes);
-	});
-	selectionManager.setOnTransform((shapeId, x, y, transformProps) => {
-		// Broadcast live transform state to collaborators
-		updateTransformedShape(shapeId, x, y, data.user.id, transformProps);
-	});
+		// Initialize selection manager
+		selectionManager = new SelectionManager(stage, layers.shapes);
+		selectionManager.setOnSelectionChange((selectedIds) => {
+			// Sync with the selectedShapeIds store for UI components like PropertiesPanel
+			selectedShapeIds.set(new Set(selectedIds));
+			// Update selection styling immediately
+			if (shapeRenderer) {
+				shapeRenderer.updateSelectionStyling(selectedIds, $shapes);
+			}
+		});
+		selectionManager.setOnDelete((ids) => {
+			ids.forEach((id) => shapeOperations.delete(id));
+		});
+		selectionManager.setOnShapeUpdate((id, changes) => {
+			shapeOperations.update(id, changes);
+		});
 
 		// Initialize shape renderer
 		shapeRenderer = new ShapeRenderer(layers.shapes, stage);

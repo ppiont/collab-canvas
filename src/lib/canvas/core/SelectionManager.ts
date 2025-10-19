@@ -35,14 +35,6 @@ export class SelectionManager {
 	private lineTransformerGroup: Konva.Group | null = null; // Custom transformer for lines
 	private lineEndpoints: Konva.Circle[] = []; // Draggable endpoint circles
 	private isDraggingLineEndpoint = false; // Prevent transformer recreation during drag
-	private userId: string | null = null; // Local user ID for broadcasting transforms
-	private onTransform: ((shapeId: string, x: number, y: number, transformProps: {
-		scaleX?: number;
-		scaleY?: number;
-		rotation?: number;
-		width?: number;
-		height?: number;
-	}) => void) | null = null;
 
 	constructor(stage: Konva.Stage, layer: Konva.Layer) {
 		this.stage = stage;
@@ -366,54 +358,10 @@ export class SelectionManager {
 			isTransforming = true;
 		});
 
-	// Listen for transform events to update visuals in real-time
-	this.transformer.on('transform', () => {
-		this.updateVisuals();
-
-		// Broadcast live transform state to collaborators
-		if (this.onTransform && this.userId) {
-			const nodes = this.transformer.nodes();
-			const callback = this.onTransform; // Store to satisfy null check
-			nodes.forEach((node) => {
-				const id = node.id();
-				if (!id) return;
-
-				const x = node.x();
-				const y = node.y();
-				const scaleX = node.scaleX();
-				const scaleY = node.scaleY();
-				const rotation = node.rotation();
-
-				// Validate all values are finite numbers
-				if (!isFinite(x) || !isFinite(y) || !isFinite(scaleX) || !isFinite(scaleY) || !isFinite(rotation)) {
-					return;
-				}
-
-				// Build transform properties based on shape type
-				const className = node.getClassName();
-				const transformProps: {
-					scaleX?: number;
-					scaleY?: number;
-					rotation?: number;
-					width?: number;
-					height?: number;
-				} = {};
-
-				if (className === 'Rect' || className === 'Image') {
-					transformProps.width = node.width() * scaleX;
-					transformProps.height = node.height() * scaleY;
-				} else {
-					// For shapes that use scale (circles, polygons, stars, triangles)
-					transformProps.scaleX = scaleX;
-					transformProps.scaleY = scaleY;
-				}
-
-				transformProps.rotation = rotation;
-
-				callback(id, x, y, transformProps);
-			});
-		}
-	});
+		// Listen for transform events to update visuals in real-time
+		this.transformer.on('transform', () => {
+			this.updateVisuals();
+		});
 
 		// Listen for transform end to save changes
 		this.transformer.on('transformend', () => {
@@ -555,26 +503,6 @@ export class SelectionManager {
 	 */
 	setOnDelete(callback: DeleteCallback): void {
 		this.onDelete = callback;
-	}
-
-	/**
-	 * Set callback for live transform broadcasts
-	 */
-	setOnTransform(callback: (shapeId: string, x: number, y: number, transformProps: {
-		scaleX?: number;
-		scaleY?: number;
-		rotation?: number;
-		width?: number;
-		height?: number;
-	}) => void): void {
-		this.onTransform = callback;
-	}
-
-	/**
-	 * Set user ID for broadcasting transforms
-	 */
-	setUserId(userId: string): void {
-		this.userId = userId;
 	}
 
 	/**
