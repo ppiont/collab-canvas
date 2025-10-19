@@ -28,18 +28,22 @@
 	import DimensionsSection from './sections/DimensionsSection.svelte';
 	import AppearanceSection from './sections/AppearanceSection.svelte';
 	import EffectsSection from './sections/EffectsSection.svelte';
+	import AlignmentSection from './sections/AlignmentSection.svelte';
 
 	// Props
 	let {
 		selectedItems = [],
-		onUpdateItems = (items: Shape[]) => {}
+		onUpdateItems = (items: Shape[]) => {},
+		onAlign = (operation: string, shapeIds: string[]) => {}
 	}: {
 		selectedItems: Shape[];
 		onUpdateItems: (items: Shape[]) => void;
+		onAlign?: (operation: string, shapeIds: string[]) => void;
 	} = $props();
 
 	// Reactive state
 	const selectionCount = $derived(selectedItems.length);
+	const showAlignmentSection = $derived(selectionCount >= 2);
 
 	// Handle shape updates
 	function handleUpdateItems(updatedItems: Shape[]) {
@@ -63,7 +67,9 @@
 				<!-- Accordion sections for different property groups -->
 				<Accordion
 					type="multiple"
-					value={['dimensions', 'appearance', 'effects']}
+					value={showAlignmentSection
+						? ['dimensions', 'appearance', 'effects', 'alignment']
+						: ['dimensions', 'appearance', 'effects']}
 					class="w-full space-y-3"
 				>
 					<!-- Dimensions Section -->
@@ -113,6 +119,24 @@
 							<EffectsSection items={selectedItems} onUpdate={handleUpdateItems} />
 						</AccordionContent>
 					</AccordionItem>
+
+					<!-- Alignment Section (only shown when 2+ items selected) -->
+					{#if showAlignmentSection}
+						<AccordionItem
+							value="alignment"
+							class="border border-slate-300 rounded-lg overflow-hidden bg-slate-100/50 hover:bg-slate-100/80 hover:border-slate-400 transition-all shadow-sm"
+							data-accordion-item="alignment"
+						>
+							<AccordionTrigger
+								class="text-sm font-semibold py-3 px-4 hover:no-underline text-slate-900 hover:text-slate-800"
+							>
+								Alignment
+							</AccordionTrigger>
+							<AccordionContent class="pt-3 pb-4 px-4 border-t border-slate-300">
+								<AlignmentSection items={selectedItems} {onAlign} />
+							</AccordionContent>
+						</AccordionItem>
+					{/if}
 				</Accordion>
 			{:else}
 				<!-- Empty state when nothing selected -->

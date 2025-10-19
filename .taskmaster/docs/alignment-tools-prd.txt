@@ -1,0 +1,69 @@
+# Alignment Tools Feature - Product Requirements Document
+
+## Overview
+Add alignment tools to the Properties Panel that allow users to align and distribute multiple selected shapes. This feature should appear as a new accordion section in the Properties Panel, only visible when 2 or more shapes are selected.
+
+## User Requirements
+
+### Alignment Operations
+Users should be able to align selected shapes in the following ways:
+- **Align Left**: Align all selected shapes to the leftmost edge
+- **Align Center (Horizontal)**: Align all shapes to the horizontal center
+- **Align Right**: Align all selected shapes to the rightmost edge
+- **Align Top**: Align all selected shapes to the topmost edge
+- **Align Middle (Vertical)**: Align all shapes to the vertical center
+- **Align Bottom**: Align all selected shapes to the bottommost edge
+- **Distribute Horizontally**: Space shapes evenly along the horizontal axis
+- **Distribute Vertically**: Space shapes evenly along the vertical axis
+
+### UI Requirements
+- New "Alignment" accordion section in Properties Panel
+- Only visible when 2 or more shapes are selected
+- Grid layout of alignment buttons with icons
+- Buttons should use lucide-svelte icons for clarity
+- Tooltips explaining each alignment operation
+
+### Technical Requirements
+
+#### Core Alignment Logic
+- Calculate bounding boxes using Konva's `getClientRect()` method
+- Handle different shape types (rectangles, circles, text, etc.)
+- Account for rotation when calculating bounds
+- Account for center vs corner positioning (rectangles/text rotate around center)
+- Update shape positions via existing `onShapeUpdate` callback
+
+#### Distribution Logic
+- For horizontal distribution: sort by x position, calculate spacing
+- For vertical distribution: sort by y position, calculate spacing
+- Maintain original shape order when distributing
+
+#### Edge Cases
+- Handle shapes with different rotation values
+- Handle shapes of different sizes
+- Ensure distribution works with as few as 2 shapes
+- Prevent alignment if only 1 shape selected
+
+## Implementation Structure
+
+### Files to Create/Modify
+1. **AlignmentSection.svelte** - New component for alignment UI
+2. **alignment.ts** - Utility functions for alignment calculations
+3. **PropertiesPanel.svelte** - Add AlignmentSection accordion
+
+### Component Hierarchy
+```
+PropertiesPanel.svelte
+├── DimensionsSection.svelte
+├── AppearanceSection.svelte
+├── EffectsSection.svelte
+└── AlignmentSection.svelte (NEW)
+    └── Uses alignment utility functions
+```
+
+## Success Criteria
+- All 8 alignment operations work correctly
+- UI is intuitive and matches existing Properties Panel design
+- Alignment respects shape rotation and center offsets
+- Performance is smooth with 10+ shapes
+- Works with all shape types (rectangle, circle, text, line, polygon, star, triangle)
+

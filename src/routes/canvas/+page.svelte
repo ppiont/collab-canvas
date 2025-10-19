@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import Konva from 'konva';
 	import Toolbar from '$lib/components/Toolbar.svelte';
 	import ConnectionStatus from '$lib/components/ConnectionStatus.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
@@ -37,6 +38,7 @@
 	import { initializeUndoManager, history } from '$lib/stores/history';
 	import { darkenColor } from '$lib/user-utils';
 	import { selectedShapeIds } from '$lib/stores/selection';
+	import * as alignmentUtils from '$lib/utils/alignment';
 
 	let { data } = $props();
 
@@ -48,6 +50,7 @@
 	let shapeRenderer = $state<ShapeRenderer | null>(null);
 	let liveShapeRenderer = $state<LiveShapeRenderer | null>(null);
 	let eventHandlers: CanvasEventHandlers;
+	let shapesLayer: Konva.Layer | null = null;
 
 	// Component state
 	let containerDiv: HTMLDivElement;
@@ -299,6 +302,83 @@
 		}
 	}
 
+	/**
+	 * Handle alignment operations from Properties Panel
+	 * Gets Konva shapes from the layer, calls alignment utilities, and updates shapes
+	 */
+	function handleAlign(operation: string, shapeIds: string[]): void {
+		if (!shapesLayer || shapeIds.length < 2) return;
+
+		try {
+			// Get Konva shapes from the layer
+			const konvaShapes = shapeIds
+				.map((id) => shapesLayer!.findOne(`#${id}`))
+				.filter((shape): shape is Konva.Shape => shape !== null);
+
+			if (konvaShapes.length < 2) {
+				console.warn('Not enough valid shapes found for alignment');
+				return;
+			}
+
+			// Call the appropriate alignment function
+			let positionUpdates: { id: string; x: number; y: number }[] = [];
+
+			switch (operation) {
+				case 'alignLeft':
+					positionUpdates = alignmentUtils.alignLeft(konvaShapes);
+					break;
+				case 'alignCenter':
+					positionUpdates = alignmentUtils.alignCenter(konvaShapes);
+					break;
+				case 'alignRight':
+					positionUpdates = alignmentUtils.alignRight(konvaShapes);
+					break;
+				case 'alignTop':
+					positionUpdates = alignmentUtils.alignTop(konvaShapes);
+					break;
+				case 'alignMiddle':
+					positionUpdates = alignmentUtils.alignMiddle(konvaShapes);
+					break;
+				case 'alignBottom':
+					positionUpdates = alignmentUtils.alignBottom(konvaShapes);
+					break;
+				case 'distributeHorizontally':
+					if (konvaShapes.length < 3) {
+						console.warn('Need at least 3 shapes for distribution');
+						return;
+					}
+					positionUpdates = alignmentUtils.distributeHorizontally(konvaShapes);
+					break;
+				case 'distributeVertically':
+					if (konvaShapes.length < 3) {
+						console.warn('Need at least 3 shapes for distribution');
+						return;
+					}
+					positionUpdates = alignmentUtils.distributeVertically(konvaShapes);
+					break;
+				default:
+					console.warn('Unknown alignment operation:', operation);
+					return;
+			}
+
+			// Apply position updates to shapes using absolutePosition
+			positionUpdates.forEach((update) => {
+				const shape = shapesLayer!.findOne(`#${update.id}`);
+				if (shape) {
+					// Set absolutePosition, then read back the actual position
+					shape.absolutePosition({ x: update.x, y: update.y });
+					const finalPos = shape.position();
+					shapeOperations.update(update.id, {
+						x: finalPos.x,
+						y: finalPos.y
+					});
+				}
+			});
+		} catch (error) {
+			console.error('Alignment operation failed:', error);
+		}
+	}
+
 	// Track last paste position for cumulative offsets
 	let lastPasteOffset = { x: 0, y: 0 };
 
@@ -452,6 +532,9 @@
 		});
 
 		const { stage, layers } = canvasEngine.initialize();
+
+		// Store reference to shapes layer for alignment operations
+		shapesLayer = layers.shapes;
 
 		// Initialize viewport manager (writes to store automatically)
 		viewportManager = new ViewportManager(stage);
@@ -730,6 +813,7 @@
 						shapeOperations.update(item.id, item);
 					});
 				}}
+				onAlign={handleAlign}
 			/>
 		</div>
 	{/if}

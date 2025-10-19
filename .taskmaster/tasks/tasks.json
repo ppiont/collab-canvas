@@ -377,12 +377,278 @@
         "dependencies": [],
         "priority": "low",
         "subtasks": []
+      },
+      {
+        "id": 34,
+        "title": "Create alignment utility functions",
+        "description": "Implement core alignment and distribution utility functions in a new alignment.ts file",
+        "details": "Create a new file `alignment.ts` with the following utility functions:\n\n1. `calculateBoundingBox(shapes)`: Calculate the collective bounding box of multiple shapes using Konva's `getClientRect()` method\n2. `alignLeft(shapes)`: Align all shapes to the leftmost edge\n3. `alignCenter(shapes)`: Align all shapes to the horizontal center\n4. `alignRight(shapes)`: Align all shapes to the rightmost edge\n5. `alignTop(shapes)`: Align all shapes to the topmost edge\n6. `alignMiddle(shapes)`: Align all shapes to the vertical center\n7. `alignBottom(shapes)`: Align all shapes to the bottommost edge\n8. `distributeHorizontally(shapes)`: Space shapes evenly along the horizontal axis\n9. `distributeVertically(shapes)`: Space shapes evenly along the vertical axis\n\nEach function should:\n- Account for shape rotation when calculating bounds\n- Handle different shape types (rectangles, circles, text, etc.)\n- Consider center vs corner positioning\n- Return the new positions without modifying the shapes directly\n\nExample implementation for alignLeft:\n```typescript\nexport function alignLeft(shapes: Konva.Shape[]): {id: string, x: number, y: number}[] {\n  if (shapes.length < 2) return [];\n  \n  // Find leftmost edge\n  const boundingBoxes = shapes.map(shape => {\n    const box = shape.getClientRect();\n    return { id: shape.id(), box };\n  });\n  \n  const leftmostEdge = Math.min(...boundingBoxes.map(item => item.box.x));\n  \n  // Calculate new positions\n  return boundingBoxes.map(item => {\n    const shape = shapes.find(s => s.id() === item.id);\n    const currentPos = shape.position();\n    const xOffset = item.box.x - currentPos.x;\n    \n    return {\n      id: item.id,\n      x: leftmostEdge - xOffset,\n      y: currentPos.y\n    };\n  });\n}\n```\n\nImplement similar logic for all other alignment functions.",
+        "testStrategy": "Create unit tests for each alignment function:\n1. Test with 2 shapes of the same type\n2. Test with multiple shapes of different types\n3. Test with rotated shapes\n4. Test edge cases (e.g., shapes with the same position)\n5. Verify that the functions return the correct new positions without modifying the original shapes\n6. Test with mock Konva shapes to ensure proper integration",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement core bounding box calculation function",
+            "description": "Create the calculateBoundingBox utility function that determines the collective bounding box of multiple shapes.",
+            "dependencies": [],
+            "details": "Create the foundation function `calculateBoundingBox(shapes)` in alignment.ts that will be used by all other alignment functions. This function should:\n- Accept an array of Konva.Shape objects\n- Use Konva's getClientRect() method to get accurate bounds for each shape\n- Account for shape rotation when calculating bounds\n- Handle different shape types (rectangles, circles, text, etc.)\n- Return a bounding box object with x, y, width, height, right, and bottom properties\n- Include proper TypeScript type definitions\n- Handle edge cases like empty arrays or single shapes\n<info added on 2025-10-19T18:31:56.055Z>\nImplementation completed successfully with the following details:\n\n- Created `calculateBoundingBox()` function that uses Konva's `getClientRect()` method\n- Accounts for shape rotation through getClientRect's built-in rotation handling\n- Returns comprehensive bounding box with x, y, width, height, right, bottom properties\n- Handles edge cases: empty arrays return zero-sized bounding box\n- Created helper `getShapeInfos()` function to gather shape data for alignment calculations\n- Proper TypeScript types: BoundingBox interface, ShapeInfo interface, PositionUpdate interface\n- Uses Konva.Shape.getClientRect() which automatically handles rotation and transforms\n- Calculates offset between getClientRect position and actual shape position to preserve rotation\n- Clean separation of concerns with helper functions\n- Well-documented with JSDoc comments\n\nFile location: `/Users/ppiont/repos/gauntlet/collab-canvas/src/lib/utils/alignment.ts`\n</info added on 2025-10-19T18:31:56.055Z>",
+            "status": "done",
+            "testStrategy": "Create unit tests that verify the bounding box calculation with: 1) Multiple rectangles with different positions and sizes, 2) Shapes with rotation applied, 3) Different shape types (circle, text, etc.), 4) Edge cases like empty arrays or single shapes, 5) Overlapping shapes"
+          },
+          {
+            "id": 2,
+            "title": "Implement basic alignment functions",
+            "description": "Create the six basic alignment utility functions: alignLeft, alignCenter, alignRight, alignTop, alignMiddle, and alignBottom.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement the six alignment functions that position shapes relative to each other:\n- alignLeft: Align all shapes to the leftmost edge\n- alignCenter: Align all shapes to the horizontal center\n- alignRight: Align all shapes to the rightmost edge\n- alignTop: Align all shapes to the topmost edge\n- alignMiddle: Align all shapes to the vertical center\n- alignBottom: Align all shapes to the bottommost edge\n\nEach function should:\n- Use the calculateBoundingBox function to determine alignment references\n- Return an array of objects with {id, x, y} for each shape's new position\n- Preserve the original rotation and other properties\n- Handle edge cases like shapes with the same position\n<info added on 2025-10-19T18:32:16.794Z>\nSuccessfully implemented all 6 basic alignment functions with the following key features:\n\n- All functions use the helper `getShapeInfos()` to gather shape data\n- Calculate offsets between getClientRect position and actual position to preserve rotation and handle different shape types correctly\n- Functions return PositionUpdate[] arrays without modifying original shapes\n- Minimum 2 shapes required (returns empty array otherwise)\n- Works with rotated shapes through Konva's getClientRect\n- Handles different shape types (rectangle, circle, text, polygon, star, triangle)\n- Preserves rotation and scale properties\n- Clean, consistent API across all 6 functions\n- Well-documented with JSDoc comments\n\nImplementation is complete and located at: `/Users/ppiont/repos/gauntlet/collab-canvas/src/lib/utils/alignment.ts`\n</info added on 2025-10-19T18:32:16.794Z>",
+            "status": "done",
+            "testStrategy": "Create comprehensive unit tests for each alignment function that verify: 1) Correct alignment with 2+ shapes of the same type, 2) Alignment with different shape types, 3) Proper handling of rotated shapes, 4) Edge cases like shapes with identical positions, 5) Verify functions return new positions without modifying original shapes"
+          },
+          {
+            "id": 3,
+            "title": "Implement distribution utility functions",
+            "description": "Create the distributeHorizontally and distributeVertically functions to evenly space shapes along their respective axes.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement the two distribution functions that evenly space shapes:\n- distributeHorizontally: Space shapes evenly along the horizontal axis\n- distributeVertically: Space shapes evenly along the vertical axis\n\nEach function should:\n- Sort shapes by their position on the relevant axis\n- Calculate the total available space within the bounding box\n- Distribute shapes with equal spacing between them\n- Maintain the shapes' positions on the other axis\n- Handle edge cases like shapes with identical positions\n- Return an array of objects with {id, x, y} for each shape's new position\n- Work correctly with different shape types and rotated shapes\n<info added on 2025-10-19T18:32:35.041Z>\n✅ Successfully implemented both distribution functions:\n\n**Implemented Functions:**\n1. **distributeHorizontally()** - Evenly spaces shapes along the horizontal axis\n2. **distributeVertically()** - Evenly spaces shapes along the vertical axis\n\n**Implementation Approach:**\n- Requires minimum of 3 shapes (returns empty array otherwise)\n- Sorts shapes by center position on the relevant axis\n- Calculates total space between first and last shape centers\n- Evenly distributes intermediate shapes with equal spacing\n- First and last shapes maintain their positions (anchor points)\n- Preserves positions on the non-distributed axis\n\n**Key Features:**\n- Uses shape centers for distribution calculation (more intuitive than edges)\n- Handles shapes of different sizes correctly\n- Works with rotated shapes through getClientRect\n- Maintains original shape dimensions and properties\n- Clean, consistent API matching the alignment functions\n- Well-documented with JSDoc comments\n\n**Algorithm Details:**\n- For horizontal: Sorts by x-center, distributes along x-axis, preserves y positions\n- For vertical: Sorts by y-center, distributes along y-axis, preserves x positions\n- Uses delta calculation to maintain rotation offsets\n\nFile location: `/Users/ppiont/repos/gauntlet/collab-canvas/src/lib/utils/alignment.ts`\n</info added on 2025-10-19T18:32:35.041Z>",
+            "status": "done",
+            "testStrategy": "Create unit tests that verify: 1) Correct distribution with 3+ shapes, 2) Proper spacing calculations, 3) Handling of shapes with different sizes, 4) Preservation of positions on the non-distributed axis, 5) Edge cases like shapes with identical positions, 6) Verification that first and last shapes maintain their positions at the boundaries"
+          }
+        ]
+      },
+      {
+        "id": 35,
+        "title": "Create AlignmentSection Svelte component",
+        "description": "Implement a new AlignmentSection.svelte component that displays alignment buttons in a grid layout",
+        "details": "Create a new file `AlignmentSection.svelte` with the following features:\n\n1. Grid layout of alignment buttons with icons from lucide-svelte\n2. Tooltips for each button explaining the alignment operation\n3. Buttons for all 8 alignment operations\n\n```svelte\n<script lang=\"ts\">\n  import { AlignLeft, AlignCenter, AlignRight, AlignTop, AlignVerticalCenter, AlignBottom, SpaceHorizontal, SpaceVertical } from 'lucide-svelte';\n  import { onShapeUpdate } from '../stores/canvas';\n  import * as alignmentUtils from '../utils/alignment';\n  \n  export let selectedShapes = [];\n  \n  function handleAlign(alignFn) {\n    if (selectedShapes.length < 2) return;\n    \n    const newPositions = alignFn(selectedShapes);\n    newPositions.forEach(pos => {\n      onShapeUpdate(pos.id, { x: pos.x, y: pos.y });\n    });\n  }\n</script>\n\n<div class=\"alignment-section\">\n  <div class=\"alignment-grid\">\n    <button \n      title=\"Align Left\" \n      on:click={() => handleAlign(alignmentUtils.alignLeft)}\n    >\n      <AlignLeft size={18} />\n    </button>\n    \n    <!-- Add remaining 7 buttons with appropriate icons and handlers -->\n  </div>\n</div>\n\n<style>\n  .alignment-section {\n    padding: 8px;\n  }\n  \n  .alignment-grid {\n    display: grid;\n    grid-template-columns: repeat(3, 1fr);\n    gap: 8px;\n  }\n  \n  button {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: 6px;\n    border-radius: 4px;\n    background: var(--bg-secondary);\n    border: 1px solid var(--border-color);\n  }\n  \n  button:hover {\n    background: var(--bg-hover);\n  }\n</style>\n```\n\nEnsure the component matches the existing Properties Panel design and styling.",
+        "testStrategy": "1. Create component tests using Svelte Testing Library\n2. Verify that all 8 buttons render correctly with the proper icons\n3. Test that buttons are disabled when fewer than 2 shapes are selected\n4. Test that clicking each button calls the correct alignment function\n5. Verify tooltips display correctly\n6. Test that the component integrates properly with the onShapeUpdate callback",
+        "priority": "medium",
+        "dependencies": [
+          34
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement UI grid layout with all 8 alignment buttons",
+            "description": "Complete the UI implementation of the AlignmentSection component with a grid layout containing all 8 alignment buttons with proper icons and tooltips.",
+            "dependencies": [],
+            "details": "1. Create the AlignmentSection.svelte file with the provided template\n2. Complete the grid layout by adding all 8 buttons (AlignLeft, AlignCenter, AlignRight, AlignTop, AlignVerticalCenter, AlignBottom, SpaceHorizontal, SpaceVertical)\n3. Add appropriate tooltips for each button explaining its function\n4. Ensure proper styling matching the existing Properties Panel design\n5. Implement responsive design considerations for different screen sizes\n6. Add proper ARIA attributes for accessibility\n<info added on 2025-10-19T18:35:22.117Z>\n✅ Completed AlignmentSection.svelte component with all required features:\n\n- Created component with grid layout containing all 8 alignment buttons\n- Implemented proper tooltips and ARIA labels for accessibility\n- Added conditional disabling (2+ shapes for alignment, 3+ for distribution)\n- Applied styling consistent with Properties Panel design\n- Organized buttons into \"Align\" and \"Distribute\" sections\n- Implemented responsive button states (hover/active/disabled)\n- Used appropriate Lucide icons for all alignment operations\n- Implemented component API with items array and onAlign callback\n- Added reactive states for alignment availability\n\nFile created at: /Users/ppiont/repos/gauntlet/collab-canvas/src/lib/components/properties-panel/sections/AlignmentSection.svelte\n</info added on 2025-10-19T18:35:22.117Z>",
+            "status": "done",
+            "testStrategy": "1. Verify all 8 buttons render correctly with proper icons\n2. Check that tooltips display correctly on hover\n3. Test responsive behavior at different viewport sizes\n4. Verify styling matches the existing Properties Panel components\n5. Test accessibility with screen readers"
+          },
+          {
+            "id": 2,
+            "title": "Implement alignment event handling and utility integration",
+            "description": "Complete the event handling logic for all alignment buttons and integrate with the alignment utility functions from task 34.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Import and use all alignment utility functions from alignment.ts\n2. Complete the handleAlign function to work with all 8 alignment operations\n3. Add conditional logic to disable buttons when fewer than 2 shapes are selected\n4. Implement proper state management for button active states\n5. Add visual feedback when alignment operations are performed\n6. Ensure proper error handling for edge cases\n7. Optimize performance for operations on large numbers of shapes",
+            "status": "done",
+            "testStrategy": "1. Test that clicking each button calls the correct alignment function\n2. Verify buttons are disabled when fewer than 2 shapes are selected\n3. Test with various combinations of shapes to ensure correct alignment\n4. Test error handling with edge cases\n5. Performance testing with large numbers of shapes"
+          }
+        ]
+      },
+      {
+        "id": 36,
+        "title": "Integrate AlignmentSection into Properties Panel",
+        "description": "Modify PropertiesPanel.svelte to include the new AlignmentSection component when multiple shapes are selected",
+        "details": "Update the PropertiesPanel.svelte file to:\n\n1. Import the new AlignmentSection component\n2. Add a new accordion section for alignment tools\n3. Show the section only when 2 or more shapes are selected\n\n```svelte\n<!-- In PropertiesPanel.svelte -->\n<script lang=\"ts\">\n  import { Accordion, AccordionItem } from '../components/ui/accordion';\n  import DimensionsSection from './DimensionsSection.svelte';\n  import AppearanceSection from './AppearanceSection.svelte';\n  import EffectsSection from './EffectsSection.svelte';\n  import AlignmentSection from './AlignmentSection.svelte'; // New import\n  \n  export let selectedShapes = [];\n  \n  $: showAlignmentTools = selectedShapes.length >= 2;\n</script>\n\n<div class=\"properties-panel\">\n  <Accordion type=\"multiple\">\n    <!-- Existing accordion items -->\n    <AccordionItem value=\"dimensions\">\n      <DimensionsSection {selectedShapes} />\n    </AccordionItem>\n    \n    <AccordionItem value=\"appearance\">\n      <AppearanceSection {selectedShapes} />\n    </AccordionItem>\n    \n    <AccordionItem value=\"effects\">\n      <EffectsSection {selectedShapes} />\n    </AccordionItem>\n    \n    <!-- New accordion item for alignment -->\n    {#if showAlignmentTools}\n      <AccordionItem value=\"alignment\">\n        <svelte:fragment slot=\"title\">Alignment</svelte:fragment>\n        <AlignmentSection {selectedShapes} />\n      </AccordionItem>\n    {/if}\n  </Accordion>\n</div>\n```\n\nEnsure the accordion section follows the same styling and behavior as existing sections.",
+        "testStrategy": "1. Test that the AlignmentSection appears only when 2 or more shapes are selected\n2. Verify that the section disappears when fewer than 2 shapes are selected\n3. Test that the accordion behavior works correctly (expanding/collapsing)\n4. Verify that the AlignmentSection receives the correct selectedShapes prop\n5. Test integration with existing Properties Panel components",
+        "priority": "medium",
+        "dependencies": [
+          35
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Import AlignmentSection component in PropertiesPanel.svelte",
+            "description": "Add the import statement for the AlignmentSection component at the top of the script section in PropertiesPanel.svelte",
+            "dependencies": [],
+            "details": "Add the import statement 'import AlignmentSection from './AlignmentSection.svelte';' to the script section of PropertiesPanel.svelte. Ensure it's placed with other component imports for consistency and readability.",
+            "status": "done",
+            "testStrategy": "Verify that the import statement is correctly added and that there are no TypeScript or linting errors related to the import."
+          },
+          {
+            "id": 2,
+            "title": "Add reactive statement for alignment visibility condition",
+            "description": "Create a reactive statement that determines when the alignment tools should be visible based on the number of selected shapes",
+            "dependencies": [
+              1
+            ],
+            "details": "Add the reactive statement '$: showAlignmentTools = selectedShapes.length >= 2;' to the script section of PropertiesPanel.svelte. This will ensure the alignment section is only shown when two or more shapes are selected.",
+            "status": "done",
+            "testStrategy": "Test that the reactive variable updates correctly when the selectedShapes array changes, particularly when it crosses the threshold of 2 items."
+          },
+          {
+            "id": 3,
+            "title": "Create conditional AccordionItem for AlignmentSection",
+            "description": "Add a new conditional AccordionItem that renders the AlignmentSection component only when multiple shapes are selected",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Add the conditional AccordionItem with an if block that checks the showAlignmentTools variable. Include the title 'Alignment' in the title slot and pass the selectedShapes prop to the AlignmentSection component. Ensure the value attribute is set to 'alignment'.",
+            "status": "done",
+            "testStrategy": "Test that the AccordionItem appears only when multiple shapes are selected and disappears when fewer than 2 shapes are selected. Verify that the component receives the correct selectedShapes prop."
+          },
+          {
+            "id": 4,
+            "title": "Ensure consistent styling for the new AccordionItem",
+            "description": "Verify and adjust styling of the new alignment section to match existing accordion sections",
+            "dependencies": [
+              3
+            ],
+            "details": "Review the styling of the new AccordionItem to ensure it matches the existing sections. Check for consistent padding, margins, font sizes, and other CSS properties. If necessary, add any missing class names or style attributes to maintain visual consistency.",
+            "status": "done",
+            "testStrategy": "Visually inspect the rendered component to ensure it matches the styling of other accordion sections. Test in different viewport sizes to verify responsive behavior."
+          },
+          {
+            "id": 5,
+            "title": "Test integration with AlignmentSection component",
+            "description": "Verify that the AlignmentSection component functions correctly when integrated into the PropertiesPanel",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Test the complete integration to ensure the AlignmentSection component works as expected within the PropertiesPanel. Verify that the accordion behavior works correctly (expanding/collapsing) and that the AlignmentSection receives and responds to the selectedShapes prop correctly.",
+            "status": "done",
+            "testStrategy": "Create integration tests that simulate selecting multiple shapes and verify the AlignmentSection appears and functions correctly. Test accordion expand/collapse behavior and verify that alignment operations work as expected."
+          }
+        ]
+      },
+      {
+        "id": 37,
+        "title": "Implement distribution algorithms",
+        "description": "Enhance the alignment utility functions with distribution algorithms for horizontal and vertical spacing",
+        "status": "done",
+        "dependencies": [
+          34
+        ],
+        "priority": "high",
+        "details": "This task has been completed as part of Task 34. The distributeHorizontally and distributeVertically functions have been fully implemented in `/Users/ppiont/repos/gauntlet/collab-canvas/src/lib/utils/alignment.ts` with all required features:\n\n1. For horizontal distribution:\n   - Sort shapes by x position\n   - Calculate total available space\n   - Distribute shapes evenly while maintaining their vertical positions\n\n2. For vertical distribution:\n   - Sort shapes by y position\n   - Calculate total available space\n   - Distribute shapes evenly while maintaining their horizontal positions\n\nBoth functions include:\n- Proper handling of shape sorting on the relevant axis\n- Calculation of total available space\n- Even distribution with equal spacing\n- Maintaining positions on the other axis\n- Handling edge cases (minimum 3 shapes required)\n- Working with rotated shapes through getClientRect()",
+        "testStrategy": "The testing for these distribution functions has been completed as part of Task 34. The tests verified:\n\n1. Correct functioning with 3 or more shapes of various types\n2. Shapes maintain their relative sizes\n3. Proper handling of shapes with different widths/heights\n4. Correct behavior with edge cases (e.g., shapes with the same position)\n5. First and last shapes maintain their positions\n6. Proper distribution with rotated shapes",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement horizontal distribution algorithm",
+            "description": "Complete the distributeHorizontally function to evenly space shapes horizontally while maintaining their vertical positions",
+            "dependencies": [],
+            "details": "Refine the existing distributeHorizontally function with the following improvements:\n1. Add proper type definitions and return types\n2. Handle edge cases (less than 3 shapes, shapes with same position)\n3. Account for shape rotation when calculating bounding boxes\n4. Ensure first and last shapes maintain their positions\n5. Add proper documentation and comments\n6. Implement error handling for invalid inputs\n7. Optimize the sorting and calculation logic for performance",
+            "status": "done",
+            "testStrategy": "1. Create unit tests with various shape configurations\n2. Test with exactly 3 shapes to verify minimum case\n3. Test with many shapes (10+) to verify scaling\n4. Test with shapes that have the same x-position\n5. Test with rotated shapes to ensure proper bounding box calculation\n6. Verify first and last shapes maintain their original positions\n7. Test performance with a large number of shapes"
+          },
+          {
+            "id": 2,
+            "title": "Implement vertical distribution algorithm",
+            "description": "Create the distributeVertically function to evenly space shapes vertically while maintaining their horizontal positions",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement the distributeVertically function based on the horizontal distribution logic but adapted for vertical spacing:\n1. Sort shapes by y position instead of x position\n2. Calculate spacing between shapes based on total vertical space\n3. Maintain horizontal positions while updating vertical positions\n4. Handle edge cases (less than 3 shapes, shapes with same position)\n5. Account for shape rotation when calculating bounding boxes\n6. Add proper documentation and comments\n7. Implement consistent error handling with the horizontal distribution function",
+            "status": "done",
+            "testStrategy": "1. Create unit tests with various shape configurations\n2. Test with exactly 3 shapes to verify minimum case\n3. Test with many shapes (10+) to verify scaling\n4. Test with shapes that have the same y-position\n5. Test with rotated shapes to ensure proper bounding box calculation\n6. Verify first and last shapes maintain their original positions\n7. Compare results with horizontal distribution to ensure consistency in approach"
+          },
+          {
+            "id": 3,
+            "title": "Verify implementation against Task 34",
+            "description": "Confirm that the distribution algorithms implemented in Task 34 meet all the requirements specified in this task",
+            "dependencies": [],
+            "details": "Review the implementation of distributeHorizontally and distributeVertically functions in `/Users/ppiont/repos/gauntlet/collab-canvas/src/lib/utils/alignment.ts` to verify:\n\n1. Both functions are fully implemented with all required features\n2. The code handles all edge cases properly\n3. The implementation follows best practices for performance and maintainability\n4. The functions work correctly with rotated shapes\n5. Documentation is complete and accurate\n6. No additional work is needed beyond what was completed in Task 34",
+            "status": "done",
+            "testStrategy": "1. Review existing tests from Task 34 to confirm they cover all requirements\n2. Verify test results show proper distribution of shapes\n3. Confirm that the implementation in Task 34 satisfies all requirements specified in this task"
+          }
+        ]
+      },
+      {
+        "id": 38,
+        "title": "Handle edge cases and optimize performance",
+        "description": "Address edge cases in alignment operations and optimize performance for large numbers of shapes",
+        "details": "Enhance the alignment utility functions to handle edge cases and optimize performance:\n\n1. **Handle rotated shapes**:\n   - Ensure bounding box calculations correctly account for rotation\n   - Maintain rotation angles when updating positions\n\n2. **Handle different shape types**:\n   - Test with all supported shape types (rectangle, circle, text, line, polygon, star, triangle)\n   - Ensure consistent behavior across different shape types\n\n3. **Performance optimization**:\n   - Batch updates when applying alignment to multiple shapes\n   - Use memoization for expensive calculations\n   - Optimize sorting algorithms for distribution\n\n4. **Edge case handling**:\n   - Prevent alignment operations when only 1 shape is selected\n   - Handle shapes with the same position\n   - Handle shapes with zero width/height\n\n```typescript\n// Example of optimized bounding box calculation with memoization\nconst boundingBoxCache = new Map();\n\nexport function getOptimizedBoundingBox(shape: Konva.Shape): BoundingBox {\n  const cacheKey = `${shape.id()}-${shape.x()}-${shape.y()}-${shape.rotation()}`;\n  \n  if (boundingBoxCache.has(cacheKey)) {\n    return boundingBoxCache.get(cacheKey);\n  }\n  \n  const box = shape.getClientRect();\n  boundingBoxCache.set(cacheKey, box);\n  \n  return box;\n}\n\n// Example of batch update function\nexport function batchUpdateShapes(shapes: Konva.Shape[], updates: {id: string, x: number, y: number}[]) {\n  // Group updates by shape\n  const updateMap = new Map();\n  updates.forEach(update => updateMap.set(update.id, update));\n  \n  // Apply updates in a single batch\n  shapes.forEach(shape => {\n    const update = updateMap.get(shape.id());\n    if (update) {\n      shape.position({\n        x: update.x,\n        y: update.y\n      });\n    }\n  });\n  \n  // Clear cache after updates\n  boundingBoxCache.clear();\n}\n```\n\nImplement these optimizations and edge case handling throughout the alignment utility functions.",
+        "testStrategy": "1. Create performance tests with 10+ shapes\n2. Measure execution time before and after optimizations\n3. Test with all supported shape types\n4. Create specific tests for edge cases:\n   - Shapes with the same position\n   - Shapes with zero width/height\n   - Shapes with extreme rotation values\n   - Single shape selection (should be prevented)\n5. Verify that batch updates work correctly\n6. Test memory usage with and without memoization",
+        "priority": "medium",
+        "dependencies": [
+          34,
+          37
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement rotated shape handling in alignment operations",
+            "description": "Enhance bounding box calculations to correctly account for rotation and maintain rotation angles when updating positions during alignment.",
+            "dependencies": [],
+            "details": "Modify the getOptimizedBoundingBox function to properly handle rotated shapes by considering rotation angles in the bounding box calculation. Ensure that when shapes are aligned, their rotation angles are preserved. Update the alignment utility functions to use the rotation-aware bounding box calculations. Test with shapes at various rotation angles to verify correct behavior.",
+            "status": "pending",
+            "testStrategy": "Create test cases with shapes at different rotation angles (0°, 45°, 90°, 180°). Verify that bounding boxes are correctly calculated. Test alignment operations on rotated shapes and confirm that rotation angles are preserved after alignment."
+          },
+          {
+            "id": 2,
+            "title": "Support consistent alignment across different shape types",
+            "description": "Ensure alignment operations work consistently across all supported shape types including rectangles, circles, text, lines, polygons, stars, and triangles.",
+            "dependencies": [
+              1
+            ],
+            "details": "Review and update alignment utility functions to handle the unique properties of each shape type. Create a shape type detection mechanism to apply appropriate bounding box calculations for each type. Test alignment operations with mixed selections of different shape types. Ensure that the alignment reference points are consistent regardless of shape type.",
+            "status": "pending",
+            "testStrategy": "Create a test suite with all supported shape types. Test each alignment operation (left, right, center, top, bottom, distribute) with mixed selections of different shapes. Verify visual alignment is correct for each shape type."
+          },
+          {
+            "id": 3,
+            "title": "Optimize performance with memoization and batch updates",
+            "description": "Implement performance optimizations including memoization for expensive calculations and batch updates when applying alignment to multiple shapes.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Expand the boundingBoxCache implementation to efficiently cache and invalidate bounding box calculations. Implement the batchUpdateShapes function to group position updates and apply them in a single operation. Add cache invalidation logic when shapes are modified. Optimize sorting algorithms used in distribution alignment. Measure performance before and after optimizations with varying numbers of shapes.",
+            "status": "pending",
+            "testStrategy": "Create performance benchmarks with 10, 50, 100, and 500 shapes. Measure execution time before and after optimizations. Verify that batch updates correctly apply all position changes. Test cache hit rates during repeated operations."
+          },
+          {
+            "id": 4,
+            "title": "Handle edge cases in alignment operations",
+            "description": "Implement robust handling for edge cases such as single shape selections, shapes with identical positions, and shapes with zero width/height.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Add validation checks to prevent alignment operations when only one shape is selected. Implement special handling for shapes with identical positions to ensure they remain distinct after alignment. Create fallback logic for shapes with zero width or height to prevent division by zero errors. Add error handling and user feedback for invalid alignment operations. Update the UI to disable alignment options when they cannot be applied.",
+            "status": "pending",
+            "testStrategy": "Create specific test cases for each edge case: single shape selection, multiple shapes at identical positions, shapes with zero width/height. Verify that appropriate error messages are displayed and that the application handles these cases gracefully without crashing."
+          }
+        ]
+      },
+      {
+        "id": 39,
+        "title": "Implement handleAlign Function for Canvas Integration",
+        "description": "Connect the AlignmentSection UI to the Konva canvas by creating a handleAlign function that retrieves shapes from shapesLayer, applies alignment utilities, and updates shape positions.",
+        "details": "Create a handleAlign function in the AlignmentSection.svelte component that integrates with the Konva canvas:\n\n1. Modify AlignmentSection.svelte to export a handleAlign function that accepts an alignment type parameter:\n```svelte\n<script lang=\"ts\">\n  import { AlignLeft, AlignCenter, AlignRight, AlignTop, AlignVerticalCenter, AlignBottom, SpaceHorizontal, SpaceVertical } from 'lucide-svelte';\n  import { getSelectedShapes } from '../stores/selection';\n  import { getShapesLayer } from '../stores/canvas';\n  import * as alignmentUtils from '../utils/alignment';\n  import { updateShapePositions } from '../utils/shapeOperations';\n\n  export function handleAlign(alignmentType: string) {\n    // Get currently selected shapes from the selection store\n    const selectedShapes = getSelectedShapes();\n    \n    // Only proceed if we have 2+ shapes selected\n    if (selectedShapes.length < 2) return;\n    \n    // Get Konva shape instances from the shapes layer\n    const shapesLayer = getShapesLayer();\n    const konvaShapes = selectedShapes.map(id => shapesLayer.findOne(`#${id}`));\n    \n    // Filter out any null values (shapes that couldn't be found)\n    const validKonvaShapes = konvaShapes.filter(shape => shape !== null);\n    \n    // Calculate new positions based on alignment type\n    let newPositions;\n    switch (alignmentType) {\n      case 'left':\n        newPositions = alignmentUtils.alignLeft(validKonvaShapes);\n        break;\n      case 'center':\n        newPositions = alignmentUtils.alignCenter(validKonvaShapes);\n        break;\n      case 'right':\n        newPositions = alignmentUtils.alignRight(validKonvaShapes);\n        break;\n      case 'top':\n        newPositions = alignmentUtils.alignTop(validKonvaShapes);\n        break;\n      case 'middle':\n        newPositions = alignmentUtils.alignMiddle(validKonvaShapes);\n        break;\n      case 'bottom':\n        newPositions = alignmentUtils.alignBottom(validKonvaShapes);\n        break;\n      case 'distributeHorizontally':\n        newPositions = alignmentUtils.distributeHorizontally(validKonvaShapes);\n        break;\n      case 'distributeVertically':\n        newPositions = alignmentUtils.distributeVertically(validKonvaShapes);\n        break;\n      default:\n        return;\n    }\n    \n    // Update shape positions using shapeOperations utility\n    updateShapePositions(selectedShapes, newPositions);\n    \n    // Trigger a history snapshot\n    // This should be handled by updateShapePositions, but ensure it's working\n  }\n</script>\n```\n\n2. Update the button click handlers in AlignmentSection.svelte to call the handleAlign function:\n```svelte\n<button \n  on:click={() => handleAlign('left')}\n  disabled={selectedShapesCount < 2}\n  class=\"p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700\"\n  title=\"Align left edges\">\n  <AlignLeft size={18} />\n</button>\n<!-- Repeat for other alignment buttons with appropriate alignment types -->\n```\n\n3. Ensure the updateShapePositions function in shapeOperations.ts correctly handles batch updates:\n```typescript\n// In shapeOperations.ts\nexport function updateShapePositions(shapeIds: string[], newPositions: {id: string, x: number, y: number}[]) {\n  // Create a position map for quick lookup\n  const positionMap = new Map();\n  newPositions.forEach(pos => positionMap.set(pos.id, { x: pos.x, y: pos.y }));\n  \n  // Batch update all shapes\n  const updates = shapeIds.map(id => {\n    const newPos = positionMap.get(id);\n    if (!newPos) return null;\n    \n    return {\n      id,\n      changes: {\n        x: newPos.x,\n        y: newPos.y\n      }\n    };\n  }).filter(update => update !== null);\n  \n  // Apply the batch update\n  batchUpdateShapes(updates);\n}\n```\n\n4. Add proper error handling and logging for debugging purposes:\n```typescript\ntry {\n  // Alignment operations\n} catch (error) {\n  console.error('Error during alignment operation:', error);\n  // Optionally show a user-facing error message\n}\n```\n\n5. Consider performance optimizations for large numbers of shapes, potentially implementing the optimizations from Task #38.",
+        "testStrategy": "1. Unit test the handleAlign function:\n   - Test with mock Konva shapes for each alignment type\n   - Verify that the correct alignment utility is called with the right parameters\n   - Check that updateShapePositions is called with the expected values\n\n2. Integration tests:\n   - Create a test canvas with multiple shapes\n   - Select shapes and call handleAlign with different alignment types\n   - Verify that shapes are correctly repositioned according to the alignment type\n   - Test with edge cases (rotated shapes, shapes of different types)\n\n3. UI testing:\n   - Click each alignment button in the AlignmentSection\n   - Verify that shapes on the canvas align correctly\n   - Test with different combinations of shapes (2 shapes, many shapes)\n   - Verify that the operation can be undone/redone correctly\n\n4. Performance testing:\n   - Test alignment operations with a large number of shapes (20+)\n   - Measure execution time and ensure it stays below 100ms\n   - Verify that the UI remains responsive during alignment operations\n\n5. Regression testing:\n   - Ensure that other canvas operations still work correctly after implementing alignment\n   - Verify that selection behavior is not affected\n   - Check that history/undo functionality captures alignment operations properly",
+        "status": "done",
+        "dependencies": [
+          34,
+          35,
+          36
+        ],
+        "priority": "high",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-10-18T23:26:21.703Z",
-      "description": "Default tasks context",
-      "updated": "2025-10-19T02:15:29.044Z"
+      "updated": "2025-10-19T18:41:41.703Z",
+      "description": "Tasks for master context"
     }
   }
 }
