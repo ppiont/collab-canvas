@@ -590,11 +590,12 @@
 			getMaxZIndex: () => maxZIndex
 		});
 
-		// Wire transformer to shapeRenderer so it stays on top during renders
+		// Wire transformer and selection manager to shapeRenderer
 		const transformer = selectionManager.getTransformer();
 		if (transformer) {
 			shapeRenderer.setTransformer(transformer);
 		}
+		shapeRenderer.setSelectionManager(selectionManager);
 
 		// Set text editing callbacks for formatting toolbar
 		shapeRenderer.setTextEditingCallback(

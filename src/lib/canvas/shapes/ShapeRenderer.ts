@@ -15,6 +15,7 @@ import type { Shape, BlendMode } from '$lib/types/shapes';
 import type { CanvasViewport } from '$lib/types/canvas';
 import { SHAPES } from '$lib/constants';
 import { filterVisibleShapes, getCullingStats } from '$lib/utils/viewport-culling';
+import type { SelectionManager } from '../core/SelectionManager';
 
 /**
  * Map blend modes to Konva's globalCompositeOperation values
@@ -63,8 +64,9 @@ export class ShapeRenderer {
 	private localUserId: string | null = null;
 	private isCreateMode = false;
 
-	// Transformer reference to ensure it stays on top
+	// Transformer and selection manager references
 	private transformer: Konva.Transformer | null = null;
+	private selectionManager: SelectionManager | null = null;
 
 	// Viewport culling settings
 	private enableCulling = true; // Enable by default
@@ -90,6 +92,13 @@ export class ShapeRenderer {
 	 */
 	setTransformer(transformer: Konva.Transformer): void {
 		this.transformer = transformer;
+	}
+
+	/**
+	 * Set selection manager reference to check transformation state
+	 */
+	setSelectionManager(selectionManager: SelectionManager): void {
+		this.selectionManager = selectionManager;
 	}
 
 	/**
@@ -184,12 +193,16 @@ export class ShapeRenderer {
 			}
 		});
 
+		// Check if transformation is in progress (resize/rotate via transformer)
+		const isTransforming = this.selectionManager?.isCurrentlyTransforming() || false;
+
 		// Shapes already sorted by zIndex in store (no need to sort again)
 		shapesToRender.forEach((shape) => {
 			const existingNode = this.shapesLayer.findOne(`#${shape.id}`);
 			const isLocallyDragging = shape.id === this.locallyDraggingId;
 			const isDraggedByOther = !!(shape.draggedBy && shape.draggedBy !== this.localUserId);
 			const isSelected = selectedIds.includes(shape.id);
+			const isBeingTransformed = isTransforming && isSelected;
 
 			// ✅ PHASE 7: Skip rendering shapes being dragged by other users (check FIRST)
 			// This prevents duplicate shapes: remote user sees only the drag ghost from LiveShapeRenderer
@@ -203,9 +216,9 @@ export class ShapeRenderer {
 				return;
 			}
 
-			// CRITICAL FIX: If node exists AND we're not currently dragging it,
+			// CRITICAL FIX: If node exists AND we're not currently dragging/transforming it,
 			// UPDATE its properties from Yjs instead of skipping it
-			if (existingNode && !isLocallyDragging) {
+			if (existingNode && !isLocallyDragging && !isBeingTransformed) {
 				// Sync Konva node properties from Yjs shape data
 				this.updateKonvaNodeProperties(existingNode, shape);
 				this.applySelectionStyling(existingNode, isSelected, shape);
@@ -215,8 +228,8 @@ export class ShapeRenderer {
 				return;
 			}
 
-			// If we're dragging this shape locally, don't recreate it
-			if (existingNode && isLocallyDragging) {
+			// If we're dragging or transforming this shape locally, don't recreate or update it
+			if (existingNode && (isLocallyDragging || isBeingTransformed)) {
 				this.applySelectionStyling(existingNode, isSelected, shape);
 				return;
 			}
@@ -332,7 +345,8 @@ export class ShapeRenderer {
 				konvaShape.stroke(shape.stroke);
 				konvaShape.strokeWidth(shape.strokeWidth);
 			} else {
-				konvaShape.stroke(undefined);
+				// Use empty string to properly clear stroke in Konva
+				konvaShape.stroke('');
 				konvaShape.strokeWidth(0);
 			}
 		}
@@ -433,8 +447,14 @@ export class ShapeRenderer {
 			// Restore original values from shape data
 			// EXCEPTION: Text shapes should never have stroke
 			if (shapeData.type !== 'text') {
-				konvaShape.stroke(shapeData.stroke);
-				konvaShape.strokeWidth(shapeData.strokeWidth);
+				// Respect strokeEnabled flag when restoring
+				if (shapeData.strokeEnabled !== false) {
+					konvaShape.stroke(shapeData.stroke);
+					konvaShape.strokeWidth(shapeData.strokeWidth);
+				} else {
+					konvaShape.stroke('');
+					konvaShape.strokeWidth(0);
+				}
 			}
 			konvaShape.dash([]);
 		}
@@ -484,7 +504,7 @@ export class ShapeRenderer {
 			y: shape.y,
 			rotation: shape.rotation || 0, // Apply stored rotation
 			fill: shape.fillEnabled !== false ? shape.fill : undefined,
-			stroke: shape.strokeEnabled !== false ? shape.stroke : undefined,
+			stroke: shape.strokeEnabled !== false ? shape.stroke : '',
 			strokeWidth: shape.strokeEnabled !== false ? shape.strokeWidth : 0,
 			strokeScaleEnabled: false, // Keep stroke width constant when scaling
 			draggable: (('draggable' in shape ? shape.draggable : true) ?? true) && !isDraggedByOther,
@@ -514,7 +534,9 @@ export class ShapeRenderer {
 					...baseConfig,
 					radius: shape.radius,
 					scaleX: shape.scaleX || 1,
-					scaleY: shape.scaleY || 1
+					scaleY: shape.scaleY || 1,
+					offsetX: 0,
+					offsetY: 0
 				});
 
 			case 'line':
@@ -532,10 +554,9 @@ export class ShapeRenderer {
 					radius: polygonShape.radius,
 					scaleX: polygonShape.scaleX || 1,
 					scaleY: polygonShape.scaleY || 1,
-					fill: polygonShape.fill || undefined,
-					stroke: polygonShape.stroke || undefined,
-					strokeWidth: polygonShape.strokeWidth || 0,
-					strokeEnabled: polygonShape.strokeEnabled !== false
+					offsetX: 0,
+					offsetY: 0
+					// fill, stroke, strokeWidth already handled in baseConfig
 				});
 			}
 
@@ -547,7 +568,9 @@ export class ShapeRenderer {
 					innerRadius: starShape.innerRadius,
 					outerRadius: starShape.outerRadius,
 					scaleX: starShape.scaleX || 1,
-					scaleY: starShape.scaleY || 1
+					scaleY: starShape.scaleY || 1,
+					offsetX: 0,
+					offsetY: 0
 				});
 			}
 
@@ -559,10 +582,9 @@ export class ShapeRenderer {
 					radius: Math.max(triangleShape.width, triangleShape.height) / 2,
 					scaleX: triangleShape.scaleX || 1,
 					scaleY: triangleShape.scaleY || 1,
-					fill: triangleShape.fill || undefined,
-					stroke: triangleShape.stroke || undefined,
-					strokeWidth: triangleShape.strokeWidth || 0,
-					strokeEnabled: triangleShape.strokeEnabled !== false
+					offsetX: 0,
+					offsetY: 0
+					// fill, stroke, strokeWidth already handled in baseConfig
 				});
 			}
 
@@ -596,12 +618,12 @@ export class ShapeRenderer {
 					// NOTE: Intentionally NOT including stroke or strokeWidth
 					// Konva.Text stroke rendering creates visual artifacts
 				});
-				
+
 				// Set rotation pivot to center of text
 				// Use actual rendered dimensions
 				textNode.offsetX(textNode.width() / 2);
 				textNode.offsetY(textNode.height() / 2);
-				
+
 				return textNode;
 			}
 
