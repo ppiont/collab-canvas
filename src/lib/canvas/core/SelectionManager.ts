@@ -254,7 +254,7 @@ export class SelectionManager {
 
 		// Get transformer's bounding box (includes rotation and scale)
 		const transformerBox = this.transformer.getClientRect();
-		
+
 		// Fixed distance below transformer
 		const LABEL_OFFSET = 12;
 
@@ -290,11 +290,10 @@ export class SelectionManager {
 				this.sizeLabel.moveToTop();
 			}
 		} else {
-			// For all other shapes, show dimensions
-			// Get actual node bounding box for dimensions (accounts for rotation)
-			const nodeBox = node.getClientRect({ relativeTo: this.layer });
-			const nodeWidth = Math.round(nodeBox.width);
-			const nodeHeight = Math.round(nodeBox.height);
+			// For all other shapes, show actual shape dimensions (not bounding box)
+			// Use shape's width/height with scale applied (doesn't change during rotation)
+			const nodeWidth = Math.round(node.width() * node.scaleX());
+			const nodeHeight = Math.round(node.height() * node.scaleY());
 
 			// Update text with actual dimensions
 			const text = this.sizeLabel.findOne('Text') as Konva.Text;
