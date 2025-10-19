@@ -676,17 +676,17 @@
 	.properties-panel-container {
 		position: fixed;
 		top: 48px; /* Below toolbar */
-		right: 0;
+		left: 0;
 		bottom: 0;
 		width: 320px; /* Sidebar width */
 		background: linear-gradient(to bottom, #ffffff, #f5f7fa);
-		border-left: 2px solid #e2e8f0;
+		border-right: 2px solid #e2e8f0;
 		overflow: hidden;
 		z-index: 100;
 		display: flex;
 		flex-direction: column;
-		box-shadow: -8px 0 16px rgba(0, 0, 0, 0.08);
-		border-radius: 16px 0 0 16px;
+		box-shadow: 8px 0 16px rgba(0, 0, 0, 0.08);
+		border-radius: 0 16px 16px 0;
 	}
 
 	:global(body) {
