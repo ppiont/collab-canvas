@@ -267,22 +267,24 @@
 			// Pass viewport for culling optimization (use reactive value, not store)
 			shapeRenderer.renderShapes(currentShapes, viewportState);
 
-			// Update maxZIndex
-			if (currentShapes.length > 0) {
-				maxZIndex = Math.max(...currentShapes.map((s) => s.zIndex || 0), maxZIndex);
-			}
+			// Update maxZIndex only when shapes are added (already tracked during add)
+			// This was redundant - maxZIndex is incremented in paste/create operations
 
 			// Check if selected shapes still exist after render (e.g., after undo delete)
-			// If any selected shape was deleted, clear that selection
 			const selectedIds = selectionManager.getSelectedIds();
-			const shapeIdSet = new Set(currentShapes.map((s) => s.id));
-			const deletedSelectedIds = selectedIds.filter((id) => !shapeIdSet.has(id));
-
-			if (deletedSelectedIds.length > 0) {
-				// Some selected shapes were deleted, remove them from selection
-				deletedSelectedIds.forEach((id) => {
-					selectionManager.removeFromSelection(id);
-				});
+			
+			// Early exit if no selection to check
+			if (selectedIds.length > 0) {
+				// Check if any selected shape was deleted using efficient lookup
+				const hasDeletedSelection = selectedIds.some(id => !shapesByIdMap.has(id));
+				
+				if (hasDeletedSelection) {
+					// Filter to valid IDs only
+					const validIds = selectedIds.filter(id => shapesByIdMap.has(id));
+					if (validIds.length !== selectedIds.length) {
+						selectionManager.selectMultiple(validIds);
+					}
+				}
 			}
 
 			// CRITICAL: Sync transformer after rendering to ensure it follows Yjs updates
