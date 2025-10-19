@@ -166,57 +166,65 @@ export class LiveShapeRenderer {
 				break;
 			}
 
-			case 'circle': {
-				const circle = shapeData as Extract<Shape, { type: 'circle' }>;
-				shapeNode = new Konva.Circle({
-					radius: circle.radius,
-					fill: circle.fill || userColor,
-					stroke: circle.stroke,
-					strokeWidth: circle.strokeWidth,
-					opacity: 0.6
-				});
-				break;
-			}
+		case 'circle': {
+			const circle = shapeData as Extract<Shape, { type: 'circle' }>;
+			shapeNode = new Konva.Circle({
+				radius: circle.radius,
+				scaleX: circle.scaleX || 1,
+				scaleY: circle.scaleY || 1,
+				fill: circle.fill || userColor,
+				stroke: circle.stroke,
+				strokeWidth: circle.strokeWidth,
+				opacity: 0.6
+			});
+			break;
+		}
 
-			case 'triangle': {
-				const triangle = shapeData as Extract<Shape, { type: 'triangle' }>;
-				shapeNode = new Konva.RegularPolygon({
-					sides: 3,
-					radius: Math.max(triangle.width, triangle.height) / 2,
-					fill: triangle.fill || userColor,
-					stroke: triangle.stroke,
-					strokeWidth: triangle.strokeWidth,
-					opacity: 0.6
-				});
-				break;
-			}
+		case 'triangle': {
+			const triangle = shapeData as Extract<Shape, { type: 'triangle' }>;
+			shapeNode = new Konva.RegularPolygon({
+				sides: 3,
+				radius: Math.max(triangle.width, triangle.height) / 2,
+				scaleX: triangle.scaleX || 1,
+				scaleY: triangle.scaleY || 1,
+				fill: triangle.fill || userColor,
+				stroke: triangle.stroke,
+				strokeWidth: triangle.strokeWidth,
+				opacity: 0.6
+			});
+			break;
+		}
 
-			case 'polygon': {
-				const polygon = shapeData as Extract<Shape, { type: 'polygon' }>;
-				shapeNode = new Konva.RegularPolygon({
-					sides: 5, // Default pentagon
-					radius: polygon.radius,
-					fill: polygon.fill || userColor,
-					stroke: polygon.stroke,
-					strokeWidth: polygon.strokeWidth,
-					opacity: 0.6
-				});
-				break;
-			}
+		case 'polygon': {
+			const polygon = shapeData as Extract<Shape, { type: 'polygon' }>;
+			shapeNode = new Konva.RegularPolygon({
+				sides: polygon.sides || 5,
+				radius: polygon.radius,
+				scaleX: polygon.scaleX || 1,
+				scaleY: polygon.scaleY || 1,
+				fill: polygon.fill || userColor,
+				stroke: polygon.stroke,
+				strokeWidth: polygon.strokeWidth,
+				opacity: 0.6
+			});
+			break;
+		}
 
-			case 'star': {
-				const star = shapeData as Extract<Shape, { type: 'star' }>;
-				shapeNode = new Konva.Star({
-					numPoints: star.numPoints || 5,
-					innerRadius: star.innerRadius || 20,
-					outerRadius: star.outerRadius || 50,
-					fill: star.fill || userColor,
-					stroke: star.stroke,
-					strokeWidth: star.strokeWidth,
-					opacity: 0.6
-				});
-				break;
-			}
+		case 'star': {
+			const star = shapeData as Extract<Shape, { type: 'star' }>;
+			shapeNode = new Konva.Star({
+				numPoints: star.numPoints || 5,
+				innerRadius: star.innerRadius || 20,
+				outerRadius: star.outerRadius || 50,
+				scaleX: star.scaleX || 1,
+				scaleY: star.scaleY || 1,
+				fill: star.fill || userColor,
+				stroke: star.stroke,
+				strokeWidth: star.strokeWidth,
+				opacity: 0.6
+			});
+			break;
+		}
 
 			case 'line': {
 				const line = shapeData as Extract<Shape, { type: 'line' }>;

@@ -105,6 +105,8 @@ export interface TriangleShape extends BaseShape {
 	type: 'triangle';
 	width: number;
 	height: number;
+	scaleX?: number; // For non-uniform scaling
+	scaleY?: number;
 }
 
 /** Union type for all shapes */

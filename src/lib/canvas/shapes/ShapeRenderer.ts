@@ -367,12 +367,15 @@ export class ShapeRenderer {
 				break;
 			}
 
-			case 'triangle': {
-				const triangle = node as Konva.RegularPolygon;
-				triangle.sides(3);
-				triangle.radius(Math.max(shape.width, shape.height) / 2);
-				break;
-			}
+		case 'triangle': {
+			const triangle = node as Konva.RegularPolygon;
+			triangle.sides(3);
+			triangle.radius(Math.max(shape.width, shape.height) / 2);
+			// Apply scale for resizing
+			triangle.scaleX(shape.scaleX || 1);
+			triangle.scaleY(shape.scaleY || 1);
+			break;
+		}
 
 			case 'text': {
 				const text = node as Konva.Text;
@@ -535,12 +538,14 @@ export class ShapeRenderer {
 				});
 			}
 
-			case 'triangle': {
-				const triangleShape = shape as Extract<Shape, { type: 'triangle' }>;
-				return new Konva.RegularPolygon({
-					...baseConfig,
-					sides: 3,
-					radius: Math.max(triangleShape.width, triangleShape.height) / 2,
+		case 'triangle': {
+			const triangleShape = shape as Extract<Shape, { type: 'triangle' }>;
+			return new Konva.RegularPolygon({
+				...baseConfig,
+				sides: 3,
+				radius: Math.max(triangleShape.width, triangleShape.height) / 2,
+				scaleX: triangleShape.scaleX || 1,
+				scaleY: triangleShape.scaleY || 1,
 					fill: triangleShape.fill || undefined,
 					stroke: triangleShape.stroke || undefined,
 					strokeWidth: triangleShape.strokeWidth || 0,
