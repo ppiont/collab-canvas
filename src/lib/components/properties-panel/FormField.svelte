@@ -50,50 +50,35 @@
 	<div class="flex justify-between items-center">
 		<Label 
 			for={id}
-			class="text-xs font-medium text-muted-foreground"
+			class="text-xs font-semibold text-slate-300 uppercase tracking-wide"
 		>
 			{label}
 			{#if required}
-				<span class="text-destructive ml-0.5" aria-label="required">*</span>
+				<span class="text-red-400 ml-1">*</span>
 			{/if}
 		</Label>
-		
 		{#if isMixed}
-			<span 
-				class="text-xs text-muted-foreground italic"
-				aria-label="Mixed values across selection"
-			>
+			<span class="text-xs font-medium text-amber-400 bg-amber-400/10 px-2 py-1 rounded">
 				Mixed
 			</span>
 		{/if}
 	</div>
-	
-	<!-- Input slot with proper aria associations -->
-	<div 
-		aria-describedby={descriptionId}
-		aria-invalid={error ? 'true' : undefined}
-	>
+
+	<!-- Slot for input control -->
+	<div class="relative">
 		{@render children()}
 	</div>
-	
-	<!-- Helper text or error message -->
-	{#if helperText && !error}
-		<p 
-			id="{id}-description" 
-			class="text-xs text-muted-foreground"
-		>
+
+	<!-- Helper text or error -->
+	{#if helperText}
+		<p id="{id}-description" class="text-xs text-slate-400">
 			{helperText}
 		</p>
 	{/if}
-	
 	{#if error}
-		<p 
-			id="{id}-description" 
-			class="text-xs text-destructive"
-			role="alert"
-		>
+		<div id="{id}-error" role="alert" class="text-xs font-medium text-red-400 bg-red-400/10 px-2 py-1 rounded">
 			{error}
-		</p>
+		</div>
 	{/if}
 </div>
 
