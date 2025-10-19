@@ -942,6 +942,18 @@ export class ShapeRenderer {
 	 * Clean up resources
 	 */
 	destroy(): void {
+		// Clean up active textarea if exists
+		if (this.activeTextarea) {
+			this.activeTextarea.remove();
+			this.activeTextarea = null;
+		}
+
+		// Call text editing end callback if exists
+		if (this.textEditingEndCallback) {
+			this.textEditingEndCallback();
+			this.textEditingEndCallback = null;
+		}
+
 		this.callbacks = null;
 		this.stage = null;
 	}

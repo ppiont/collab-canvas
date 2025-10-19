@@ -182,7 +182,7 @@
         "description": "Cleanup undo manager event listeners on re-initialization",
         "details": "**File:** `src/lib/stores/history.ts:26-53`\n\n**Problem:** Listeners accumulate if initializeUndoManager called multiple times (HMR)\n\n**Steps:**\n1. Track handler reference globally\n2. Remove old listeners before creating new undo manager\n3. Add destroyUndoManager() cleanup function\n\n**Impact:** Prevents listener accumulation during development",
         "testStrategy": "",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -193,7 +193,7 @@
         "description": "Clean up active textarea in ShapeRenderer.destroy()",
         "details": "**File:** `src/lib/canvas/shapes/ShapeRenderer.ts:942-945`\n\n**Problem:** If component unmounts during text editing, textarea remains in DOM\n\n**Steps:**\n1. In destroy(), check if activeTextarea exists\n2. Call activeTextarea.remove()\n3. Call textEditingEndCallback if exists\n\n**Impact:** Prevents DOM pollution from orphaned textareas",
         "testStrategy": "",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -382,7 +382,7 @@
     "metadata": {
       "created": "2025-10-18T23:26:21.703Z",
       "description": "Default tasks context",
-      "updated": "2025-10-19T00:34:57.433Z"
+      "updated": "2025-10-19T00:37:20.300Z"
     }
   }
 }
