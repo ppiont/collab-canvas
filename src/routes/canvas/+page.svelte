@@ -578,15 +578,19 @@
 	<!-- Connection Status -->
 	<ConnectionStatus currentUserId={data.user.id} onUserClick={handleUserClick} />
 
-	<!-- Properties Panel -->
-	<PropertiesPanel 
-		selectedItems={$shapes.filter(s => $selectedShapeIds.has(s.id))}
-		onUpdateItems={(updatedItems) => {
-			updatedItems.forEach(item => {
-				shapeOperations.update(item.id, item);
-			});
-		}}
-	/>
+	<!-- Properties Panel (right sidebar, only visible when items selected) -->
+	{#if $selectedShapeIds.size > 0}
+		<div class="properties-panel-container">
+			<PropertiesPanel
+				selectedItems={$shapes.filter((s) => $selectedShapeIds.has(s.id))}
+				onUpdateItems={(updatedItems) => {
+					updatedItems.forEach((item) => {
+						shapeOperations.update(item.id, item);
+					});
+				}}
+			/>
+		</div>
+	{/if}
 
 	<!-- Command Palette -->
 	<CommandPalette bind:open={commandPaletteOpen} userId={data.user.id} viewport={$viewport} />
@@ -667,6 +671,20 @@
 		height: 100vh;
 		overflow: hidden;
 		background: #ffffff;
+	}
+
+	.properties-panel-container {
+		position: fixed;
+		top: 48px; /* Below toolbar */
+		right: 0;
+		bottom: 0;
+		width: 320px; /* Sidebar width */
+		background: hsl(var(--background));
+		border-left: 1px solid hsl(var(--border));
+		overflow: hidden;
+		z-index: 100;
+		display: flex;
+		flex-direction: column;
 	}
 
 	:global(body) {
