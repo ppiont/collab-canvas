@@ -119,35 +119,6 @@ export type Shape =
 	| StarShape
 	| TriangleShape;
 
-/** Type guards for discriminated unions */
-export function isRectangle(shape: Shape): shape is RectangleShape {
-	return shape.type === 'rectangle';
-}
-
-export function isCircle(shape: Shape): shape is CircleShape {
-	return shape.type === 'circle';
-}
-
-export function isLine(shape: Shape): shape is LineShape {
-	return shape.type === 'line';
-}
-
-export function isText(shape: Shape): shape is TextShape {
-	return shape.type === 'text';
-}
-
-export function isPolygon(shape: Shape): shape is PolygonShape {
-	return shape.type === 'polygon';
-}
-
-export function isStar(shape: Shape): shape is StarShape {
-	return shape.type === 'star';
-}
-
-export function isTriangle(shape: Shape): shape is TriangleShape {
-	return shape.type === 'triangle';
-}
-
 /** Default values for base shape properties */
 export const DEFAULT_BASE_SHAPE: Omit<
 	BaseShape,
