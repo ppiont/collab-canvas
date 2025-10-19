@@ -71,7 +71,7 @@
   - Borders minimized (only panel border-l)
 -->
 <aside
-	class="w-full h-full bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-slate-100 border-l-2 border-slate-700 dark:border-slate-600 flex flex-col shadow-2xl"
+	class="w-full h-full bg-gradient-to-b from-white to-slate-50 text-slate-900 border-l-2 border-slate-200 flex flex-col shadow-lg"
 	data-testid="properties-panel"
 >
 	<ScrollArea class="flex-1">
@@ -89,15 +89,15 @@
 					<!-- Dimensions Section -->
 					<AccordionItem
 						value="dimensions"
-						class="border border-slate-700 rounded-lg overflow-hidden bg-slate-800/50 backdrop-blur-sm hover:bg-slate-800/70 hover:border-slate-600 transition-all shadow-md"
+						class="border border-slate-300 rounded-lg overflow-hidden bg-slate-100/50 hover:bg-slate-100/80 hover:border-slate-400 transition-all shadow-sm"
 						data-accordion-item="dimensions"
 					>
 						<AccordionTrigger
-							class="text-sm font-semibold py-3 px-4 hover:no-underline text-slate-100 hover:text-white"
+							class="text-sm font-semibold py-3 px-4 hover:no-underline text-slate-900 hover:text-slate-800"
 						>
 							Dimensions
 						</AccordionTrigger>
-						<AccordionContent class="pt-3 pb-4 px-4 border-t border-slate-700">
+						<AccordionContent class="pt-3 pb-4 px-4 border-t border-slate-300">
 							<DimensionsSection items={selectedItems} onUpdate={handleUpdateItems} />
 						</AccordionContent>
 					</AccordionItem>
@@ -105,15 +105,15 @@
 					<!-- Appearance Section -->
 					<AccordionItem
 						value="appearance"
-						class="border border-slate-700 rounded-lg overflow-hidden bg-slate-800/50 backdrop-blur-sm hover:bg-slate-800/70 hover:border-slate-600 transition-all shadow-md"
+						class="border border-slate-300 rounded-lg overflow-hidden bg-slate-100/50 hover:bg-slate-100/80 hover:border-slate-400 transition-all shadow-sm"
 						data-accordion-item="appearance"
 					>
 						<AccordionTrigger
-							class="text-sm font-semibold py-3 px-4 hover:no-underline text-slate-100 hover:text-white"
+							class="text-sm font-semibold py-3 px-4 hover:no-underline text-slate-900 hover:text-slate-800"
 						>
 							Appearance
 						</AccordionTrigger>
-						<AccordionContent class="pt-3 pb-4 px-4 border-t border-slate-700">
+						<AccordionContent class="pt-3 pb-4 px-4 border-t border-slate-300">
 							<AppearanceSection items={selectedItems} onUpdate={handleUpdateItems} />
 						</AccordionContent>
 					</AccordionItem>
@@ -121,15 +121,15 @@
 					<!-- Effects Section -->
 					<AccordionItem
 						value="effects"
-						class="border border-slate-700 rounded-lg overflow-hidden bg-slate-800/50 backdrop-blur-sm hover:bg-slate-800/70 hover:border-slate-600 transition-all shadow-md"
+						class="border border-slate-300 rounded-lg overflow-hidden bg-slate-100/50 hover:bg-slate-100/80 hover:border-slate-400 transition-all shadow-sm"
 						data-accordion-item="effects"
 					>
 						<AccordionTrigger
-							class="text-sm font-semibold py-3 px-4 hover:no-underline text-slate-100 hover:text-white"
+							class="text-sm font-semibold py-3 px-4 hover:no-underline text-slate-900 hover:text-slate-800"
 						>
 							Effects
 						</AccordionTrigger>
-						<AccordionContent class="pt-3 pb-4 px-4 border-t border-slate-700">
+						<AccordionContent class="pt-3 pb-4 px-4 border-t border-slate-300">
 							<EffectsSection items={selectedItems} onUpdate={handleUpdateItems} />
 						</AccordionContent>
 					</AccordionItem>
@@ -137,7 +137,7 @@
 			{:else}
 				<!-- Empty state when nothing selected -->
 				<div class="flex items-center justify-center py-12">
-					<p class="text-sm text-muted-foreground text-center">Select an item to view properties</p>
+					<p class="text-sm text-slate-500 text-center">Select an item to view properties</p>
 				</div>
 			{/if}
 		</div>
@@ -145,52 +145,52 @@
 </aside>
 
 <style>
-	/* Override input styling within properties panel for dark theme */
+	/* Override input styling within properties panel for light theme */
 	:global([data-testid='properties-panel'] input[type='number']),
 	:global([data-testid='properties-panel'] input[type='text']),
 	:global([data-testid='properties-panel'] input[type='color']) {
-		background-color: rgba(99, 102, 241, 0.1);
-		border-color: rgb(71, 85, 105);
-		color: rgb(226, 232, 240);
+		background-color: white;
+		border-color: rgb(203, 213, 225);
+		color: rgb(15, 23, 42);
 		transition: all 200ms ease;
 	}
 
 	:global([data-testid='properties-panel'] input[type='number']:hover),
 	:global([data-testid='properties-panel'] input[type='text']:hover),
 	:global([data-testid='properties-panel'] input[type='color']:hover) {
-		background-color: rgba(99, 102, 241, 0.15);
-		border-color: rgb(59, 70, 85);
+		background-color: rgb(248, 250, 252);
+		border-color: rgb(148, 163, 184);
 	}
 
 	:global([data-testid='properties-panel'] input[type='number']:focus-visible),
 	:global([data-testid='properties-panel'] input[type='text']:focus-visible),
 	:global([data-testid='properties-panel'] input[type='color']:focus-visible) {
-		background-color: rgba(99, 102, 241, 0.2);
-		border-color: rgb(51, 65, 85);
-		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+		background-color: white;
+		border-color: rgb(124, 58, 237);
+		box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
 	}
 
 	/* Override slider styling */
 	:global([data-testid='properties-panel'] [role='slider']) {
-		background-color: rgba(99, 102, 241, 0.1);
+		background-color: rgb(226, 232, 240);
 	}
 
 	/* Override select/dropdown styling */
 	:global([data-testid='properties-panel'] button[data-state='closed']),
 	:global([data-testid='properties-panel'] button[data-state='open']) {
-		background-color: rgba(99, 102, 241, 0.1);
-		border-color: rgb(71, 85, 105);
-		color: rgb(226, 232, 240);
+		background-color: white;
+		border-color: rgb(203, 213, 225);
+		color: rgb(51, 65, 85);
 	}
 
 	:global([data-testid='properties-panel'] button[data-state='closed']:hover),
 	:global([data-testid='properties-panel'] button[data-state='open']:hover) {
-		background-color: rgba(99, 102, 241, 0.15);
-		border-color: rgb(59, 70, 85);
+		background-color: rgb(248, 250, 252);
+		border-color: rgb(148, 163, 184);
 	}
 
 	/* Override label styling */
 	:global([data-testid='properties-panel'] label) {
-		color: rgb(203, 213, 225);
+		color: rgb(71, 85, 105);
 	}
 </style>
