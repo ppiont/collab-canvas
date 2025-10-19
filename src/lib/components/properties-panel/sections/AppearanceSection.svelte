@@ -5,7 +5,11 @@
 	 * Controls for fill color, stroke color, and stroke width.
 	 * Handles mixed values across multiple selections.
 	 *
-	 * Spacing: 12px between related fields (space-y-3)
+	 * Spacing (8pt grid):
+	 * - Between controls: 12px (space-y-3)
+	 * - Within controls: 8px (space-y-2) for label/picker
+	 * - Gap between elements: 8px (gap-2)
+	 * 
 	 * Features:
 	 * - Fill color picker with enable/disable toggle
 	 * - Stroke color picker with enable/disable toggle

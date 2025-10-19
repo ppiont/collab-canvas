@@ -2,14 +2,18 @@
 	/**
 	 * Color Picker Field Component
 	 * 
-	 * Professional color picker with:
-	 * - Native color picker with preview swatch
-	 * - Format switching (HEX, RGB, HSL, HSB)
+	 * Simple, one-click color picker using browser's native color picker.
+	 * 
+	 * Spacing (8pt grid):
+	 * - Gap between elements: 8px (gap-2)
+	 * - Swatch size: 40x40px (h-10 w-10)
+	 * - Copy button padding: 4px (p-1)
+	 * 
+	 * Features:
+	 * - One-click native color picker
+	 * - Hex value display
 	 * - Copy to clipboard button
-	 * - Contrast ratio checker (vs white background)
-	 * - Recent colors (last 10)
-	 * - WCAG AA/AAA indicators
-	 * - 44x44px touch targets
+	 * - Hover states for better UX
 	 */
 	
 	import { Copy, Check } from 'lucide-svelte';

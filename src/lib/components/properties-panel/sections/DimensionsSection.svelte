@@ -5,7 +5,10 @@
 	 * Controls for width, height, position (x, y), and rotation.
 	 * Handles mixed values across multiple selections.
 	 * 
-	 * Spacing: 12px between related fields (space-y-3)
+	 * Spacing (8pt grid):
+	 * - Between fields: 12px (space-y-3)
+	 * - Grid gap: 8px (gap-2) between X/Y and W/H columns
+	 * 
 	 * Features:
 	 * - Mixed value handling with em dash
 	 * - Arrow key increment/decrement

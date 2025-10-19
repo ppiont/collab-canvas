@@ -5,7 +5,10 @@
 	 * Controls for opacity (slider + input) and blend mode (select dropdown).
 	 * Handles mixed values across multiple selections.
 	 *
-	 * Spacing: 12px between related fields (space-y-3)
+	 * Spacing (8pt grid):
+	 * - Between controls: 12px (space-y-3)
+	 * - Within opacity control: 8px (space-y-2) for slider/input
+	 * 
 	 * Features:
 	 * - Opacity slider (0-100%) with synchronized input
 	 * - Blend mode dropdown with all CSS blend modes
