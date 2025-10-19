@@ -267,20 +267,24 @@
 			// Pass viewport for culling optimization (use reactive value, not store)
 			shapeRenderer.renderShapes(currentShapes, viewportState);
 
-			// Update maxZIndex only when shapes are added (already tracked during add)
-			// This was redundant - maxZIndex is incremented in paste/create operations
+			// Keep maxZIndex in sync (needed for keyboard shortcuts like Bring To Front)
+			// Use Math.max with current value to handle both additions and z-index changes
+			if (currentShapes.length > 0) {
+				const currentMaxZ = Math.max(...currentShapes.map((s) => s.zIndex || 0));
+				maxZIndex = Math.max(maxZIndex, currentMaxZ);
+			}
 
 			// Check if selected shapes still exist after render (e.g., after undo delete)
 			const selectedIds = selectionManager.getSelectedIds();
-			
+
 			// Early exit if no selection to check
 			if (selectedIds.length > 0) {
 				// Check if any selected shape was deleted using efficient lookup
-				const hasDeletedSelection = selectedIds.some(id => !shapesByIdMap.has(id));
-				
+				const hasDeletedSelection = selectedIds.some((id) => !shapesByIdMap.has(id));
+
 				if (hasDeletedSelection) {
 					// Filter to valid IDs only
-					const validIds = selectedIds.filter(id => shapesByIdMap.has(id));
+					const validIds = selectedIds.filter((id) => shapesByIdMap.has(id));
 					if (validIds.length !== selectedIds.length) {
 						selectionManager.selectMultiple(validIds);
 					}
