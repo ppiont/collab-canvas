@@ -12,24 +12,18 @@
 
 	let { value = 2, onchange, min = 0, max = 20 }: Props = $props();
 
-	// eslint-disable-next-line svelte/prefer-writable-derived
-	let sliderValue = $state(value);
+	// Derive display value from prop - no need for state/effects
+	let displayValue = $derived(Math.round(value));
 
-	$effect(() => {
-		// Always sync the slider value when the prop changes
-		sliderValue = Math.round(value);
-	});
-
-	// Watch for changes to sliderValue (from slider) and call onchange
-	$effect(() => {
-		onchange?.(Math.round(sliderValue));
-	});
+	function handleSliderChange(newValue: number) {
+		const rounded = Math.round(newValue);
+		onchange?.(rounded);
+	}
 
 	function handleInputChange(e: Event) {
 		const target = e.target as HTMLInputElement;
 		const num = parseInt(target.value, 10) || 0;
 		const clamped = Math.max(min, Math.min(max, num));
-		sliderValue = clamped;
 		onchange?.(clamped);
 	}
 
@@ -43,14 +37,14 @@
 <div class="space-y-2">
 	<div class="flex justify-between items-center">
 		<Label>Stroke Width</Label>
-		<span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{Math.round(sliderValue)}px</span>
+		<span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{displayValue}px</span>
 	</div>
 
-	<Slider type="single" bind:value={sliderValue} {min} {max} step={1} />
+	<Slider type="single" value={displayValue} {min} {max} step={1} onchange={handleSliderChange} />
 
 	<Input
 		type="number"
-		value={Math.round(sliderValue)}
+		value={displayValue}
 		onchange={handleInputChange}
 		onfocus={handleInputFocus}
 		{min}

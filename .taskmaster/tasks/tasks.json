@@ -215,7 +215,7 @@
         "description": "Enable hitGraphEnabled and use FastLayer for grid",
         "details": "**File:** `src/lib/canvas/core/CanvasEngine.ts:49-56`\n\n**Steps:**\n1. Import Konva.FastLayer\n2. Use FastLayer for grid (static content)\n3. Add `listening: false` to grid layer\n4. Add `hitGraphEnabled: true` to shapes layer\n\n**Impact:** 5-10% rendering performance improvement",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "1"
         ],
@@ -228,7 +228,7 @@
         "description": "Cache grid layer since it rarely changes",
         "details": "**File:** `src/lib/canvas/core/CanvasEngine.ts:92-125`\n\n**Steps:**\n1. After drawing grid, call `gridLayer.cache()`\n2. Call `clearCache()` before redrawing (on resize)\n\n**Impact:** 5-10% rendering improvement, less GPU work",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "19"
         ],
@@ -382,7 +382,7 @@
     "metadata": {
       "created": "2025-10-18T23:26:21.703Z",
       "description": "Default tasks context",
-      "updated": "2025-10-19T01:32:45.749Z"
+      "updated": "2025-10-19T01:44:45.280Z"
     }
   }
 }

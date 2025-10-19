@@ -45,18 +45,18 @@ export class CanvasEngine {
 			draggable: false // Will be enabled conditionally on mousedown
 		});
 
-	// Create layers
-	// Grid layer: static content, no events needed (performance optimization)
-	const gridLayer = new Konva.Layer({ listening: false });
-	this.stage.add(gridLayer);
+		// Create layers
+		// Grid layer: static content, no events needed (performance optimization)
+		const gridLayer = new Konva.Layer({ listening: false });
+		this.stage.add(gridLayer);
 
-	// Shapes layer: interactive content with full event handling
-	const shapesLayer = new Konva.Layer();
-	this.stage.add(shapesLayer);
+		// Shapes layer: interactive content with full event handling
+		const shapesLayer = new Konva.Layer();
+		this.stage.add(shapesLayer);
 
-	// Cursors layer: visual feedback, no interaction needed
-	const cursorsLayer = new Konva.Layer({ listening: false });
-	this.stage.add(cursorsLayer);
+		// Cursors layer: visual feedback, no interaction needed
+		const cursorsLayer = new Konva.Layer({ listening: false });
+		this.stage.add(cursorsLayer);
 
 		this.layers = {
 			grid: gridLayer,
@@ -105,7 +105,7 @@ export class CanvasEngine {
 		// Get current viewport bounds (accounting for stage position and scale)
 		const stagePos = this.stage.position();
 		const scale = this.stage.scaleX(); // Assume uniform scaling
-		
+
 		// Calculate visible world coordinates with padding for smooth panning
 		const padding = Math.max(this.config.width, this.config.height);
 		const startX = Math.floor((-stagePos.x - padding) / scale / gridSize) * gridSize;
