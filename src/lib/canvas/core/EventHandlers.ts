@@ -529,11 +529,11 @@ export class CanvasEventHandlers {
 			// Layer management shortcuts
 			const isModifierKey = e.metaKey || e.ctrlKey;
 
-			// Cmd+Shift+] - Bring to front (top z-order)
+			// Cmd+Shift+] OR Cmd+Shift+Up - Bring to front (top z-order)
 			if (
 				isModifierKey &&
 				e.shiftKey &&
-				(e.key === '}' || e.code === 'BracketRight') &&
+				((e.key === '}' || e.code === 'BracketRight') || e.key === 'ArrowUp') &&
 				!isTyping
 			) {
 				e.preventDefault();
@@ -550,8 +550,13 @@ export class CanvasEventHandlers {
 				return;
 			}
 
-			// Cmd+Shift+[ - Send to back (bottom z-order)
-			if (isModifierKey && e.shiftKey && (e.key === '{' || e.code === 'BracketLeft') && !isTyping) {
+			// Cmd+Shift+[ OR Cmd+Shift+Down - Send to back (bottom z-order)
+			if (
+				isModifierKey &&
+				e.shiftKey &&
+				((e.key === '{' || e.code === 'BracketLeft') || e.key === 'ArrowDown') &&
+				!isTyping
+			) {
 				e.preventDefault();
 				e.stopPropagation();
 				const selectedIds = this.selectionManager.getSelectedIds();
