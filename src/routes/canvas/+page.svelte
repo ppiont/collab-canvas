@@ -55,6 +55,9 @@
 	let maxZIndex = $state(0);
 	let commandPaletteOpen = $state(false);
 
+	// O(1) shape lookup map for performance (avoids O(n) find() in hot paths)
+	let shapesByIdMap = $derived(new Map($shapes.map((s) => [s.id, s])));
+
 	// Toast notification state
 	let toastVisible = $state(false);
 	let toastMessage = $state('');
@@ -344,8 +347,8 @@
 				return selectionManager.getSelectedIds();
 			},
 			getShapeById: (id: string) => {
-				// Look up current shape from store to ensure fresh data in event handlers
-				return $shapes.find((s) => s.id === id);
+				// O(1) Map lookup instead of O(n) array find
+				return shapesByIdMap.get(id);
 			},
 			onBroadcastCursor: () => {
 				cursorManager?.broadcastCursorImmediate();
