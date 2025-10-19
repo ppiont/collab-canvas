@@ -29,12 +29,12 @@
 		onUpdate: (items: Shape[]) => void;
 	} = $props();
 	
-	// Helper to check if shape has width/height (rectangles, etc.)
-	function hasWidthHeight(shape: Shape): shape is RectangleShape {
-		return 'width' in shape && 'height' in shape;
+	// Helper to check if shape has width/height (rectangles, triangles, etc.)
+	function hasWidthHeight(shape: Shape): shape is RectangleShape & { width: number; height: number } {
+		return 'width' in shape && 'height' in shape && typeof shape.width === 'number' && typeof shape.height === 'number';
 	}
 	
-	// Helper to check if shape has radius (circles)
+	// Helper to check if shape has radius (circles, polygons, stars)
 	function hasRadius(shape: Shape): shape is CircleShape {
 		return 'radius' in shape;
 	}
