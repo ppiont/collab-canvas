@@ -7,7 +7,9 @@
 	 */
 	
 	import PropertiesPanel from '$lib/components/properties-panel/PropertiesPanel.svelte';
+	import ColorPickerField from '$lib/components/properties-panel/sections/ColorPickerField.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Separator } from '$lib/components/ui/separator';
 	import type { Shape } from '$lib/types/shapes';
 	
 	// Mock shapes for testing
@@ -90,6 +92,15 @@
 		selectedShapes = updatedShapes;
 		console.log('Shapes updated:', updatedShapes);
 	}
+	
+	// Color picker demo
+	let demoColor = $state('#3b82f6');
+	let recentColors = $state<string[]>([]);
+	
+	function handleColorChange(newColor: string) {
+		demoColor = newColor;
+		console.log('Color changed:', newColor);
+	}
 </script>
 
 <svelte:head>
@@ -156,6 +167,26 @@
 			</div>
 		</div>
 		
+		<!-- Color Picker Demo -->
+		<div class="space-y-2">
+			<h2 class="text-lg font-semibold">Color Picker Demo</h2>
+			<div class="rounded-lg border p-4 bg-background space-y-3">
+				<div class="flex items-center gap-4">
+					<ColorPickerField 
+						color={demoColor}
+						label="Demo Color"
+						onChange={handleColorChange}
+						bind:recentColors
+					/>
+				</div>
+				<div class="text-xs text-muted-foreground">
+					Current: {demoColor} | Recent: {recentColors.length} colors
+				</div>
+			</div>
+		</div>
+		
+		<Separator />
+		
 		<!-- Instructions -->
 		<div class="space-y-2">
 			<h2 class="text-lg font-semibold">Testing Checklist</h2>
@@ -168,6 +199,7 @@
 				<li>Section placeholders render (full implementation in later tasks)</li>
 				<li>8pt grid spacing visible throughout</li>
 				<li>No excessive borders (only panel border-l)</li>
+				<li><strong>NEW: Color picker opens, shows formats, contrast checker, recent colors</strong></li>
 			</ul>
 		</div>
 	</div>
