@@ -219,7 +219,12 @@ export class ShapeRenderer {
 		// This ensures visual stacking matches data (bottom to top order)
 		// CRITICAL: Use ALL shapes, not just visible ones, for correct z-order
 		// Shapes already sorted by zIndex in store (no need to sort again)
-		this.reorderShapesByZIndex(shapes);
+		// OPTIMIZATION: Only reorder if z-index order has changed (prevents interrupting drags)
+		const currentZIndexOrder = shapes.map(s => s.id).join(',');
+		if (currentZIndexOrder !== this.lastZIndexOrder) {
+			this.reorderShapesByZIndex(shapes);
+			this.lastZIndexOrder = currentZIndexOrder;
+		}
 
 		// CRITICAL: Move transformer to top after rendering shapes
 		// This ensures the transformer is always visible above shapes
@@ -237,11 +242,11 @@ export class ShapeRenderer {
 	private reorderShapesByZIndex(sortedShapes: Shape[]): void {
 		// Get all current layer children (including non-shape nodes like transformer)
 		const currentChildren = this.shapesLayer.getChildren().slice(); // Clone array
-		
+
 		// Create map of shape nodes for quick lookup
 		const shapeNodeMap = new Map<string, Konva.Node>();
 		const nonShapeNodes: Konva.Node[] = [];
-		
+
 		currentChildren.forEach((node) => {
 			const id = node.id();
 			if (id) {
@@ -263,7 +268,7 @@ export class ShapeRenderer {
 				this.shapesLayer.add(node as Konva.Shape);
 			}
 		});
-		
+
 		// Add non-shape nodes at the end (they should be on top)
 		nonShapeNodes.forEach((node) => this.shapesLayer.add(node as Konva.Shape));
 	}
@@ -767,6 +772,9 @@ export class ShapeRenderer {
 
 	// Store reference to active textarea for live updates
 	private activeTextarea: HTMLTextAreaElement | null = null;
+	
+	// Track last z-index order to avoid unnecessary reordering
+	private lastZIndexOrder: string = '';
 
 	/**
 	 * Set callback for text editing
