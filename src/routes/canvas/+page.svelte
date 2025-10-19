@@ -394,10 +394,7 @@
 		// Initialize undo/redo (captures ALL shapesMap modifications)
 		initializeUndoManager(shapesMap);
 
-		// Initialize provider
-		initializeProvider(data.user.id, data.userProfile.displayName, data.userProfile.color);
-
-		// Wait for provider to be ready, then initialize cursor manager
+		// Subscribe to provider BEFORE initializing to prevent race condition
 		const unsubscribeProvider = provider.subscribe((providerValue) => {
 			if (providerValue?.awareness && cursorManager) {
 				cursorManager.initialize(providerValue.awareness, data.user.id, width, height);
@@ -413,6 +410,9 @@
 				}
 			}
 		});
+
+		// Initialize provider AFTER subscribing
+		initializeProvider(data.user.id, data.userProfile.displayName, data.userProfile.color);
 
 		// Initialize event handlers
 		eventHandlers = new CanvasEventHandlers(
