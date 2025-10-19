@@ -45,15 +45,18 @@ export class CanvasEngine {
 			draggable: false // Will be enabled conditionally on mousedown
 		});
 
-		// Create layers
-		const gridLayer = new Konva.Layer();
-		this.stage.add(gridLayer);
+	// Create layers
+	// Grid layer: static content, no events needed (performance optimization)
+	const gridLayer = new Konva.Layer({ listening: false });
+	this.stage.add(gridLayer);
 
-		const shapesLayer = new Konva.Layer();
-		this.stage.add(shapesLayer);
+	// Shapes layer: interactive content with full event handling
+	const shapesLayer = new Konva.Layer();
+	this.stage.add(shapesLayer);
 
-		const cursorsLayer = new Konva.Layer();
-		this.stage.add(cursorsLayer);
+	// Cursors layer: visual feedback, no interaction needed
+	const cursorsLayer = new Konva.Layer({ listening: false });
+	this.stage.add(cursorsLayer);
 
 		this.layers = {
 			grid: gridLayer,

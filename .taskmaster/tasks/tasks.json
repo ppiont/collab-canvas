@@ -158,7 +158,7 @@
         "description": "Use Array.from instead of forEach + spread for better performance",
         "details": "**File:** `src/lib/collaboration.ts:110-115`\n\n**Current:** Creates new object for each shape  \n**Solution:** `return Array.from(shapesMap.values());`\n\n**Impact:** 20-30% faster shape sync updates",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "3"
         ],
@@ -382,7 +382,7 @@
     "metadata": {
       "created": "2025-10-18T23:26:21.703Z",
       "description": "Default tasks context",
-      "updated": "2025-10-19T01:30:27.179Z"
+      "updated": "2025-10-19T01:32:45.749Z"
     }
   }
 }
