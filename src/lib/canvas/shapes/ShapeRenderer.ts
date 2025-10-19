@@ -236,12 +236,12 @@ export class ShapeRenderer {
 	 */
 	private reorderShapesByZIndex(sortedShapes: Shape[]): void {
 		// Get all current layer children (including non-shape nodes like transformer)
-		const currentChildren = this.shapesLayer.getChildren();
-
+		const currentChildren = this.shapesLayer.getChildren().slice(); // Clone array
+		
 		// Create map of shape nodes for quick lookup
 		const shapeNodeMap = new Map<string, Konva.Node>();
 		const nonShapeNodes: Konva.Node[] = [];
-
+		
 		currentChildren.forEach((node) => {
 			const id = node.id();
 			if (id) {
@@ -253,22 +253,19 @@ export class ShapeRenderer {
 			}
 		});
 
-		// Build new children array in correct order: shapes by zIndex, then non-shapes
-		const reorderedChildren: Konva.Node[] = [];
+		// Remove all children from layer
+		currentChildren.forEach((child) => child.remove());
 
-		// Add shapes in zIndex order
+		// Re-add shapes in zIndex order
 		sortedShapes.forEach((shape) => {
 			const node = shapeNodeMap.get(shape.id);
 			if (node) {
-				reorderedChildren.push(node);
+				this.shapesLayer.add(node as Konva.Shape);
 			}
 		});
-
+		
 		// Add non-shape nodes at the end (they should be on top)
-		reorderedChildren.push(...nonShapeNodes);
-
-		// Apply new order in one operation (O(n) instead of O(n²))
-		this.shapesLayer.setChildren(reorderedChildren);
+		nonShapeNodes.forEach((node) => this.shapesLayer.add(node as Konva.Shape));
 	}
 
 	/**
