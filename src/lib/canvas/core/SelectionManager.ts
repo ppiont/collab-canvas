@@ -35,6 +35,7 @@ export class SelectionManager {
 	private lineTransformerGroup: Konva.Group | null = null; // Custom transformer for lines
 	private lineEndpoints: Konva.Circle[] = []; // Draggable endpoint circles
 	private isDraggingLineEndpoint = false; // Prevent transformer recreation during drag
+	private isTransforming = false; // Track if transformation (resize/rotate) is in progress
 
 	constructor(stage: Konva.Stage, layer: Konva.Layer) {
 		this.stage = stage;
@@ -317,12 +318,9 @@ export class SelectionManager {
 	 * Setup transformer event handlers
 	 */
 	private setupTransformerEvents(): void {
-		// Track if transform is actually happening (not just selection)
-		let isTransforming = false;
-
 		// Listen for transform start to track when transformation begins
 		this.transformer.on('transformstart', () => {
-			isTransforming = true;
+			this.isTransforming = true;
 		});
 
 		// Listen for transform events to update visuals and rotation in real-time
@@ -355,10 +353,10 @@ export class SelectionManager {
 			this.updateVisuals();
 
 			// Only save if we were actually transforming (not just selecting)
-			if (!isTransforming) {
+			if (!this.isTransforming) {
 				return;
 			}
-			isTransforming = false;
+			this.isTransforming = false;
 
 			const updateCallback = this.onShapeUpdate;
 			if (!updateCallback) return;
@@ -587,6 +585,13 @@ export class SelectionManager {
 	 */
 	getTransformer(): Konva.Transformer {
 		return this.transformer;
+	}
+
+	/**
+	 * Check if transformation (resize/rotate) is currently in progress
+	 */
+	isCurrentlyTransforming(): boolean {
+		return this.isTransforming;
 	}
 
 	/**
