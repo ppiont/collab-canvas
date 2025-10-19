@@ -60,7 +60,7 @@
 	}
 
 	function changeFontSize(delta: number) {
-		const newSize = Math.max(8, Math.min(72, fontSize + delta));
+		const newSize = Math.max(8, Math.min(144, fontSize + delta));
 		onFormatChange({ fontSize: newSize });
 	}
 

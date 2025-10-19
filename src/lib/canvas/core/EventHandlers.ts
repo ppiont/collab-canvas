@@ -877,7 +877,7 @@ export class CanvasEventHandlers {
 		} else if (activeToolValue === 'text') {
 			// Show text preview as a dashed rectangle with "T" indicator
 			const group = new Konva.Group({ listening: false });
-			
+
 			// Dashed rectangle
 			const rect = new Konva.Rect({
 				x,
@@ -890,22 +890,22 @@ export class CanvasEventHandlers {
 				listening: false
 			});
 			group.add(rect);
-			
+
 			// Calculate font size preview (matching creation logic)
 			const fontSize = Math.max(8, Math.min(144, Math.round(height * 0.7)));
 			
-			// "T" indicator to show text size
+			// "Text" indicator to show text size
 			const textPreview = new Konva.Text({
 				x: x + 5,
 				y: y + 5,
-				text: 'T',
+				text: 'Text',
 				fontSize,
 				fill: '#667eea',
 				opacity: 0.5,
 				listening: false
 			});
 			group.add(textPreview);
-			
+
 			this.shapePreviewNode = group;
 		} else if (activeToolValue === 'triangle') {
 			// Show triangle preview using RegularPolygon with 3 sides
