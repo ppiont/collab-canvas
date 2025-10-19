@@ -237,6 +237,7 @@ export class SelectionManager {
 
 	/**
 	 * Update size label position and text
+	 * Positions label at fixed distance below transformer's lowest point, centered horizontally
 	 */
 	private updateSizeLabel(): void {
 		if (!this.sizeLabel || !this.transformer) return;
@@ -250,6 +251,12 @@ export class SelectionManager {
 		const node = nodes[0];
 		const isLine = node instanceof Konva.Line;
 		const isClosedPolygon = isLine && (node as Konva.Line).closed();
+
+		// Get transformer's bounding box (includes rotation and scale)
+		const transformerBox = this.transformer.getClientRect();
+		
+		// Fixed distance below transformer
+		const LABEL_OFFSET = 12;
 
 		if (isLine && !isClosedPolygon) {
 			// For open lines only, calculate and show length
@@ -273,46 +280,21 @@ export class SelectionManager {
 					text.text(`${length}px`);
 				}
 
-				// Position near the line midpoint in layer space
-				const midX = (x1 + x2) / 2 + line.x();
-				const midY = (y1 + y2) / 2 + line.y();
-
+				// Position below transformer, centered horizontally
 				this.sizeLabel.position({
-					x: midX + 12,
-					y: midY - 12
+					x: transformerBox.x + transformerBox.width / 2,
+					y: transformerBox.y + transformerBox.height + LABEL_OFFSET
 				});
 
 				this.sizeLabel.visible(true);
 				this.sizeLabel.moveToTop();
 			}
 		} else {
-			// For regular shapes and closed polygons, show dimensions
-			// Work entirely in layer space using local shape properties
-			let nodeWidth: number;
-			let nodeHeight: number;
-			let labelX: number;
-			let labelY: number;
-
-			if (isClosedPolygon || node instanceof Konva.RegularPolygon) {
-				// For polygons, use bounding box dimensions
-				const box = node.getClientRect({ relativeTo: this.layer });
-				nodeWidth = Math.round(box.width);
-				nodeHeight = Math.round(box.height);
-				labelX = box.x + box.width / 2;
-				labelY = box.y + box.height + 12;
-			} else {
-				// For regular shapes, use local position + dimensions
-				nodeWidth = Math.round(node.width() * node.scaleX());
-				nodeHeight = Math.round(node.height() * node.scaleY());
-
-				const shapeX = node.x();
-				const shapeY = node.y();
-				const shapeWidth = node.width() * node.scaleX();
-				const shapeHeight = node.height() * node.scaleY();
-
-				labelX = shapeX + shapeWidth / 2;
-				labelY = shapeY + shapeHeight + 12;
-			}
+			// For all other shapes, show dimensions
+			// Get actual node bounding box for dimensions (accounts for rotation)
+			const nodeBox = node.getClientRect({ relativeTo: this.layer });
+			const nodeWidth = Math.round(nodeBox.width);
+			const nodeHeight = Math.round(nodeBox.height);
 
 			// Update text with actual dimensions
 			const text = this.sizeLabel.findOne('Text') as Konva.Text;
@@ -320,9 +302,10 @@ export class SelectionManager {
 				text.text(`${nodeWidth} × ${nodeHeight}`);
 			}
 
+			// Position below transformer, centered horizontally
 			this.sizeLabel.position({
-				x: labelX,
-				y: labelY
+				x: transformerBox.x + transformerBox.width / 2,
+				y: transformerBox.y + transformerBox.height + LABEL_OFFSET
 			});
 
 			this.sizeLabel.visible(true);
