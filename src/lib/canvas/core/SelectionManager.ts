@@ -328,21 +328,25 @@ export class SelectionManager {
 		// Listen for transform events to update visuals and rotation in real-time
 		this.transformer.on('transform', () => {
 			this.updateVisuals();
-			
+
 			// Update rotation in real-time for Properties Panel slider
+			// Only for single shape selection to avoid interfering with group rotation
 			const updateCallback = this.onShapeUpdate;
 			if (updateCallback) {
 				const nodes = this.transformer.nodes();
-				nodes.forEach((node) => {
+
+				// Only update rotation for single-shape selection
+				if (nodes.length === 1) {
+					const node = nodes[0];
 					const id = node.id();
 					if (!id) return;
-					
+
 					const rotation = node.rotation();
 					if (isFinite(rotation)) {
 						// Only update rotation during transform for real-time feedback
 						updateCallback(id, { rotation });
 					}
-				});
+				}
 			}
 		});
 

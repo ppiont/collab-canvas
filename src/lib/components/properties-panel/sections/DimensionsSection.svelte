@@ -158,7 +158,49 @@
 	function updateRotation(value: string) {
 		const num = parseFloat(value);
 		if (isNaN(num)) return;
-		onUpdate(items.map((item) => ({ ...item, rotation: num })));
+		
+		// Single shape: just update rotation
+		if (items.length === 1) {
+			onUpdate([{ ...items[0], rotation: num }]);
+			return;
+		}
+		
+		// Multiple shapes: rotate as a group around collective center
+		// Calculate group center
+		const centerX = items.reduce((sum, item) => sum + item.x, 0) / items.length;
+		const centerY = items.reduce((sum, item) => sum + item.y, 0) / items.length;
+		
+		// Calculate rotation delta from current average rotation
+		const currentRotation = dimensions.rotation || 0;
+		const rotationDelta = num - currentRotation;
+		const radians = (rotationDelta * Math.PI) / 180;
+		
+		// Rotate each shape around group center
+		const updatedItems = items.map((item) => {
+			// Vector from center to shape
+			const dx = item.x - centerX;
+			const dy = item.y - centerY;
+			
+			// Rotate vector
+			const cos = Math.cos(radians);
+			const sin = Math.sin(radians);
+			const newDx = dx * cos - dy * sin;
+			const newDy = dx * sin + dy * cos;
+			
+			// New position
+			const newX = centerX + newDx;
+			const newY = centerY + newDy;
+			
+			// Update both position and rotation
+			return {
+				...item,
+				x: newX,
+				y: newY,
+				rotation: (item.rotation || 0) + rotationDelta
+			};
+		});
+		
+		onUpdate(updatedItems);
 	}
 
 	// Auto-select input text on focus
