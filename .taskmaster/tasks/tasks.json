@@ -362,7 +362,7 @@
         "description": "Delete unused _shapeMapInstance parameter",
         "details": "**File:** `src/lib/stores/shapes.ts:20`\n\n**Change:**\n```typescript\n// Before:\nexport function initializeShapesSync(_shapeMapInstance: Y.Map<Shape>) {\n\n// After:\nexport function initializeShapesSync() {\n```\n\nUpdate call site in canvas/+page.svelte:391\n\n**Impact:** Cleaner API",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -382,7 +382,7 @@
     "metadata": {
       "created": "2025-10-18T23:26:21.703Z",
       "description": "Default tasks context",
-      "updated": "2025-10-19T01:29:16.453Z"
+      "updated": "2025-10-19T01:30:27.179Z"
     }
   }
 }

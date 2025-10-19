@@ -108,11 +108,8 @@ export function disconnectProvider() {
  * Get all shapes from Yjs map as array
  */
 export function getAllShapes(): Shape[] {
-	const shapesList: Shape[] = [];
-	shapesMap.forEach((shape, id) => {
-		shapesList.push({ ...shape, id });
-	});
-	return shapesList;
+	// Shapes already have id property - no need to clone or add it
+	return Array.from(shapesMap.values());
 }
 
 /**
