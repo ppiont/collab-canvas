@@ -116,13 +116,6 @@ export function getAllShapes(): Shape[] {
 }
 
 /**
- * Get online user count from awareness
- */
-export function getOnlineUserCount(): number {
-	return _provider?.awareness.getStates().size || 1;
-}
-
-/**
  * PHASE 1, 6: Update live dragged shape position in Awareness
  * Called during dragmove to show other users the shape being dragged
  */
@@ -157,23 +150,4 @@ export function clearDraggedShape(shapeId: string): void {
 	delete draggedShapes[shapeId];
 
 	_provider.awareness.setLocalStateField('draggedShapes', draggedShapes);
-}
-
-/**
- * Get current dragged shapes from all users
- */
-export function getAllDraggedShapes(): Map<string, { id: string; x: number; y: number; userId: string; timestamp: number }> {
-	const allDragged = new Map<string, { id: string; x: number; y: number; userId: string; timestamp: number }>();
-
-	if (!_provider) return allDragged;
-
-	_provider.awareness.getStates().forEach((state: Record<string, any>) => {
-		if (state.draggedShapes) {
-			Object.entries(state.draggedShapes).forEach(([shapeId, dragInfo]: [string, any]) => {
-				allDragged.set(`${state.user?.id}-${shapeId}`, dragInfo);
-			});
-		}
-	});
-
-	return allDragged;
 }
