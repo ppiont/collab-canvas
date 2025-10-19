@@ -325,9 +325,25 @@ export class SelectionManager {
 			isTransforming = true;
 		});
 
-		// Listen for transform events to update visuals in real-time
+		// Listen for transform events to update visuals and rotation in real-time
 		this.transformer.on('transform', () => {
 			this.updateVisuals();
+			
+			// Update rotation in real-time for Properties Panel slider
+			const updateCallback = this.onShapeUpdate;
+			if (updateCallback) {
+				const nodes = this.transformer.nodes();
+				nodes.forEach((node) => {
+					const id = node.id();
+					if (!id) return;
+					
+					const rotation = node.rotation();
+					if (isFinite(rotation)) {
+						// Only update rotation during transform for real-time feedback
+						updateCallback(id, { rotation });
+					}
+				});
+			}
 		});
 
 		// Listen for transform end to save changes
