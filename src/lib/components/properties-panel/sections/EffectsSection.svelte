@@ -29,14 +29,7 @@
 	} = $props();
 
 	// Available blend modes
-	const blendModes: BlendMode[] = [
-		'normal',
-		'multiply',
-		'screen',
-		'overlay',
-		'darken',
-		'lighten'
-	];
+	const blendModes: BlendMode[] = ['normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten'];
 
 	// Compute mixed states for effects properties
 	const effects = $derived.by(() => {
@@ -56,7 +49,7 @@
 		return {
 			opacity,
 			blendMode,
-			hasMixedOpacity: items.some((item) => ((item.opacity || 1) * 100) !== opacity),
+			hasMixedOpacity: items.some((item) => (item.opacity || 1) * 100 !== opacity),
 			hasMixedBlendMode: items.some((item) => (item.blendMode || 'normal') !== blendMode)
 		};
 	});
@@ -218,4 +211,3 @@ Interaction:
 - Select blend mode from dropdown
 - All controls support keyboard navigation
 -->
-
