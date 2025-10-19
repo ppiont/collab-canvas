@@ -8,6 +8,7 @@ import Konva from 'konva';
 import type { Shape } from '$lib/types/shapes';
 import type { Awareness } from 'y-protocols/awareness';
 import type * as Y from 'yjs';
+import { CANVAS } from '$lib/constants';
 
 interface DraggedShapeInfo {
 	id: string;
@@ -38,7 +39,7 @@ export class LiveShapeRenderer {
 	private draggedShapeNodes = new Map<string, Konva.Group>();
 	private userColors = new Map<string, string>();
 	private lastUpdateTime = 0;
-	private updateInterval = 16; // 60fps update
+	private updateInterval = CANVAS.FRAME_TIME_MS; // 60fps update
 	private awarenessChangeHandler: (() => void) | null = null;
 
 	constructor(shapesLayer: Konva.Layer, stage: Konva.Stage, awareness: Awareness, shapesMap: Y.Map<Shape>) {

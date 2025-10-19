@@ -7,6 +7,7 @@ import { writable, derived } from 'svelte/store';
 import { UndoManager } from 'yjs';
 import { ydoc } from '$lib/collaboration';
 import type * as Y from 'yjs';
+import { HISTORY } from '$lib/constants';
 
 /**
  * Undo manager instance
@@ -48,7 +49,7 @@ export function initializeUndoManager(shapesMap: Y.Map<any>) {
 		// Only track transactions with 'user-action' origin
 		// This prevents system changes (like selection updates) from affecting undo/redo
 		trackedOrigins: new Set(['user-action']),
-		captureTimeout: 500 // Group rapid changes within 500ms
+		captureTimeout: HISTORY.CAPTURE_TIMEOUT_MS
 	});
 
 	// Create and store handler reference for cleanup

@@ -204,7 +204,7 @@
         "description": "Prevent memory leak from abandoned Konva.Tween objects",
         "details": "**File:** `src/lib/canvas/core/SelectionManager.ts:341-411`\n\n**Problem:** Tweens created but never destroyed if component unmounts mid-animation\n\n**Steps:**\n1. Add private field: `activeTweens: Konva.Tween[] = []`\n2. Create helper method that tracks tweens\n3. Clean up all active tweens in destroy()\n\n**Impact:** Prevents tween-related memory leaks",
         "testStrategy": "",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -241,7 +241,7 @@
         "description": "Move hardcoded values to CANVAS/HISTORY/AI constants",
         "details": "**Files:** Multiple\n\n**Values to Extract:**\n- LiveShapeRenderer updateInterval (16) → CANVAS.FRAME_TIME_MS\n- EventHandlers drag threshold (5) → CANVAS.DRAG_NET_THRESHOLD\n- SelectionManager min size (5) → SHAPES.MIN_SIZE (already exists!)\n- CommandPalette timeout (30000) → AI.COMMAND_TIMEOUT_MS\n- History captureTimeout (500) → HISTORY.CAPTURE_TIMEOUT_MS\n\n**Impact:** Better maintainability, easier tuning",
         "testStrategy": "",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -382,7 +382,7 @@
     "metadata": {
       "created": "2025-10-18T23:26:21.703Z",
       "description": "Default tasks context",
-      "updated": "2025-10-19T00:38:59.105Z"
+      "updated": "2025-10-19T00:46:01.357Z"
     }
   }
 }

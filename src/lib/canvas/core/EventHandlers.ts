@@ -18,6 +18,7 @@ import type { CursorManager } from '../collaboration/CursorManager';
 import { SelectionNet } from './SelectionNet';
 import type { Shape } from '$lib/types/shapes';
 import { activeTool } from '$lib/stores/tool';
+import { CANVAS } from '$lib/constants';
 import { shapeOperations } from '$lib/stores/shapes';
 
 /** Callback for shape creation */
@@ -287,13 +288,13 @@ export class CanvasEventHandlers {
 			) {
 				const pos = this.stage.getPointerPosition();
 				if (pos) {
-					// Calculate drag distance
-					const dx = pos.x - this.netStartPos.x;
-					const dy = pos.y - this.netStartPos.y;
-					const distance = Math.sqrt(dx * dx + dy * dy);
+				// Calculate drag distance
+				const dx = pos.x - this.netStartPos.x;
+				const dy = pos.y - this.netStartPos.y;
+				const distance = Math.sqrt(dx * dx + dy * dy);
 
-					// Start net if dragged more than 5px
-					if (distance > 5) {
+				// Start net if dragged more than threshold
+				if (distance > CANVAS.DRAG_NET_THRESHOLD) {
 						this.isDrawingNet = true;
 						this.stage.draggable(false); // Ensure stage drag is disabled
 						this.stage.container().style.cursor = 'crosshair'; // Crosshair during selection
