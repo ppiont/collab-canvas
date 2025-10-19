@@ -679,18 +679,19 @@
 		right: 0;
 		bottom: 0;
 		width: 320px; /* Sidebar width */
-		background: linear-gradient(to bottom, #1e293b, #0f172a);
-		border-left: 2px solid #475569;
+		background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+		border-left: 2px solid #cbd5e1;
 		overflow: hidden;
 		z-index: 100;
 		display: flex;
 		flex-direction: column;
-		box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5);
+		box-shadow: -8px 0 32px rgba(0, 0, 0, 0.1);
+		border-radius: 16px 0 0 16px;
 	}
-	
+
 	@media (prefers-color-scheme: dark) {
 		.properties-panel-container {
-			background: linear-gradient(to bottom, #0f172a, #0a0f1f);
+			background: linear-gradient(to bottom, #1e293b, #0f172a);
 			border-left-color: #334155;
 			box-shadow: -8px 0 32px rgba(0, 0, 0, 0.8);
 		}

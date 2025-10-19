@@ -1,11 +1,11 @@
 <script lang="ts">
 	/**
 	 * Reusable Form Field Component
-	 * 
+	 *
 	 * Handles labels, inputs, and accessibility requirements.
 	 * Typography: field labels 12px, weight 500.
 	 * Spacing: 8px within components (space-y-2).
-	 * 
+	 *
 	 * Features:
 	 * - Proper label associations (for/id)
 	 * - Mixed value indicator for multiple selections
@@ -13,12 +13,12 @@
 	 * - WCAG AA compliant contrast
 	 * - 8pt grid spacing (space-y-2 = 8px)
 	 */
-	
+
 	import type { Snippet } from 'svelte';
 	import { Label } from '$lib/components/ui/label';
-	
+
 	// Props
-	let { 
+	let {
 		id,
 		label,
 		helperText = '',
@@ -26,7 +26,7 @@
 		required = false,
 		error = '',
 		children
-	}: { 
+	}: {
 		id: string;
 		label: string;
 		helperText?: string;
@@ -35,7 +35,7 @@
 		error?: string;
 		children: Snippet;
 	} = $props();
-	
+
 	// Compute aria-describedby IDs
 	const descriptionId = $derived(helperText || error ? `${id}-description` : undefined);
 </script>
@@ -48,17 +48,14 @@
 <div class="space-y-2" data-form-field={id}>
 	<!-- Label row with mixed value indicator -->
 	<div class="flex justify-between items-center">
-		<Label 
-			for={id}
-			class="text-xs font-semibold text-slate-300 uppercase tracking-wide"
-		>
+		<Label for={id} class="text-xs font-semibold text-slate-700 uppercase tracking-wide">
 			{label}
 			{#if required}
-				<span class="text-red-400 ml-1">*</span>
+				<span class="text-red-500 ml-1">*</span>
 			{/if}
 		</Label>
 		{#if isMixed}
-			<span class="text-xs font-medium text-amber-400 bg-amber-400/10 px-2 py-1 rounded">
+			<span class="text-xs font-medium text-amber-600 bg-amber-100/80 px-2 py-1 rounded">
 				Mixed
 			</span>
 		{/if}
@@ -71,12 +68,16 @@
 
 	<!-- Helper text or error -->
 	{#if helperText}
-		<p id="{id}-description" class="text-xs text-slate-400">
+		<p id="{id}-description" class="text-xs text-slate-500">
 			{helperText}
 		</p>
 	{/if}
 	{#if error}
-		<div id="{id}-error" role="alert" class="text-xs font-medium text-red-400 bg-red-400/10 px-2 py-1 rounded">
+		<div
+			id="{id}-error"
+			role="alert"
+			class="text-xs font-medium text-red-600 bg-red-100/80 px-2 py-1 rounded"
+		>
 			{error}
 		</div>
 	{/if}
@@ -127,4 +128,3 @@ USAGE EXAMPLES:
   </Select>
 </FormField>
 -->
-

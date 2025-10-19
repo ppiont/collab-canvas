@@ -47,9 +47,12 @@
   Spacing reference (8pt grid):
   - 16px = pb-4 (bottom padding)
 -->
-<div class="flex justify-between items-center pb-4 px-4 -mx-4 pt-4 -mt-4 border-b border-slate-700 bg-slate-800/80 backdrop-blur-sm mb-2 rounded-t-lg" data-testid="panel-header">
+<div
+	class="flex justify-between items-center pb-4 px-4 -mx-4 pt-4 -mt-4 border-b border-slate-200 bg-white/60 backdrop-blur-sm mb-2 rounded-tl-lg text-slate-900"
+	data-testid="panel-header"
+>
 	<!-- Selection count and type -->
-	<h2 class="text-base font-semibold truncate flex-1 mr-2 text-slate-100">
+	<h2 class="text-base font-semibold truncate flex-1 mr-2 text-slate-900">
 		{selectionText}
 	</h2>
 
@@ -60,7 +63,7 @@
 			size="icon"
 			onclick={onClearSelection}
 			aria-label="Clear selection"
-			class="h-11 w-11 shrink-0 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800 text-slate-300 hover:text-slate-100 hover:bg-slate-700/50 rounded-lg transition-colors"
+			class="h-11 w-11 shrink-0 focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 rounded-lg transition-colors"
 		>
 			<X class="h-4 w-4" />
 		</Button>
