@@ -414,7 +414,8 @@
 						layers.shapes,
 						stage,
 						providerValue.awareness,
-						shapesMap
+						shapesMap,
+						data.user.id
 					);
 				}
 			}

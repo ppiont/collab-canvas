@@ -36,17 +36,19 @@ export class LiveShapeRenderer {
 	private stage: Konva.Stage;
 	private awareness: Awareness;
 	private shapesMap: Y.Map<Shape>;
+	private localUserId: string;
 	private draggedShapeNodes = new Map<string, Konva.Group>();
 	private userColors = new Map<string, string>();
 	private lastUpdateTime = 0;
 	private updateInterval = CANVAS.FRAME_TIME_MS; // 60fps update
 	private awarenessChangeHandler: (() => void) | null = null;
 
-	constructor(shapesLayer: Konva.Layer, stage: Konva.Stage, awareness: Awareness, shapesMap: Y.Map<Shape>) {
+	constructor(shapesLayer: Konva.Layer, stage: Konva.Stage, awareness: Awareness, shapesMap: Y.Map<Shape>, localUserId: string) {
 		this.shapesLayer = shapesLayer;
 		this.stage = stage;
 		this.awareness = awareness;
 		this.shapesMap = shapesMap;
+		this.localUserId = localUserId;
 
 		// Listen for Awareness state changes
 		this.setupAwarenessListener();
@@ -79,10 +81,16 @@ export class LiveShapeRenderer {
 		const allDraggedShapes = new Map<string, DraggedShapeInfo>();
 		const seenKeys = new Set<string>();
 
-		// Collect all dragged shapes from all users
+		// Collect all dragged shapes from OTHER users (exclude local user)
 		this.awareness.getStates().forEach((state: AwarenessStateData) => {
 			if (state.draggedShapes && state.user) {
 				const user = state.user; // Store in const to satisfy TypeScript
+				
+				// Skip local user - don't render ghosts for own drags
+				if (user.id === this.localUserId) {
+					return;
+				}
+				
 				const userColor = user.color || '#3b82f6';
 				this.userColors.set(user.id, userColor);
 
