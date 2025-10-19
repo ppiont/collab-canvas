@@ -679,22 +679,14 @@
 		right: 0;
 		bottom: 0;
 		width: 320px; /* Sidebar width */
-		background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
-		border-left: 2px solid #cbd5e1;
+		background: linear-gradient(to bottom, #ffffff, #f5f7fa);
+		border-left: 2px solid #e2e8f0;
 		overflow: hidden;
 		z-index: 100;
 		display: flex;
 		flex-direction: column;
-		box-shadow: -8px 0 32px rgba(0, 0, 0, 0.1);
+		box-shadow: -8px 0 16px rgba(0, 0, 0, 0.08);
 		border-radius: 16px 0 0 16px;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.properties-panel-container {
-			background: linear-gradient(to bottom, #1e293b, #0f172a);
-			border-left-color: #334155;
-			box-shadow: -8px 0 32px rgba(0, 0, 0, 0.8);
-		}
 	}
 
 	:global(body) {
