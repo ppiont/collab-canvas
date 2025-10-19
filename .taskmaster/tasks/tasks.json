@@ -340,7 +340,7 @@
         "description": "Add perfectDrawEnabled: false and hitStrokeWidth for better performance",
         "details": "**File:** `src/lib/canvas/shapes/ShapeRenderer.ts:446-563`\n\n**Add to baseConfig:**\n```typescript\nconst baseConfig = {\n    // ...existing...\n    perfectDrawEnabled: false, // Faster rendering\n    hitStrokeWidth: 0, // Simpler hit detection\n    shadowForStrokeEnabled: false // Skip shadow for strokes\n};\n```\n\n**Impact:** 3-5% rendering performance gain",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -382,7 +382,7 @@
     "metadata": {
       "created": "2025-10-18T23:26:21.703Z",
       "description": "Default tasks context",
-      "updated": "2025-10-19T01:28:49.846Z"
+      "updated": "2025-10-19T01:29:16.453Z"
     }
   }
 }

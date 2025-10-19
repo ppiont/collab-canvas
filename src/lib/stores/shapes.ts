@@ -17,7 +17,7 @@ export const shapes = writable<Shape[]>([]);
  * Initialize Yjs observer to sync Y.Map changes to Svelte store
  * Call this once on app initialization
  */
-export function initializeShapesSync(_shapeMapInstance: Y.Map<Shape>) {
+export function initializeShapesSync() {
 	// Listen to Yjs changes and update Svelte store
 	shapesMap.observe(() => {
 		const allShapes = getAllShapes();

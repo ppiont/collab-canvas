@@ -394,11 +394,11 @@
 			}
 		);
 
-		// Initialize cursor manager
-		cursorManager = new CursorManager(stage, layers.cursors);
+	// Initialize cursor manager
+	cursorManager = new CursorManager(stage, layers.cursors);
 
-		// Initialize Yjs sync
-		initializeShapesSync(shapesMap);
+	// Initialize Yjs sync
+	initializeShapesSync();
 
 		// Initialize undo/redo (captures ALL shapesMap modifications)
 		initializeUndoManager(shapesMap);
