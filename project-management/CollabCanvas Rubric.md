@@ -118,7 +118,7 @@
 
 - Smooth pan/zoom ✅
 - 3+ shape types ✅
-- Text with formatting
+- Text with formatting ✅
 - Multi-select (shift-click or drag) ✅
 - Layer management
 - Transform operations (move/resize/rotate) ✅
@@ -185,7 +185,7 @@
 
 **Tier 1 Features (2 points each, max 3 features \= 6 points)**
 
-- Color picker with recent colors/saved palettes
+- Color picker with recent colors/saved palettes ✅
 - Undo/redo with keyboard shortcuts (Cmd+Z/Cmd+Shift+Z) ✅
 - Keyboard shortcuts for common operations (Delete, Duplicate, Arrow keys to move) ✅
 - Export canvas or objects as PNG/SVG
@@ -197,7 +197,7 @@
 
 - Component system (create reusable components/symbols)
 - Layers panel with drag-to-reorder and hierarchy
-- Alignment tools (align left/right/center, distribute evenly)
+- Alignment tools (align left/right/center, distribute evenly) ✅
 - Z-index management (bring to front, send to back) ✅
 - Selection tools (lasso select, select all of type) 
 - Styles/design tokens (save and reuse colors, text styles)
@@ -210,7 +210,7 @@
 - Version history with restore capability
 - Plugins or extensions system
 - Vector path editing (pen tool with bezier curves)
-- Advanced blend modes and opacity (IN PROGRESS)
+- Advanced blend modes and opacity ✅
 - Prototyping/interaction modes (clickable links between frames)
 
 ---

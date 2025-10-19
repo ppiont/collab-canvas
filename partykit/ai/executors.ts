@@ -5,6 +5,7 @@
 
 import * as Y from 'yjs';
 import type { ToolName } from './tools';
+import * as AlignmentCore from '../../src/lib/utils/alignment-core';
 
 /** Result type for tool execution */
 export interface ToolExecutionResult {
@@ -291,43 +292,43 @@ export async function executeTool(
 				return { success: true };
 			}
 
-		case 'updateShapeColor': {
-			const shape = shapesMap.get(params.shapeId as string);
-			if (!shape) {
-				return { success: false, error: 'Shape not found' };
-			}
-			const updates: ShapeData = { ...shape };
-			if (params.fill !== undefined) updates.fill = params.fill;
-			if (params.stroke !== undefined) updates.stroke = params.stroke;
-			updates.modifiedAt = Date.now();
+			case 'updateShapeColor': {
+				const shape = shapesMap.get(params.shapeId as string);
+				if (!shape) {
+					return { success: false, error: 'Shape not found' };
+				}
+				const updates: ShapeData = { ...shape };
+				if (params.fill !== undefined) updates.fill = params.fill;
+				if (params.stroke !== undefined) updates.stroke = params.stroke;
+				updates.modifiedAt = Date.now();
 
-			shapesMap.set(params.shapeId as string, updates);
-			return { success: true };
-		}
-
-		case 'updateText': {
-			const shape = shapesMap.get(params.shapeId as string);
-			if (!shape || shape.type !== 'text') {
-				return { success: false, error: 'Text shape not found' };
+				shapesMap.set(params.shapeId as string, updates);
+				return { success: true };
 			}
 
-			const updates: Partial<ShapeData> = {};
-			if (params.text !== undefined) updates.text = params.text as string;
-			if (params.fontSize !== undefined)
-				updates.fontSize = Math.max(8, Math.min(144, params.fontSize as number));
-			if (params.fontFamily !== undefined) updates.fontFamily = params.fontFamily as string;
-			if (params.fontWeight !== undefined) updates.fontWeight = params.fontWeight as string;
-			if (params.fontStyle !== undefined) updates.fontStyle = params.fontStyle as string;
-			if (params.textDecoration !== undefined)
-				updates.textDecoration = params.textDecoration as string;
-			if (params.align !== undefined) updates.align = params.align as string;
-			if (params.fill !== undefined) updates.fill = params.fill as string;
+			case 'updateText': {
+				const shape = shapesMap.get(params.shapeId as string);
+				if (!shape || shape.type !== 'text') {
+					return { success: false, error: 'Text shape not found' };
+				}
 
-			shapesMap.set(params.shapeId as string, { ...shape, ...updates, modifiedAt: Date.now() });
-			return { success: true, result: params.shapeId as string };
-		}
+				const updates: Partial<ShapeData> = {};
+				if (params.text !== undefined) updates.text = params.text as string;
+				if (params.fontSize !== undefined)
+					updates.fontSize = Math.max(8, Math.min(144, params.fontSize as number));
+				if (params.fontFamily !== undefined) updates.fontFamily = params.fontFamily as string;
+				if (params.fontWeight !== undefined) updates.fontWeight = params.fontWeight as string;
+				if (params.fontStyle !== undefined) updates.fontStyle = params.fontStyle as string;
+				if (params.textDecoration !== undefined)
+					updates.textDecoration = params.textDecoration as string;
+				if (params.align !== undefined) updates.align = params.align as string;
+				if (params.fill !== undefined) updates.fill = params.fill as string;
 
-		case 'deleteShape': {
+				shapesMap.set(params.shapeId as string, { ...shape, ...updates, modifiedAt: Date.now() });
+				return { success: true, result: params.shapeId as string };
+			}
+
+			case 'deleteShape': {
 				const shape = shapesMap.get(params.shapeId as string);
 				if (!shape) {
 					return { success: false, error: 'Shape not found' };
@@ -498,38 +499,40 @@ export async function executeTool(
 					.map((id: string) => shapesMap.get(id))
 					.filter((s): s is ShapeData => s !== undefined);
 
-				if (shapes.length < 2) {
-					return { success: false, error: 'Need at least 2 shapes to distribute' };
+				if (shapes.length < 3) {
+					return { success: false, error: 'Need at least 3 shapes to distribute' };
 				}
 
-				// Calculate bounds
-				const positions = shapes.map((s: ShapeData) => ({ x: s.x as number, y: s.y as number }));
+				// Convert to AlignmentCore.ShapeData format
+				const alignmentShapes: AlignmentCore.ShapeData[] = shapes.map(s => ({
+					id: s.id,
+					x: s.x as number,
+					y: s.y as number,
+					width: s.width as number | undefined,
+					height: s.height as number | undefined,
+					radius: s.radius as number | undefined,
+					outerRadius: s.outerRadius as number | undefined,
+					fontSize: s.fontSize as number | undefined,
+					type: s.type
+				}));
 
-				if (params.direction === 'horizontal') {
-					const minX = Math.min(...positions.map((p) => p.x));
-					const maxX = Math.max(...positions.map((p) => p.x));
-					const spacing = (maxX - minX) / (shapes.length - 1);
+				// Use shared distribution core logic
+				const updates = params.direction === 'horizontal'
+					? AlignmentCore.distributeHorizontally(alignmentShapes)
+					: AlignmentCore.distributeVertically(alignmentShapes);
 
-					shapes.forEach((shape: ShapeData, index: number) => {
-						shapesMap.set(shape.id, {
+				// Apply updates to shapes
+				updates.forEach(update => {
+					const shape = shapesMap.get(update.id);
+					if (shape) {
+						shapesMap.set(update.id, {
 							...shape,
-							x: minX + index * spacing,
+							x: update.x,
+							y: update.y,
 							modifiedAt: Date.now()
 						});
-					});
-				} else {
-					const minY = Math.min(...positions.map((p) => p.y));
-					const maxY = Math.max(...positions.map((p) => p.y));
-					const spacing = (maxY - minY) / (shapes.length - 1);
-
-					shapes.forEach((shape: ShapeData, index: number) => {
-						shapesMap.set(shape.id, {
-							...shape,
-							y: minY + index * spacing,
-							modifiedAt: Date.now()
-						});
-					});
-				}
+					}
+				});
 
 				return { success: true };
 			}
@@ -539,60 +542,62 @@ export async function executeTool(
 					.map((id: string) => shapesMap.get(id))
 					.filter((s): s is ShapeData => s !== undefined);
 
-				if (shapes.length === 0) {
-					return { success: false, error: 'No shapes found' };
+				if (shapes.length < 2) {
+					return { success: false, error: 'Need at least 2 shapes to align' };
 				}
 
 				const alignment = params.alignment as string;
 
-				// Calculate alignment target
-				const positions = shapes.map((s: ShapeData) => ({ x: s.x as number, y: s.y as number }));
+				// Convert to AlignmentCore.ShapeData format
+				const alignmentShapes: AlignmentCore.ShapeData[] = shapes.map(s => ({
+					id: s.id,
+					x: s.x as number,
+					y: s.y as number,
+					width: s.width as number | undefined,
+					height: s.height as number | undefined,
+					radius: s.radius as number | undefined,
+					outerRadius: s.outerRadius as number | undefined,
+					fontSize: s.fontSize as number | undefined,
+					type: s.type
+				}));
 
-				let targetValue: number;
+				// Use shared alignment core logic
+				let updates: AlignmentCore.PositionUpdate[];
 				switch (alignment) {
-					case 'left': {
-						targetValue = Math.min(...positions.map((p) => p.x));
-						shapes.forEach((shape: ShapeData) => {
-							shapesMap.set(shape.id, { ...shape, x: targetValue, modifiedAt: Date.now() });
-						});
+					case 'left':
+						updates = AlignmentCore.alignLeft(alignmentShapes);
 						break;
-					}
-					case 'right': {
-						targetValue = Math.max(...positions.map((p) => p.x));
-						shapes.forEach((shape: ShapeData) => {
-							shapesMap.set(shape.id, { ...shape, x: targetValue, modifiedAt: Date.now() });
-						});
+					case 'center':
+						updates = AlignmentCore.alignCenter(alignmentShapes);
 						break;
-					}
-					case 'center': {
-						const avgX = positions.reduce((sum, p) => sum + p.x, 0) / positions.length;
-						shapes.forEach((shape: ShapeData) => {
-							shapesMap.set(shape.id, { ...shape, x: avgX, modifiedAt: Date.now() });
-						});
+					case 'right':
+						updates = AlignmentCore.alignRight(alignmentShapes);
 						break;
-					}
-					case 'top': {
-						targetValue = Math.min(...positions.map((p) => p.y));
-						shapes.forEach((shape: ShapeData) => {
-							shapesMap.set(shape.id, { ...shape, y: targetValue, modifiedAt: Date.now() });
-						});
+					case 'top':
+						updates = AlignmentCore.alignTop(alignmentShapes);
 						break;
-					}
-					case 'bottom': {
-						targetValue = Math.max(...positions.map((p) => p.y));
-						shapes.forEach((shape: ShapeData) => {
-							shapesMap.set(shape.id, { ...shape, y: targetValue, modifiedAt: Date.now() });
-						});
+					case 'middle':
+						updates = AlignmentCore.alignMiddle(alignmentShapes);
 						break;
-					}
-					case 'middle': {
-						const avgY = positions.reduce((sum, p) => sum + p.y, 0) / positions.length;
-						shapes.forEach((shape: ShapeData) => {
-							shapesMap.set(shape.id, { ...shape, y: avgY, modifiedAt: Date.now() });
-						});
+					case 'bottom':
+						updates = AlignmentCore.alignBottom(alignmentShapes);
 						break;
-					}
+					default:
+						return { success: false, error: `Unknown alignment type: ${alignment}` };
 				}
+
+				// Apply updates to shapes
+				updates.forEach(update => {
+					const shape = shapesMap.get(update.id);
+					if (shape) {
+						shapesMap.set(update.id, {
+							...shape,
+							x: update.x,
+							y: update.y,
+							modifiedAt: Date.now()
+						});
+					}
+				});
 
 				return { success: true };
 			}
@@ -601,20 +606,20 @@ export async function executeTool(
 			// QUERY TOOLS
 			// ═══════════════════════════════════════════════════════
 
-		case 'getCanvasState': {
-			const allShapes: ShapeData[] = [];
-			shapesMap.forEach((shape) => {
-				allShapes.push(shape);
-			});
+			case 'getCanvasState': {
+				const allShapes: ShapeData[] = [];
+				shapesMap.forEach((shape) => {
+					allShapes.push(shape);
+				});
 
-			// Filter to only visible shapes if viewport is provided
-			const visibleShapes =
-				params.viewport && typeof params.viewport === 'object'
-					? filterShapesInViewport(allShapes, params.viewport as Viewport)
-					: allShapes;
+				// Filter to only visible shapes if viewport is provided
+				const visibleShapes =
+					params.viewport && typeof params.viewport === 'object'
+						? filterShapesInViewport(allShapes, params.viewport as Viewport)
+						: allShapes;
 
-			return { success: true, result: visibleShapes as unknown as string[] };
-		}
+				return { success: true, result: visibleShapes as unknown as string[] };
+			}
 
 			case 'findShapesByType': {
 				const matching: string[] = [];
