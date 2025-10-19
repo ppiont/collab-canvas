@@ -1,10 +1,10 @@
 <script lang="ts">
 	/**
 	 * Appearance Section Component
-	 * 
+	 *
 	 * Controls for fill color, stroke color, and stroke width.
 	 * Handles mixed values across multiple selections.
-	 * 
+	 *
 	 * Spacing: 12px between related fields (space-y-3)
 	 * Features:
 	 * - Fill color picker with enable/disable toggle
@@ -13,25 +13,25 @@
 	 * - Shared recent colors for fill and stroke
 	 * - Mixed value handling with em dash
 	 */
-	
+
 	import type { Shape } from '$lib/types/shapes';
 	import { Input } from '$lib/components/ui/input';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import FormField from '../FormField.svelte';
 	import ColorPickerField from './ColorPickerField.svelte';
-	
+
 	// Props
-	let { 
+	let {
 		items = [],
 		onUpdate = (items: Shape[]) => {}
-	}: { 
+	}: {
 		items: Shape[];
 		onUpdate: (items: Shape[]) => void;
 	} = $props();
-	
+
 	// Recent colors shared between fill and stroke
 	let recentColors = $state<string[]>([]);
-	
+
 	// Compute mixed states for appearance properties
 	const appearance = $derived.by(() => {
 		if (items.length === 0) {
@@ -48,61 +48,61 @@
 				hasMixedStrokeWidth: false
 			};
 		}
-		
+
 		const first = items[0];
 		const fill = first.fill || '#000000';
 		const fillEnabled = first.fillEnabled !== false; // Default true
 		const stroke = first.stroke || '#000000';
 		const strokeEnabled = first.strokeEnabled !== false; // Default true if stroke exists
 		const strokeWidth = first.strokeWidth || 1;
-		
+
 		return {
 			fill,
 			fillEnabled,
 			stroke,
 			strokeEnabled,
 			strokeWidth,
-			hasMixedFill: items.some(item => (item.fill || '#000000') !== fill),
-			hasMixedFillEnabled: items.some(item => (item.fillEnabled !== false) !== fillEnabled),
-			hasMixedStroke: items.some(item => (item.stroke || '#000000') !== stroke),
-			hasMixedStrokeEnabled: items.some(item => (item.strokeEnabled !== false) !== strokeEnabled),
-			hasMixedStrokeWidth: items.some(item => (item.strokeWidth || 1) !== strokeWidth)
+			hasMixedFill: items.some((item) => (item.fill || '#000000') !== fill),
+			hasMixedFillEnabled: items.some((item) => (item.fillEnabled !== false) !== fillEnabled),
+			hasMixedStroke: items.some((item) => (item.stroke || '#000000') !== stroke),
+			hasMixedStrokeEnabled: items.some((item) => (item.strokeEnabled !== false) !== strokeEnabled),
+			hasMixedStrokeWidth: items.some((item) => (item.strokeWidth || 1) !== strokeWidth)
 		};
 	});
-	
+
 	// Update functions
 	function updateFill(color: string) {
-		onUpdate(items.map(item => ({ ...item, fill: color })));
+		onUpdate(items.map((item) => ({ ...item, fill: color })));
 	}
-	
+
 	function updateFillEnabled(enabled: boolean) {
-		onUpdate(items.map(item => ({ ...item, fillEnabled: enabled })));
+		onUpdate(items.map((item) => ({ ...item, fillEnabled: enabled })));
 	}
-	
+
 	function updateStroke(color: string) {
-		onUpdate(items.map(item => ({ ...item, stroke: color })));
+		onUpdate(items.map((item) => ({ ...item, stroke: color })));
 	}
-	
+
 	function updateStrokeEnabled(enabled: boolean) {
-		onUpdate(items.map(item => ({ ...item, strokeEnabled: enabled })));
+		onUpdate(items.map((item) => ({ ...item, strokeEnabled: enabled })));
 	}
-	
+
 	function updateStrokeWidth(value: string) {
 		const num = parseFloat(value);
 		if (isNaN(num) || num < 0) return;
-		onUpdate(items.map(item => ({ ...item, strokeWidth: num })));
+		onUpdate(items.map((item) => ({ ...item, strokeWidth: num })));
 	}
-	
+
 	// Auto-select input text on focus
 	function handleFocus(e: FocusEvent) {
 		(e.target as HTMLInputElement).select();
 	}
-	
+
 	// Arrow key increment/decrement for stroke width
 	function handleKeyDown(e: KeyboardEvent) {
 		const input = e.currentTarget as HTMLInputElement;
 		const currentValue = parseFloat(input.value) || 0;
-		
+
 		if (e.key === 'ArrowUp') {
 			e.preventDefault();
 			const increment = e.shiftKey ? 10 : 1;
@@ -121,9 +121,7 @@
 	<!-- Fill Color -->
 	<div class="space-y-2">
 		<div class="flex items-center justify-between">
-			<label class="text-xs font-medium text-muted-foreground" for="fill-enabled">
-				Fill
-			</label>
+			<label class="text-xs font-medium text-muted-foreground" for="fill-enabled"> Fill </label>
 			<div class="flex items-center gap-2">
 				{#if appearance.hasMixedFillEnabled}
 					<span class="text-xs text-muted-foreground italic">Mixed</span>
@@ -136,7 +134,7 @@
 				/>
 			</div>
 		</div>
-		
+
 		{#if appearance.fillEnabled || appearance.hasMixedFillEnabled}
 			<FormField id="fill-color" label="" isMixed={appearance.hasMixedFill}>
 				<ColorPickerField
@@ -148,13 +146,11 @@
 			</FormField>
 		{/if}
 	</div>
-	
+
 	<!-- Stroke Color -->
 	<div class="space-y-2">
 		<div class="flex items-center justify-between">
-			<label class="text-xs font-medium text-muted-foreground" for="stroke-enabled">
-				Stroke
-			</label>
+			<label class="text-xs font-medium text-muted-foreground" for="stroke-enabled"> Stroke </label>
 			<div class="flex items-center gap-2">
 				{#if appearance.hasMixedStrokeEnabled}
 					<span class="text-xs text-muted-foreground italic">Mixed</span>
@@ -167,7 +163,7 @@
 				/>
 			</div>
 		</div>
-		
+
 		{#if appearance.strokeEnabled || appearance.hasMixedStrokeEnabled}
 			<FormField id="stroke-color" label="" isMixed={appearance.hasMixedStroke}>
 				<ColorPickerField
@@ -179,7 +175,7 @@
 			</FormField>
 		{/if}
 	</div>
-	
+
 	<!-- Stroke Width -->
 	{#if appearance.strokeEnabled || appearance.hasMixedStrokeEnabled}
 		<FormField id="stroke-width" label="Stroke Width" isMixed={appearance.hasMixedStrokeWidth}>
@@ -197,7 +193,9 @@
 					step={0.5}
 					aria-label="Stroke width in pixels"
 				/>
-				<span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
+				<span
+					class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none"
+				>
 					px
 				</span>
 			</div>
@@ -252,4 +250,3 @@ Interaction:
 - Use recent colors for quick reuse
 - Edit stroke width with keyboard or mouse
 -->
-
