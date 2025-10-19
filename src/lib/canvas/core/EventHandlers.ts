@@ -24,6 +24,9 @@ import { shapeOperations } from '$lib/stores/shapes';
 /** Callback for shape creation */
 export type ShapeCreateCallback = (x: number, y: number) => void;
 
+/** Callback for shape creation with size (drag-to-size) */
+export type ShapeCreateWithSizeCallback = (x: number, y: number, width: number, height: number) => void;
+
 /** Callback for line shape creation with points */
 export type LineCreateCallback = (points: number[]) => void;
 
@@ -42,6 +45,7 @@ export class CanvasEventHandlers {
 	private selectionNet: SelectionNet;
 	private isCreateMode: () => boolean;
 	private onShapeCreate: ShapeCreateCallback;
+	private onShapeCreateWithSize: ShapeCreateWithSizeCallback;
 	private onLineCreate: LineCreateCallback;
 	private getShapes: GetShapesCallback;
 	private isDraggingStage = false;
@@ -53,6 +57,9 @@ export class CanvasEventHandlers {
 	private currentLinePoints: number[] = []; // Points for current line being drawn
 	private linePreviewLayer: Konva.Layer | null = null; // Layer for line preview
 	private linePreviewGroup: Konva.Group | null = null; // Group for preview line and points
+	private isDrawingShape = false; // Track if currently dragging to create a shape
+	private shapeStartPos: { x: number; y: number } | null = null; // Start position for shape drag
+	private shapePreviewNode: Konva.Shape | null = null; // Preview node for shape being drawn
 
 	constructor(
 		stage: Konva.Stage,
@@ -62,6 +69,7 @@ export class CanvasEventHandlers {
 		cursorManager: CursorManager,
 		isCreateMode: () => boolean,
 		onShapeCreate: ShapeCreateCallback,
+		onShapeCreateWithSize: ShapeCreateWithSizeCallback,
 		onLineCreate: LineCreateCallback,
 		getShapes: GetShapesCallback
 	) {
@@ -72,11 +80,12 @@ export class CanvasEventHandlers {
 		this.cursorManager = cursorManager;
 		this.isCreateMode = isCreateMode;
 		this.onShapeCreate = onShapeCreate;
+		this.onShapeCreateWithSize = onShapeCreateWithSize;
 		this.onLineCreate = onLineCreate;
 		this.getShapes = getShapes;
 		this.selectionNet = new SelectionNet(stage, shapesLayer);
 
-		// Create preview layer for line drawing UI
+		// Create preview layer for line drawing UI and shape preview
 		this.linePreviewLayer = new Konva.Layer();
 		this.stage.add(this.linePreviewLayer);
 		this.linePreviewGroup = new Konva.Group();
@@ -106,6 +115,11 @@ export class CanvasEventHandlers {
 			// Update line preview if drawing
 			if (this.isDrawingLine) {
 				this.updateLinePreview();
+			}
+
+			// Update shape preview if drawing
+			if (this.isDrawingShape) {
+				this.updateShapePreview();
 			}
 
 			// Update cursor based on what we're hovering over
@@ -142,7 +156,7 @@ export class CanvasEventHandlers {
 			const isCmd = e.evt.metaKey || e.evt.ctrlKey;
 			const activeToolValue = get(activeTool);
 
-			// Handle line drawing mode
+			// Handle line drawing mode (click to add points)
 			if (activeToolValue === 'line') {
 				const pos = this.stage.getPointerPosition();
 				if (pos) {
@@ -163,12 +177,15 @@ export class CanvasEventHandlers {
 			// If clicked on empty canvas
 			if (e.target === this.stage) {
 				if (this.isCreateMode()) {
-					// Create shape at click position
-					const pos = this.stage.getPointerPosition();
-					if (pos) {
-						const transform = this.stage.getAbsoluteTransform().copy().invert();
-						const canvasPos = transform.point(pos);
-						this.onShapeCreate(canvasPos.x, canvasPos.y);
+					// Only text creates on click (no drag-to-size)
+					// Other shapes use drag-to-size (handled in drag handlers)
+					if (activeToolValue === 'text') {
+						const pos = this.stage.getPointerPosition();
+						if (pos) {
+							const transform = this.stage.getAbsoluteTransform().copy().invert();
+							const canvasPos = transform.point(pos);
+							this.onShapeCreate(canvasPos.x, canvasPos.y);
+						}
 					}
 				} else {
 					// Only deselect if no modifiers held
@@ -209,9 +226,21 @@ export class CanvasEventHandlers {
 
 		this.stage.on('mousedown', (e) => {
 			if (e.target === this.stage) {
+				const activeToolValue = get(activeTool);
+				const pos = this.stage.getPointerPosition();
+
+				// In create mode, start drag-to-size for applicable shapes
+				if (this.isCreateMode() && pos && activeToolValue !== 'line' && activeToolValue !== 'text') {
+					const transform = this.stage.getAbsoluteTransform().copy().invert();
+					const canvasPos = transform.point(pos);
+					this.shapeStartPos = canvasPos;
+					this.isDrawingShape = true;
+					this.stage.draggable(false);
+					return;
+				}
+
 				// In select mode, record position for potential drag-net
 				if (!this.isCreateMode() && !this.isSpacePressed) {
-					const pos = this.stage.getPointerPosition();
 					if (pos) {
 						this.netStartPos = pos;
 					}
@@ -259,6 +288,12 @@ export class CanvasEventHandlers {
 
 		// Handle mouseup to reset drag state (in case drag didn't complete)
 		this.stage.on('mouseup', () => {
+			// Handle shape drag-to-size completion
+			if (this.isDrawingShape) {
+				this.finishShapeDrawing();
+				return;
+			}
+
 			if (this.isDraggingStage) {
 				this.isDraggingStage = false;
 
@@ -451,6 +486,14 @@ export class CanvasEventHandlers {
 
 			// Escape key - deselect and cancel
 			if (e.key === 'Escape') {
+				// Cancel shape drawing if in progress
+				if (this.isDrawingShape) {
+					this.isDrawingShape = false;
+					this.shapeStartPos = null;
+					this.clearShapePreview();
+					return;
+				}
+
 				// Cancel line drawing if in progress
 				if (this.isDrawingLine) {
 					this.currentLinePoints = [];
@@ -800,6 +843,154 @@ export class CanvasEventHandlers {
 		this.currentLinePoints = [];
 		this.isDrawingLine = false;
 		this.clearLinePreview();
+	}
+
+	/**
+	 * Update shape preview visualization as user drags to define size
+	 */
+	private updateShapePreview(): void {
+		if (!this.shapeStartPos || !this.linePreviewLayer) return;
+
+		const pos = this.stage.getPointerPosition();
+		if (!pos) return;
+
+		const transform = this.stage.getAbsoluteTransform().copy().invert();
+		const canvasPos = transform.point(pos);
+		const activeToolValue = get(activeTool);
+
+		// Calculate dimensions
+		const width = Math.abs(canvasPos.x - this.shapeStartPos.x);
+		const height = Math.abs(canvasPos.y - this.shapeStartPos.y);
+		const x = Math.min(this.shapeStartPos.x, canvasPos.x);
+		const y = Math.min(this.shapeStartPos.y, canvasPos.y);
+
+		// Remove old preview
+		if (this.shapePreviewNode) {
+			this.shapePreviewNode.destroy();
+			this.shapePreviewNode = null;
+		}
+
+		// Create preview based on tool type
+		if (activeToolValue === 'rectangle') {
+			this.shapePreviewNode = new Konva.Rect({
+				x,
+				y,
+				width,
+				height,
+				stroke: '#667eea',
+				strokeWidth: 2,
+				dash: [5, 5],
+				listening: false
+			});
+		} else if (activeToolValue === 'triangle') {
+			// Show triangle preview using RegularPolygon with 3 sides
+			const radius = Math.max(width, height) / 2;
+			this.shapePreviewNode = new Konva.RegularPolygon({
+				x: x + width / 2,
+				y: y + height / 2,
+				sides: 3,
+				radius,
+				stroke: '#667eea',
+				strokeWidth: 2,
+				dash: [5, 5],
+				listening: false
+			});
+		} else if (activeToolValue === 'circle') {
+			const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
+			this.shapePreviewNode = new Konva.Circle({
+				x: this.shapeStartPos.x,
+				y: this.shapeStartPos.y,
+				radius,
+				stroke: '#667eea',
+				strokeWidth: 2,
+				dash: [5, 5],
+				listening: false
+			});
+		} else if (activeToolValue === 'polygon') {
+			const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
+			this.shapePreviewNode = new Konva.RegularPolygon({
+				x: this.shapeStartPos.x,
+				y: this.shapeStartPos.y,
+				sides: 5, // Pentagon (default)
+				radius,
+				stroke: '#667eea',
+				strokeWidth: 2,
+				dash: [5, 5],
+				listening: false
+			});
+		} else if (activeToolValue === 'star') {
+			const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
+			this.shapePreviewNode = new Konva.Star({
+				x: this.shapeStartPos.x,
+				y: this.shapeStartPos.y,
+				numPoints: 5,
+				innerRadius: radius / 2,
+				outerRadius: radius,
+				stroke: '#667eea',
+				strokeWidth: 2,
+				dash: [5, 5],
+				listening: false
+			});
+		}
+
+		if (this.shapePreviewNode) {
+			this.linePreviewLayer.add(this.shapePreviewNode);
+			this.linePreviewLayer.batchDraw();
+		}
+	}
+
+	/**
+	 * Finish drawing a shape and create it with the dragged size
+	 */
+	private finishShapeDrawing(): void {
+		if (!this.shapeStartPos) {
+			this.isDrawingShape = false;
+			return;
+		}
+
+		const pos = this.stage.getPointerPosition();
+		if (!pos) {
+			this.isDrawingShape = false;
+			this.shapeStartPos = null;
+			this.clearShapePreview();
+			return;
+		}
+
+		const transform = this.stage.getAbsoluteTransform().copy().invert();
+		const canvasPos = transform.point(pos);
+
+		// Calculate dimensions
+		const width = Math.abs(canvasPos.x - this.shapeStartPos.x);
+		const height = Math.abs(canvasPos.y - this.shapeStartPos.y);
+		const x = Math.min(this.shapeStartPos.x, canvasPos.x);
+		const y = Math.min(this.shapeStartPos.y, canvasPos.y);
+
+		// Minimum size threshold (prevent tiny accidental shapes)
+		const minSize = 5;
+		if (width < minSize || height < minSize) {
+			this.isDrawingShape = false;
+			this.shapeStartPos = null;
+			this.clearShapePreview();
+			return;
+		}
+
+		// Create the shape with the dragged size
+		this.onShapeCreateWithSize(x, y, width, height);
+
+		this.isDrawingShape = false;
+		this.shapeStartPos = null;
+		this.clearShapePreview();
+	}
+
+	/**
+	 * Clear shape preview
+	 */
+	private clearShapePreview(): void {
+		if (this.shapePreviewNode) {
+			this.shapePreviewNode.destroy();
+			this.shapePreviewNode = null;
+			this.linePreviewLayer?.batchDraw();
+		}
 	}
 
 	/**

@@ -143,6 +143,110 @@
 		}
 	}
 
+	function createShapeWithSize(x: number, y: number, width: number, height: number): Shape | null {
+		const tool = $activeTool;
+
+		// Use ShapeFactory for all shape creation
+		if (tool === 'select' || tool === 'pan' || tool === 'line' || tool === 'text') {
+			return null;
+		}
+
+		try {
+			// For circles, use the dragged dimensions to calculate radius
+			if (tool === 'circle') {
+				const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
+				return ShapeFactory.create(
+					tool,
+					{
+						x, // Center at start position
+						y,
+						radius,
+						fill: data.userProfile.color,
+						stroke: darkenColor(data.userProfile.color, 20),
+						strokeWidth: 2,
+						zIndex: maxZIndex + 1
+					},
+					data.user.id
+				);
+			}
+
+			// For polygon, use radius from dragged size
+			if (tool === 'polygon') {
+				const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
+				return ShapeFactory.create(
+					tool,
+					{
+						x, // Center at start position
+						y,
+						radius,
+						fill: data.userProfile.color,
+						stroke: darkenColor(data.userProfile.color, 20),
+						strokeWidth: 2,
+						zIndex: maxZIndex + 1
+					},
+					data.user.id
+				);
+			}
+
+			// For star, use radius from dragged size for both inner and outer radius
+			if (tool === 'star') {
+				const outerRadius = Math.sqrt(width ** 2 + height ** 2) / 2;
+				const innerRadius = outerRadius / 2;
+				return ShapeFactory.create(
+					tool,
+					{
+						x, // Center at start position
+						y,
+						outerRadius,
+						innerRadius,
+						fill: data.userProfile.color,
+						stroke: darkenColor(data.userProfile.color, 20),
+						strokeWidth: 2,
+						zIndex: maxZIndex + 1
+					},
+					data.user.id
+				);
+			}
+
+			// For triangle, use width/height but center position
+			if (tool === 'triangle') {
+				return ShapeFactory.create(
+					tool,
+					{
+						x: x + width / 2, // Center the triangle
+						y: y + height / 2,
+						width,
+						height,
+						fill: data.userProfile.color,
+						stroke: darkenColor(data.userProfile.color, 20),
+						strokeWidth: 2,
+						zIndex: maxZIndex + 1
+					},
+					data.user.id
+				);
+			}
+
+			// For rectangle, use width/height with top-left position
+			return ShapeFactory.create(
+				tool,
+				{
+					x,
+					y,
+					width,
+					height,
+					fill: data.userProfile.color,
+					stroke: darkenColor(data.userProfile.color, 20),
+					strokeWidth: 2,
+					zIndex: maxZIndex + 1
+				},
+				data.user.id
+			);
+		} catch (error) {
+			console.error('Failed to create shape with size:', error);
+			return null;
+		}
+	}
+
 	// Helper function to create a line with accumulated points
 	function createLineWithPoints(points: number[]): void {
 		try {
@@ -441,7 +545,19 @@
 				return $isCreateToolActive;
 			},
 			(x, y) => {
+				// Used for text creation (click to place)
 				const newShape = createShapeAtPosition(x, y);
+				if (newShape) {
+					shapeOperations.add(newShape);
+					maxZIndex++;
+					// Switch back to select mode and select the new shape
+					activeTool.set('select');
+					selectionManager.select(newShape.id);
+				}
+			},
+			(x, y, width, height) => {
+				// Used for drag-to-size shape creation
+				const newShape = createShapeWithSize(x, y, width, height);
 				if (newShape) {
 					shapeOperations.add(newShape);
 					maxZIndex++;
