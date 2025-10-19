@@ -1,0 +1,17 @@
+# Task ID: 20
+# Title: MED: Add Grid Layer Caching
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Cache grid layer since it rarely changes
+# Details:
+**File:** `src/lib/canvas/core/CanvasEngine.ts:92-125`
+
+**Steps:**
+1. After drawing grid, call `gridLayer.cache()`
+2. Call `clearCache()` before redrawing (on resize)
+
+**Impact:** 5-10% rendering improvement, less GPU work
+
+# Test Strategy:
+

@@ -1,0 +1,30 @@
+# Task ID: 29
+# Title: MED: Fix Text Shape Width Calculation in Selection Net
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Use actual width property when available instead of estimation
+# Details:
+**File:** `src/lib/canvas/core/SelectionNet.ts:238-247`
+
+**Problem:** Doesn't use shape.width if available
+
+**Solution:**
+```typescript
+case 'text': {
+    const textWidth = shape.width || (shape.text?.length || 1) * (shape.fontSize || 16) * 0.6;
+    const textHeight = shape.height || (shape.fontSize || 16) * 1.2;
+    shapeBounds = {
+        x: shape.x,
+        y: shape.y,
+        width: textWidth,
+        height: textHeight
+    };
+    break;
+}
+```
+
+**Impact:** More accurate drag-net selection for text shapes
+
+# Test Strategy:
+

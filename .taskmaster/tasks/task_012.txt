@@ -1,0 +1,22 @@
+# Task ID: 12
+# Title: MED: Delete Unused Exported Functions
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Remove getOnlineUserCount() and getAllDraggedShapes() - never called
+# Details:
+**File:** `src/lib/collaboration.ts`
+
+**Functions to DELETE:**
+1. Lines 118-123: `getOnlineUserCount()`
+2. Lines 162-179: `getAllDraggedShapes()`
+
+**Steps:**
+1. Verify no imports exist with grep
+2. Delete both functions
+3. Run build to confirm
+
+**Impact:** Cleaner API surface, less confusion
+
+# Test Strategy:
+

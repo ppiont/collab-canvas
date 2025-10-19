@@ -198,8 +198,8 @@
 - Component system (create reusable components/symbols)
 - Layers panel with drag-to-reorder and hierarchy
 - Alignment tools (align left/right/center, distribute evenly)
-- Z-index management (bring to front, send to back)
-- Selection tools (lasso select, select all of type)
+- Z-index management (bring to front, send to back) ✅
+- Selection tools (lasso select, select all of type) 
 - Styles/design tokens (save and reuse colors, text styles)
 - Canvas frames/artboards for organizing work
 

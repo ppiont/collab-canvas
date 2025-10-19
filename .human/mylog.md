@@ -87,4 +87,30 @@ We've finished our MVP. Now we need to start work on the final product (@PRD-fin
 
 ## RANDOM PROMPTS:
 
+```
 One of our problems is that we aren't grouping shapes. Konva has a group functionality. Use the Kanva and Svelte MCPs to identify ways to implement implicit grouping (during multi-select) for performance improvements. Use taskmaster-ai to plan the approach and give me an executive summary for approval/modification.
+```
+
+```
+Write an extensive Prompt for an LLM.
+
+The LLM needs to thoroughly analyze a codebase: Just the code. Any and all documentation or files outside of src/ should not be trusted. The code is the source of truth.
+
+The intent is to:
+
+1. Identify zombie code
+2. Identify bad code
+3. identify bad style
+4. Identify areas for performance improvements
+5. Fix comments if they are wrong or missing
+6. Identify points where Svelte 5 and Konva are not being utilized to their utmost potential and their design philosophy not followed.
+7. Identify code that makes no sense.
+8. Identify "extra work", i.e. code that has too much wiring or makes unnecessary steps.
+9. etc.
+
+It is important for the LLM to understand the ENTIRE context of everything that it reads. Not scan separate ranges of lines of code and address those in isolation -- that creates problems. It Needs to trace every interaction and state, as well as every function stack. The OBJECTIVE IS A TOTAL PERFORMANCE OVERHAUL WITH NO BUGS. We want absolute best practices and clean code.
+
+It needs to be guided to use the taskmaster-ai MCP server to create a plan to address all issues identified.
+
+Write a prompt that gives an LLM the best possible context for this.
+```

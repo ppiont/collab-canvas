@@ -1,0 +1,388 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "CRITICAL: Fix Infinite requestAnimationFrame Loop",
+        "description": "Fix severe performance bug in LiveShapeRenderer causing 100% CPU usage",
+        "details": "**File:** `src/lib/canvas/collaboration/LiveShapeRenderer.ts:61-66`\n\n**Problem:** Infinite `requestAnimationFrame` loop that does nothing, causing severe CPU drain.\n\n**Steps:**\n1. Delete the entire `scheduleUpdates()` method (lines 61-66)\n2. Remove the call to `this.scheduleUpdates()` from constructor (line 42)\n3. The awareness 'change' listener already triggers updates on-demand\n\n**Impact:** 20-30% CPU usage reduction, better battery life",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "CRITICAL: Fix Memory Leak in CursorManager",
+        "description": "Uncleaned awareness event listeners causing 50-100MB/hour memory leak",
+        "details": "**File:** `src/lib/canvas/collaboration/CursorManager.ts:80-81, 631-648`\n\n**Problem:** Event listeners added to awareness but never removed in destroy()\n\n**Steps:**\n1. Add private field: `private awarenessChangeHandler: (() => void) | null = null;`\n2. In initialize(), create bound handler before adding listeners\n3. Store handler reference\n4. In destroy(), call `awareness.off()` with stored handler before nulling awareness\n\n**Impact:** Prevents 50-100MB memory leak per hour of use",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "CRITICAL: Fix Syntax Error in shapes.ts",
+        "description": "Missing closing brace causing build failure",
+        "details": "**File:** `src/lib/stores/shapes.ts:25`\n\n**Problem:** Missing `});` after `shapes.set(allShapes);`\n\n**Steps:**\n1. Add closing brace and parenthesis after line 24: `});`\n\n**Impact:** Code compiles and runs correctly",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "CRITICAL: Fix LiveShapeRenderer Listener Cleanup Bug",
+        "description": "Awareness listener not properly removed due to wrong function reference",
+        "details": "**File:** `src/lib/canvas/collaboration/LiveShapeRenderer.ts:50, 293`\n\n**Problem:** Listener registered with arrow function but removed with method reference (doesn't match)\n\n**Steps:**\n1. Add private field: `private awarenessChangeHandler: (() => void) | null = null;`\n2. In setupAwarenessListener(), store the arrow function\n3. In destroy(), use stored reference for off()\n\n**Impact:** Fixes memory leak from uncleaned awareness listeners",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "HIGH: Delete Dead Code Files (8 files)",
+        "description": "Remove 8 completely unused files reducing bundle by ~15KB",
+        "details": "**Files to DELETE:**\n1. `src/lib/components/index.ts` - Empty placeholder\n2. `src/lib/utils/index.ts` - Empty placeholder\n3. `src/lib/index.ts` - Empty\n4. `src/lib/canvas/shapes/BaseShape.ts` - Never used\n5. `src/lib/canvas/core/LayerManager.ts` - Never imported\n6. `src/lib/types/project.ts` - Never imported (47 lines)\n7. `src/lib/types/collaboration.ts` - Never imported (44 lines)\n8. `src/lib/types/ai.ts` - Never imported in src/ (only in partykit/)\n\n**Steps:**\n1. Delete all 8 files\n2. Update `src/lib/types/index.ts` to remove exports for deleted types\n3. Run `bun run check` to verify no broken imports\n\n**Impact:** 15KB bundle reduction, cleaner codebase",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "HIGH: Remove Unused Package Dependencies",
+        "description": "Remove svelte-konva and @internationalized/date (50KB+)",
+        "details": "**Unused Dependencies:**\n1. `svelte-konva` - Not imported anywhere (using raw Konva)\n2. `@internationalized/date` - Not imported anywhere\n\n**Steps:**\n1. Run `bun remove svelte-konva @internationalized/date`\n2. Verify build still works\n3. Consider removing `mode-watcher` (only used once) and replacing with native CSS media query\n\n**Impact:** 50KB+ bundle reduction, faster installs",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "HIGH: Fix O(n) Shape Lookup in Hot Path",
+        "description": "Replace linear search with O(1) Map lookup for getShapeById callback",
+        "details": "**File:** `src/routes/canvas/+page.svelte:347`\n\n**Problem:** `$shapes.find()` called on every mouse event (O(n) with 500 shapes)\n\n**Steps:**\n1. Add derived shapesMap: `let shapesMap = $derived(new Map($shapes.map(s => [s.id, s])));`\n2. Change getShapeById callback to use Map: `return shapesMap.get(id);`\n\n**Impact:** 10-15ms saved per interaction with 500 shapes",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          "3"
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "HIGH: Optimize Render Effect Array Operations",
+        "description": "Remove redundant array operations in main render $effect",
+        "details": "**File:** `src/routes/canvas/+page.svelte:257-288`\n\n**Problem:** Multiple expensive array operations on every render (1500+ operations with 500 shapes)\n\n**Steps:**\n1. Remove maxZIndex calculation block (already maintained during add operations)\n2. Optimize deleted selection detection with early exit\n3. Use .some() instead of creating full Set when possible\n\n**Impact:** 60-80% faster render updates",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          "3"
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "HIGH: Optimize Layer Reordering Algorithm",
+        "description": "Replace O(n²) moveUp() loop with O(n) setChildren()",
+        "details": "**File:** `src/lib/canvas/shapes/ShapeRenderer.ts:258-271`\n\n**Problem:** Using moveToBottom() + moveUp() loop causes up to 250,000 operations with 500 shapes\n\n**Steps:**\n1. Replace moveUp loop with direct children array manipulation\n2. Build new children array in correct order\n3. Call layer.setChildren(reorderedNodes) once\n\n**Impact:** 80-90% faster layer reordering",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [
+          "13"
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "HIGH: Fix Missing Timeout Cleanup",
+        "description": "Add cleanup for selection timeout to prevent memory leak",
+        "details": "**File:** `src/routes/canvas/+page.svelte:239`\n\n**Problem:** setTimeout() without cleanup - fires with destroyed references if unmounted early\n\n**Steps:**\n1. Add `let selectionTimeout: ReturnType<typeof setTimeout> | null = null;`\n2. Store timeout reference when calling setTimeout\n3. Add `if (selectionTimeout) clearTimeout(selectionTimeout);` to cleanup\n\n**Impact:** Prevents potential crashes from callbacks on destroyed objects",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "HIGH: Fix Type Safety - Replace any with Proper Types",
+        "description": "Add proper TypeScript types for awareness and shapesMap",
+        "details": "**Files:** \n- `src/lib/canvas/collaboration/LiveShapeRenderer.ts:25-26, 32`\n- `src/lib/collaboration.ts:165-172`\n\n**Steps:**\n1. Import proper types: `import type { Awareness } from 'y-protocols/awareness';`\n2. Import `import type * as Y from 'yjs';`\n3. Replace all `any` types with proper Awareness and Y.Map<Shape> types\n\n**Impact:** Type safety restored, catches potential runtime errors",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "MED: Delete Unused Exported Functions",
+        "description": "Remove getOnlineUserCount() and getAllDraggedShapes() - never called",
+        "details": "**File:** `src/lib/collaboration.ts`\n\n**Functions to DELETE:**\n1. Lines 118-123: `getOnlineUserCount()`\n2. Lines 162-179: `getAllDraggedShapes()`\n\n**Steps:**\n1. Verify no imports exist with grep\n2. Delete both functions\n3. Run build to confirm\n\n**Impact:** Cleaner API surface, less confusion",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "MED: Pre-Sort Shapes in Store",
+        "description": "Sort shapes once in store instead of twice per render",
+        "details": "**File:** `src/lib/stores/shapes.ts:22-28`\n\n**Problem:** Shapes sorted twice per render (O(n log n) x 2)\n\n**Steps:**\n1. In initializeShapesSync(), sort shapes before setting store\n2. Remove sorting from ShapeRenderer.renderShapes()\n\n**Impact:** 50% less sorting operations, 5-10ms saved with 500 shapes",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [
+          "3"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "MED: Optimize getAllShapes - Remove Unnecessary Clone",
+        "description": "Use Array.from instead of forEach + spread for better performance",
+        "details": "**File:** `src/lib/collaboration.ts:110-115`\n\n**Current:** Creates new object for each shape  \n**Solution:** `return Array.from(shapesMap.values());`\n\n**Impact:** 20-30% faster shape sync updates",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [
+          "3"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "MED: Lower Viewport Culling Threshold",
+        "description": "Activate culling at 20 shapes instead of 50 for earlier performance gains",
+        "details": "**File:** `src/lib/utils/viewport-culling.ts:220`\n\n**Change:** `if (shapes.length < 20)` instead of `< 50`\n\n**Impact:** Better performance with 20-50 shapes",
+        "testStrategy": "",
+        "status": "in-progress",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "MED: Fix History Store Memory Leak",
+        "description": "Cleanup undo manager event listeners on re-initialization",
+        "details": "**File:** `src/lib/stores/history.ts:26-53`\n\n**Problem:** Listeners accumulate if initializeUndoManager called multiple times (HMR)\n\n**Steps:**\n1. Track handler reference globally\n2. Remove old listeners before creating new undo manager\n3. Add destroyUndoManager() cleanup function\n\n**Impact:** Prevents listener accumulation during development",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "MED: Fix Textarea Cleanup on Unmount",
+        "description": "Clean up active textarea in ShapeRenderer.destroy()",
+        "details": "**File:** `src/lib/canvas/shapes/ShapeRenderer.ts:942-945`\n\n**Problem:** If component unmounts during text editing, textarea remains in DOM\n\n**Steps:**\n1. In destroy(), check if activeTextarea exists\n2. Call activeTextarea.remove()\n3. Call textEditingEndCallback if exists\n\n**Impact:** Prevents DOM pollution from orphaned textareas",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "MED: Track and Destroy Konva Tweens",
+        "description": "Prevent memory leak from abandoned Konva.Tween objects",
+        "details": "**File:** `src/lib/canvas/core/SelectionManager.ts:341-411`\n\n**Problem:** Tweens created but never destroyed if component unmounts mid-animation\n\n**Steps:**\n1. Add private field: `activeTweens: Konva.Tween[] = []`\n2. Create helper method that tracks tweens\n3. Clean up all active tweens in destroy()\n\n**Impact:** Prevents tween-related memory leaks",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 19,
+        "title": "MED: Add Konva Layer Optimizations",
+        "description": "Enable hitGraphEnabled and use FastLayer for grid",
+        "details": "**File:** `src/lib/canvas/core/CanvasEngine.ts:49-56`\n\n**Steps:**\n1. Import Konva.FastLayer\n2. Use FastLayer for grid (static content)\n3. Add `listening: false` to grid layer\n4. Add `hitGraphEnabled: true` to shapes layer\n\n**Impact:** 5-10% rendering performance improvement",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [
+          "1"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 20,
+        "title": "MED: Add Grid Layer Caching",
+        "description": "Cache grid layer since it rarely changes",
+        "details": "**File:** `src/lib/canvas/core/CanvasEngine.ts:92-125`\n\n**Steps:**\n1. After drawing grid, call `gridLayer.cache()`\n2. Call `clearCache()` before redrawing (on resize)\n\n**Impact:** 5-10% rendering improvement, less GPU work",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [
+          "19"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 21,
+        "title": "MED: Extract Magic Numbers to Constants",
+        "description": "Move hardcoded values to CANVAS/HISTORY/AI constants",
+        "details": "**Files:** Multiple\n\n**Values to Extract:**\n- LiveShapeRenderer updateInterval (16) → CANVAS.FRAME_TIME_MS\n- EventHandlers drag threshold (5) → CANVAS.DRAG_NET_THRESHOLD\n- SelectionManager min size (5) → SHAPES.MIN_SIZE (already exists!)\n- CommandPalette timeout (30000) → AI.COMMAND_TIMEOUT_MS\n- History captureTimeout (500) → HISTORY.CAPTURE_TIMEOUT_MS\n\n**Impact:** Better maintainability, easier tuning",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 22,
+        "title": "MED: Standardize Error Handling Patterns",
+        "description": "Consistent error handling with user feedback for user-initiated operations",
+        "details": "**Files:** Multiple stores and managers\n\n**Pattern to Implement:**\n- User-initiated operations: console.error + toast notification\n- Internal/programmer errors: throw Error with descriptive message\n- Optional operations: return false on failure\n\n**Impact:** Better debugging, better UX",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 23,
+        "title": "LOW: Fix Writable-Derived Anti-Pattern",
+        "description": "Simplify StrokeWidthControl and ColorPicker prop syncing",
+        "details": "**Files:**\n- `src/lib/components/controls/StrokeWidthControl.svelte`\n- `src/lib/components/ui/ColorPicker.svelte`\n\n**Problem:** Two $effect blocks fighting each other, eslint rules disabled\n\n**Solution:** Use explicit change handlers instead of reactive effects\n\n**Impact:** Cleaner code, easier to maintain",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "low",
+        "subtasks": []
+      },
+      {
+        "id": 24,
+        "title": "LOW: Remove Commented Dead Code",
+        "description": "Clean up commented code blocks that should use git history",
+        "details": "**File:** `src/app.d.ts:13-14`\n\n```typescript\n// interface Error {}\n// interface Platform {}\n```\n\n**Steps:**\n1. Remove all commented code blocks\n2. Use git history if old code is needed\n\n**Impact:** Cleaner code, less noise",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "low",
+        "subtasks": []
+      },
+      {
+        "id": 25,
+        "title": "LOW: Delete Unused Type Guards",
+        "description": "Remove isRectangle, isCircle, etc. type guards that are never used",
+        "details": "**File:** `src/lib/types/shapes.ts:114-141`\n\n**Functions to DELETE:**\n- isRectangle()\n- isCircle()\n- isLine()\n- isText()\n- isPolygon()\n- isStar()\n- isTriangle()\n\n**Rationale:** Code uses switch/case with direct casting instead\n\n**Impact:** Simpler API, less exported surface",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "low",
+        "subtasks": []
+      },
+      {
+        "id": 26,
+        "title": "LOW: Fix SVG Asset Dark Mode Support",
+        "description": "Use currentColor instead of hardcoded black in logout.svg",
+        "details": "**File:** `src/lib/assets/logout.svg:1`\n\n**Change:** `stroke=\"#000000\"` to `stroke=\"currentColor\"`\n\n**Impact:** Logout icon adapts to theme",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "low",
+        "subtasks": []
+      },
+      {
+        "id": 27,
+        "title": "MED: Add Error Boundaries for Yjs Transactions",
+        "description": "Wrap all ydoc.transact() calls in try/catch for error handling",
+        "details": "**File:** `src/lib/stores/shapes.ts` (all shapeOperations methods)\n\n**Steps:**\n1. Add try/catch around all transact() calls\n2. Return boolean success/failure\n3. Consider showing user toast on failure\n\n**Impact:** Graceful error handling, better UX",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 28,
+        "title": "LOW: Document Store vs Runes Decision",
+        "description": "Add JSDoc comments explaining why Svelte stores are kept vs migrating to runes",
+        "details": "**Files:** All files in `src/lib/stores/`\n\n**Add Documentation:**\n```typescript\n/**\n * Global shapes store (read-only, synced from Yjs)\n * \n * NOTE: Using Svelte 4 stores instead of runes because:\n * 1. Global state shared across many components\n * 2. Yjs integration requires stable reference\n * 3. Store pattern provides consistent API for subscriptions\n * \n * This is an acceptable pattern for global singleton state.\n */\nexport const shapes = writable<Shape[]>([]);\n```\n\n**Impact:** Clarity for future developers",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "low",
+        "subtasks": []
+      },
+      {
+        "id": 29,
+        "title": "MED: Fix Text Shape Width Calculation in Selection Net",
+        "description": "Use actual width property when available instead of estimation",
+        "details": "**File:** `src/lib/canvas/core/SelectionNet.ts:238-247`\n\n**Problem:** Doesn't use shape.width if available\n\n**Solution:**\n```typescript\ncase 'text': {\n    const textWidth = shape.width || (shape.text?.length || 1) * (shape.fontSize || 16) * 0.6;\n    const textHeight = shape.height || (shape.fontSize || 16) * 1.2;\n    shapeBounds = {\n        x: shape.x,\n        y: shape.y,\n        width: textWidth,\n        height: textHeight\n    };\n    break;\n}\n```\n\n**Impact:** More accurate drag-net selection for text shapes",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 30,
+        "title": "MED: Add Konva Performance Hints",
+        "description": "Add perfectDrawEnabled: false and hitStrokeWidth for better performance",
+        "details": "**File:** `src/lib/canvas/shapes/ShapeRenderer.ts:446-563`\n\n**Add to baseConfig:**\n```typescript\nconst baseConfig = {\n    // ...existing...\n    perfectDrawEnabled: false, // Faster rendering\n    hitStrokeWidth: 0, // Simpler hit detection\n    shadowForStrokeEnabled: false // Skip shadow for strokes\n};\n```\n\n**Impact:** 3-5% rendering performance gain",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 31,
+        "title": "HIGH: Fix Provider Subscription Race Condition",
+        "description": "Subscribe to provider before initializing to prevent missed initial state",
+        "details": "**File:** `src/routes/canvas/+page.svelte:397-414`\n\n**Problem:** Subscription registered after provider initialization - may miss initial state\n\n**Steps:**\n1. Move `provider.subscribe()` BEFORE `initializeProvider()`\n2. Ensure cursor manager initializes on first provider update\n\n**Impact:** Prevents cursor manager initialization failures",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 32,
+        "title": "MED: Remove Unused Parameter from initializeShapesSync",
+        "description": "Delete unused _shapeMapInstance parameter",
+        "details": "**File:** `src/lib/stores/shapes.ts:20`\n\n**Change:**\n```typescript\n// Before:\nexport function initializeShapesSync(_shapeMapInstance: Y.Map<Shape>) {\n\n// After:\nexport function initializeShapesSync() {\n```\n\nUpdate call site in canvas/+page.svelte:391\n\n**Impact:** Cleaner API",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 33,
+        "title": "LOW: Optimize Svelte $effect in TextFormattingToolbar",
+        "description": "Replace multiple $effects with single $derived computation",
+        "details": "**File:** `src/routes/canvas/+page.svelte:84-105`\n\n**Problem:** Multiple $effect blocks that could be consolidated\n\n**Solution:** Use $derived for formatting state, single $effect for side effect only\n\n**Impact:** Simpler reactive logic, easier to debug",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "low",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-10-18T23:26:21.703Z",
+      "description": "Default tasks context",
+      "updated": "2025-10-19T00:30:04.930Z"
+    }
+  }
+}
