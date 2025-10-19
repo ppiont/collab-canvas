@@ -47,7 +47,7 @@
   Spacing reference (8pt grid):
   - 16px = pb-4 (bottom padding)
 -->
-<div class="flex justify-between items-center pb-4 px-4 -mx-4 px-4 pt-4 -mt-4 border-b border-slate-700 bg-slate-800/80 backdrop-blur-sm mb-2 rounded-t-lg" data-testid="panel-header">
+<div class="flex justify-between items-center pb-4 px-4 -mx-4 pt-4 -mt-4 border-b border-slate-700 bg-slate-800/80 backdrop-blur-sm mb-2 rounded-t-lg" data-testid="panel-header">
 	<!-- Selection count and type -->
 	<h2 class="text-base font-semibold truncate flex-1 mr-2 text-slate-100">
 		{selectionText}

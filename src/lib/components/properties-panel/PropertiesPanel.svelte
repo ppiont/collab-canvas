@@ -128,27 +128,48 @@
 	:global([data-testid="properties-panel"] input[type="number"]),
 	:global([data-testid="properties-panel"] input[type="text"]),
 	:global([data-testid="properties-panel"] input[type="color"]) {
-		@apply bg-slate-700/50 border-slate-600 text-slate-100 placeholder:text-slate-500;
-		@apply hover:bg-slate-700/70 hover:border-slate-500;
-		@apply focus-visible:bg-slate-700 focus-visible:border-slate-400 focus-visible:ring-blue-500/50;
-		@apply transition-all;
+		background-color: rgba(99, 102, 241, 0.1);
+		border-color: rgb(71, 85, 105);
+		color: rgb(226, 232, 240);
+		transition: all 200ms ease;
+	}
+
+	:global([data-testid="properties-panel"] input[type="number"]:hover),
+	:global([data-testid="properties-panel"] input[type="text"]:hover),
+	:global([data-testid="properties-panel"] input[type="color"]:hover) {
+		background-color: rgba(99, 102, 241, 0.15);
+		border-color: rgb(59, 70, 85);
+	}
+
+	:global([data-testid="properties-panel"] input[type="number"]:focus-visible),
+	:global([data-testid="properties-panel"] input[type="text"]:focus-visible),
+	:global([data-testid="properties-panel"] input[type="color"]:focus-visible) {
+		background-color: rgba(99, 102, 241, 0.2);
+		border-color: rgb(51, 65, 85);
+		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 	}
 
 	/* Override slider styling */
 	:global([data-testid="properties-panel"] [role="slider"]) {
-		@apply bg-slate-700/50;
+		background-color: rgba(99, 102, 241, 0.1);
 	}
 
 	/* Override select/dropdown styling */
 	:global([data-testid="properties-panel"] button[data-state="closed"]),
 	:global([data-testid="properties-panel"] button[data-state="open"]) {
-		@apply bg-slate-700/50 border-slate-600 text-slate-100;
-		@apply hover:bg-slate-700/70 hover:border-slate-500;
-		@apply focus-visible:ring-blue-500/50;
+		background-color: rgba(99, 102, 241, 0.1);
+		border-color: rgb(71, 85, 105);
+		color: rgb(226, 232, 240);
+	}
+
+	:global([data-testid="properties-panel"] button[data-state="closed"]:hover),
+	:global([data-testid="properties-panel"] button[data-state="open"]:hover) {
+		background-color: rgba(99, 102, 241, 0.15);
+		border-color: rgb(59, 70, 85);
 	}
 
 	/* Override label styling */
 	:global([data-testid="properties-panel"] label) {
-		@apply text-slate-300;
+		color: rgb(203, 213, 225);
 	}
 </style>
