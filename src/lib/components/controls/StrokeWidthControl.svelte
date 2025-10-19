@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Label } from '$lib/components/ui/label';
-	import { Slider } from '$lib/components/ui/slider';
 	import { Input } from '$lib/components/ui/input';
 
 	interface Props {
@@ -14,11 +13,6 @@
 
 	// Derive display value from prop - no need for state/effects
 	let displayValue = $derived(Math.round(value));
-
-	function handleSliderChange(newValue: number) {
-		const rounded = Math.round(newValue);
-		onchange?.(rounded);
-	}
 
 	function handleInputChange(e: Event) {
 		const target = e.target as HTMLInputElement;
@@ -39,8 +33,6 @@
 		<Label>Stroke Width</Label>
 		<span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{displayValue}px</span>
 	</div>
-
-	<Slider type="single" value={displayValue} {min} {max} step={1} onchange={handleSliderChange} />
 
 	<Input
 		type="number"
