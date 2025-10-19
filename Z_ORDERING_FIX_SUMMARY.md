@@ -1,7 +1,7 @@
 # Z-Ordering Fix - Summary
 
 ## Problem
-Z-ordering (stacking order) of shapes was not maintained correctly across collaborators and between refreshes/zooms. Shapes would randomly shift their stacking positions.
+Z-ordering (stacking order) of shapes was not maintained correctly across collaborators and between refreshes/zooms. Shapes would randomly shift their stacking positions, especially when zooming in and out.
 
 ## Root Cause
 The bug was in `/src/lib/canvas/shapes/ShapeRenderer.ts` at lines 257-261.
@@ -26,7 +26,9 @@ User brings B forward: [A (z=1), B (z=3)] → order string: "A,B" (same!)
 Result: Reordering is skipped even though z-indices changed!
 ```
 
-## The Fix
+## The Fixes
+
+### Fix 1: Include zIndex Values in Comparison
 
 Changed the order comparison to include zIndex values:
 
@@ -44,11 +46,30 @@ Now the check detects:
 - ✅ When shape z-indices change (zIndex values change)
 - ✅ When the sorted order changes
 
+### Fix 2: Only Reorder Shapes That Exist in Layer (Zoom Bug)
+
+**Additional Issue Discovered:** Viewport culling destroys shapes outside the viewport during zoom. The reorder logic was trying to reorder ALL shapes (including destroyed ones), causing re-created shapes to be added at the end of the layer on zoom out.
+
+**Fix:**
+```typescript
+// ✅ Only reorder shapes currently in the layer
+const renderedShapeIds = new Set(this.shapesLayer.find('.shape').map(n => n.id()));
+const renderedShapes = shapes.filter(s => renderedShapeIds.has(s.id));
+const currentZIndexOrder = renderedShapes.map(s => `${s.id}:${s.zIndex}`).join(',');
+if (currentZIndexOrder !== this.lastZIndexOrder) {
+    this.reorderShapesByZIndex(renderedShapes);
+    this.lastZIndexOrder = currentZIndexOrder;
+}
+```
+
+This ensures culled shapes don't break z-order logic during zoom operations.
+
 ## Files Changed
 
-1. **`/src/lib/canvas/shapes/ShapeRenderer.ts`** (line 258)
-   - Updated the zIndex order comparison to include zIndex values
-   - Added comment explaining the fix
+1. **`/src/lib/canvas/shapes/ShapeRenderer.ts`** (lines 260-266)
+   - Updated the zIndex order comparison to include zIndex values (Fix 1)
+   - Only reorder shapes that exist in the layer (Fix 2)
+   - Added comments explaining both fixes
 
 ## Impact
 

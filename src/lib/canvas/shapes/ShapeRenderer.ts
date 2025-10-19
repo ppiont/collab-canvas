@@ -251,13 +251,17 @@ export class ShapeRenderer {
 
 		// Reorder shapes in layer based on zIndex
 		// This ensures visual stacking matches data (bottom to top order)
-		// CRITICAL: Use ALL shapes, not just visible ones, for correct z-order
+		// CRITICAL: Only reorder shapes that actually exist in the layer
+		// When viewport culling is active, some shapes are destroyed and shouldn't be included
 		// Shapes already sorted by zIndex in store (no need to sort again)
 		// OPTIMIZATION: Only reorder if z-index order has changed (prevents interrupting drags)
 		// FIX: Include zIndex values in comparison, not just IDs, to detect z-index changes
-		const currentZIndexOrder = shapes.map(s => `${s.id}:${s.zIndex}`).join(',');
+		// FIX 2: Only compare shapes that are actually rendered in the layer (not culled ones)
+		const renderedShapeIds = new Set(this.shapesLayer.find('.shape').map(n => n.id()));
+		const renderedShapes = shapes.filter(s => renderedShapeIds.has(s.id));
+		const currentZIndexOrder = renderedShapes.map(s => `${s.id}:${s.zIndex}`).join(',');
 		if (currentZIndexOrder !== this.lastZIndexOrder) {
-			this.reorderShapesByZIndex(shapes);
+			this.reorderShapesByZIndex(renderedShapes);
 			this.lastZIndexOrder = currentZIndexOrder;
 		}
 

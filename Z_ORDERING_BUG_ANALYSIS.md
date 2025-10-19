@@ -1,7 +1,7 @@
 # Z-Ordering Bug Analysis
 
 ## Problem Statement
-Z-ordering (stacking order) of shapes is not maintained properly across collaborators and between refreshes/zooms. Shapes appear to randomly shift their stacking order.
+Z-ordering (stacking order) of shapes is not maintained properly across collaborators and between refreshes/zooms. Shapes appear to randomly shift their stacking order, especially when zooming in and out.
 
 ## Root Cause
 
@@ -59,7 +59,9 @@ Konva layer children order is now STALE (doesn't match zIndex values)
 User B sees wrong stacking order
 ```
 
-## The Fix
+## The Fixes
+
+### Fix 1: Include zIndex in Comparison
 
 Replace the flawed ID-based optimization with a zIndex-aware check:
 
@@ -76,6 +78,34 @@ This ensures reordering happens whenever:
 - A shape is added/removed (ID list changes)
 - A shape's zIndex is modified (zIndex value changes)
 - The sorted order of shapes changes
+
+### Fix 2: Only Reorder Shapes That Exist in Layer (Zoom Bug)
+
+**Additional Bug Found:** When viewport culling is active (zooming), shapes outside the viewport are destroyed. But the reorder logic was trying to reorder ALL shapes, including destroyed ones. When you zoom back out, culled shapes get re-created and added to the END of the layer, making them appear on top.
+
+**The Flow:**
+```
+Zoom in → Shapes A,B,C culled (destroyed)
+Reorder → Only visible shapes D,E,F reordered  
+Zoom out → A,B,C re-created → Added to END → Appear on top!
+```
+
+**Fix:**
+```typescript
+// Only reorder shapes that actually exist in the layer
+const renderedShapeIds = new Set(this.shapesLayer.find('.shape').map(n => n.id()));
+const renderedShapes = shapes.filter(s => renderedShapeIds.has(s.id));
+const currentZIndexOrder = renderedShapes.map(s => `${s.id}:${s.zIndex}`).join(',');
+if (currentZIndexOrder !== this.lastZIndexOrder) {
+    this.reorderShapesByZIndex(renderedShapes);
+    this.lastZIndexOrder = currentZIndexOrder;
+}
+```
+
+This ensures:
+- Only shapes currently in the layer are considered for reordering
+- Culled shapes don't break the z-order logic
+- When shapes are re-created after zoom, they get added in correct z-order
 
 ## Impact
 
