@@ -10,6 +10,14 @@ import type * as Y from 'yjs';
 
 /**
  * Global shapes store (read-only, synced from Yjs)
+ * 
+ * NOTE: Using Svelte stores instead of runes because:
+ * 1. Global state shared across many components (ShapeRenderer, EventHandlers, etc.)
+ * 2. Yjs integration requires stable reference for observe() callbacks
+ * 3. Store pattern provides consistent API for subscriptions across the app
+ * 4. Derived stores allow efficient reactive computations without manual effects
+ * 
+ * This is an acceptable pattern for global singleton state that integrates with external systems.
  */
 export const shapes = writable<Shape[]>([]);
 

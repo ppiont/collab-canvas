@@ -9,6 +9,14 @@ import { CANVAS } from '$lib/constants';
 
 /**
  * Canvas viewport state (position and zoom)
+ * 
+ * NOTE: Using Svelte stores instead of runes because:
+ * 1. Global viewport state shared across ViewportManager, EventHandlers, CanvasEngine
+ * 2. Multiple derived stores (zoomPercentage, isViewportDefault) depend on this
+ * 3. Konva integration requires stable subscription API for stage transforms
+ * 4. Store pattern allows atomic updates across pan, zoom, and position changes
+ * 
+ * This is an acceptable pattern for global singleton state.
  */
 export const viewport = writable<CanvasViewport>({
 	x: 0,

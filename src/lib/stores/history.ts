@@ -21,6 +21,14 @@ let stackUpdateHandler: (() => void) | null = null;
 
 /**
  * Stack sizes for reactive updates
+ * 
+ * NOTE: Using Svelte stores instead of runes because:
+ * 1. Global history state shared across EventHandlers, Toolbar, KeyboardShortcuts
+ * 2. Multiple derived stores (canUndo, canRedo, historyInfo) depend on these
+ * 3. Yjs UndoManager integration requires stable event listener callbacks
+ * 4. Store pattern provides consistent API for history UI updates
+ * 
+ * This is an acceptable pattern for global singleton state that integrates with Yjs.
  */
 export const undoStackSize = writable(0);
 export const redoStackSize = writable(0);
