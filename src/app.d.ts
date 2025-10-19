@@ -10,8 +10,6 @@ declare global {
 			user: Auth0User | null;
 			userProfile: UserProfile | null;
 		}
-		// interface Error {}
-		// interface Platform {}
 	}
 }
 
