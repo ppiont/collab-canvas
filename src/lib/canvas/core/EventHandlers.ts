@@ -898,8 +898,8 @@ export class CanvasEventHandlers {
 		} else if (activeToolValue === 'circle') {
 			const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
 			this.shapePreviewNode = new Konva.Circle({
-				x: this.shapeStartPos.x,
-				y: this.shapeStartPos.y,
+				x: x + width / 2, // Center of drag box
+				y: y + height / 2,
 				radius,
 				stroke: '#667eea',
 				strokeWidth: 2,
@@ -909,8 +909,8 @@ export class CanvasEventHandlers {
 		} else if (activeToolValue === 'polygon') {
 			const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
 			this.shapePreviewNode = new Konva.RegularPolygon({
-				x: this.shapeStartPos.x,
-				y: this.shapeStartPos.y,
+				x: x + width / 2, // Center of drag box
+				y: y + height / 2,
 				sides: 5, // Pentagon (default)
 				radius,
 				stroke: '#667eea',
@@ -921,8 +921,8 @@ export class CanvasEventHandlers {
 		} else if (activeToolValue === 'star') {
 			const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
 			this.shapePreviewNode = new Konva.Star({
-				x: this.shapeStartPos.x,
-				y: this.shapeStartPos.y,
+				x: x + width / 2, // Center of drag box
+				y: y + height / 2,
 				numPoints: 5,
 				innerRadius: radius / 2,
 				outerRadius: radius,

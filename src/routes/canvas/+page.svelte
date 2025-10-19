@@ -153,13 +153,14 @@
 
 		try {
 			// For circles, use the dragged dimensions to calculate radius
+			// Position at center of dragged area (not top-left)
 			if (tool === 'circle') {
 				const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
 				return ShapeFactory.create(
 					tool,
 					{
-						x, // Center at start position
-						y,
+						x: x + width / 2, // Center of drag box
+						y: y + height / 2,
 						radius,
 						fill: data.userProfile.color,
 						stroke: darkenColor(data.userProfile.color, 20),
@@ -171,13 +172,14 @@
 			}
 
 			// For polygon, use radius from dragged size
+			// Position at center of dragged area (not top-left)
 			if (tool === 'polygon') {
 				const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
 				return ShapeFactory.create(
 					tool,
 					{
-						x, // Center at start position
-						y,
+						x: x + width / 2, // Center of drag box
+						y: y + height / 2,
 						radius,
 						fill: data.userProfile.color,
 						stroke: darkenColor(data.userProfile.color, 20),
@@ -189,14 +191,15 @@
 			}
 
 			// For star, use radius from dragged size for both inner and outer radius
+			// Position at center of dragged area (not top-left)
 			if (tool === 'star') {
 				const outerRadius = Math.sqrt(width ** 2 + height ** 2) / 2;
 				const innerRadius = outerRadius / 2;
 				return ShapeFactory.create(
 					tool,
 					{
-						x, // Center at start position
-						y,
+						x: x + width / 2, // Center of drag box
+						y: y + height / 2,
 						outerRadius,
 						innerRadius,
 						fill: data.userProfile.color,
