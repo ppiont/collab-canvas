@@ -248,12 +248,17 @@
 
 	// Broadcast cursor when viewport changes (modern Svelte 5 reactivity)
 	$effect(() => {
-		// Track viewport changes to broadcast cursor
+		// Track viewport changes to broadcast cursor and redraw grid
 		void $viewport;
 
 		// Broadcast cursor position when viewport changes
 		if (cursorManager) {
 			cursorManager.broadcastCurrentPosition();
+		}
+
+		// Redraw grid for infinite viewport-based rendering
+		if (canvasEngine) {
+			canvasEngine.drawGrid();
 		}
 	});
 

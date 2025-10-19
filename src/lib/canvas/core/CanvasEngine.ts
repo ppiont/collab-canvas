@@ -91,9 +91,10 @@ export class CanvasEngine {
 
 	/**
 	 * Draw grid lines on grid layer
+	 * Uses viewport culling for infinite grid performance
 	 */
 	drawGrid(): void {
-		if (!this.layers) return;
+		if (!this.layers || !this.stage) return;
 
 		const gridLayer = this.layers.grid;
 		gridLayer.destroyChildren();
@@ -101,27 +102,35 @@ export class CanvasEngine {
 		const gridSize = this.config.gridSize;
 		const gridColor = this.config.gridColor;
 
-		// Make grid much larger than viewport for infinite feel
-		const gridExtent = Math.max(this.config.width, this.config.height) * 5;
-		const gridStart = -gridExtent;
-		const gridEnd = gridExtent;
+		// Get current viewport bounds (accounting for stage position and scale)
+		const stagePos = this.stage.position();
+		const scale = this.stage.scaleX(); // Assume uniform scaling
+		
+		// Calculate visible world coordinates with padding for smooth panning
+		const padding = Math.max(this.config.width, this.config.height);
+		const startX = Math.floor((-stagePos.x - padding) / scale / gridSize) * gridSize;
+		const endX = Math.floor((-stagePos.x + this.config.width + padding) / scale / gridSize) * gridSize;
+		const startY = Math.floor((-stagePos.y - padding) / scale / gridSize) * gridSize;
+		const endY = Math.floor((-stagePos.y + this.config.height + padding) / scale / gridSize) * gridSize;
 
-		// Vertical lines
-		for (let i = gridStart; i <= gridEnd; i += gridSize) {
+		// Only render visible vertical lines
+		for (let x = startX; x <= endX; x += gridSize) {
 			const line = new Konva.Line({
-				points: [i, gridStart, i, gridEnd],
+				points: [x, startY, x, endY],
 				stroke: gridColor,
-				strokeWidth: 1
+				strokeWidth: 1 / scale, // Counter-scale stroke for consistent width
+				listening: false
 			});
 			gridLayer.add(line);
 		}
 
-		// Horizontal lines
-		for (let i = gridStart; i <= gridEnd; i += gridSize) {
+		// Only render visible horizontal lines
+		for (let y = startY; y <= endY; y += gridSize) {
 			const line = new Konva.Line({
-				points: [gridStart, i, gridEnd, i],
+				points: [startX, y, endX, y],
 				stroke: gridColor,
-				strokeWidth: 1
+				strokeWidth: 1 / scale, // Counter-scale stroke for consistent width
+				listening: false
 			});
 			gridLayer.add(line);
 		}
