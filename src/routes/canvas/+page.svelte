@@ -147,7 +147,7 @@
 		const tool = $activeTool;
 
 		// Use ShapeFactory for all shape creation
-		if (tool === 'select' || tool === 'pan' || tool === 'line' || tool === 'text') {
+		if (tool === 'select' || tool === 'pan' || tool === 'line') {
 			return null;
 		}
 
@@ -204,6 +204,22 @@
 						innerRadius,
 						fill: data.userProfile.color,
 						stroke: darkenColor(data.userProfile.color, 20),
+						strokeWidth: 2,
+						zIndex: maxZIndex + 1
+					},
+					data.user.id
+				);
+			}
+
+			// For text, use width from drag as text box width
+			if (tool === 'text') {
+				return ShapeFactory.create(
+					tool,
+					{
+						x,
+						y,
+						width, // Use dragged width for text box
+						fill: data.userProfile.color,
 						strokeWidth: 2,
 						zIndex: maxZIndex + 1
 					},

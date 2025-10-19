@@ -177,16 +177,8 @@ export class CanvasEventHandlers {
 			// If clicked on empty canvas
 			if (e.target === this.stage) {
 				if (this.isCreateMode()) {
-					// Only text creates on click (no drag-to-size)
-					// Other shapes use drag-to-size (handled in drag handlers)
-					if (activeToolValue === 'text') {
-						const pos = this.stage.getPointerPosition();
-						if (pos) {
-							const transform = this.stage.getAbsoluteTransform().copy().invert();
-							const canvasPos = transform.point(pos);
-							this.onShapeCreate(canvasPos.x, canvasPos.y);
-						}
-					}
+					// All shapes now use drag-to-size (handled in drag handlers)
+					// No instant creation on click
 				} else {
 					// Only deselect if no modifiers held
 					if (!isShift && !isCmd) {
@@ -230,7 +222,7 @@ export class CanvasEventHandlers {
 				const pos = this.stage.getPointerPosition();
 
 				// In create mode, start drag-to-size for applicable shapes
-				if (this.isCreateMode() && pos && activeToolValue !== 'line' && activeToolValue !== 'text') {
+				if (this.isCreateMode() && pos && activeToolValue !== 'line') {
 					const transform = this.stage.getAbsoluteTransform().copy().invert();
 					const canvasPos = transform.point(pos);
 					this.shapeStartPos = canvasPos;
@@ -872,6 +864,18 @@ export class CanvasEventHandlers {
 
 		// Create preview based on tool type
 		if (activeToolValue === 'rectangle') {
+			this.shapePreviewNode = new Konva.Rect({
+				x,
+				y,
+				width,
+				height,
+				stroke: '#667eea',
+				strokeWidth: 2,
+				dash: [5, 5],
+				listening: false
+			});
+		} else if (activeToolValue === 'text') {
+			// Show text preview as a dashed rectangle
 			this.shapePreviewNode = new Konva.Rect({
 				x,
 				y,
