@@ -99,7 +99,7 @@
         "description": "Replace O(n²) moveUp() loop with O(n) setChildren()",
         "details": "**File:** `src/lib/canvas/shapes/ShapeRenderer.ts:258-271`\n\n**Problem:** Using moveToBottom() + moveUp() loop causes up to 250,000 operations with 500 shapes\n\n**Steps:**\n1. Replace moveUp loop with direct children array manipulation\n2. Build new children array in correct order\n3. Call layer.setChildren(reorderedNodes) once\n\n**Impact:** 80-90% faster layer reordering",
         "testStrategy": "",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [
           "13"
         ],
@@ -145,7 +145,7 @@
         "description": "Sort shapes once in store instead of twice per render",
         "details": "**File:** `src/lib/stores/shapes.ts:22-28`\n\n**Problem:** Shapes sorted twice per render (O(n log n) x 2)\n\n**Steps:**\n1. In initializeShapesSync(), sort shapes before setting store\n2. Remove sorting from ShapeRenderer.renderShapes()\n\n**Impact:** 50% less sorting operations, 5-10ms saved with 500 shapes",
         "testStrategy": "",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "3"
         ],
@@ -382,7 +382,7 @@
     "metadata": {
       "created": "2025-10-18T23:26:21.703Z",
       "description": "Default tasks context",
-      "updated": "2025-10-19T00:49:43.337Z"
+      "updated": "2025-10-19T00:52:58.840Z"
     }
   }
 }
