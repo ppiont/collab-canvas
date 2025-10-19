@@ -106,7 +106,7 @@
 		<div class="space-y-2">
 			<!-- Slider -->
 			<Slider
-				type="multiple"
+				type="single"
 				value={[effects.hasMixedOpacity ? 100 : effects.opacity]}
 				onValueChange={(values: number[]) => updateOpacity(values[0])}
 				min={0}
