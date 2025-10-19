@@ -14,16 +14,36 @@ import type * as Y from 'yjs';
 let undoManager: UndoManager | null = null;
 
 /**
+ * Event handler reference for cleanup
+ */
+let stackUpdateHandler: (() => void) | null = null;
+
+/**
  * Stack sizes for reactive updates
  */
 export const undoStackSize = writable(0);
 export const redoStackSize = writable(0);
 
 /**
+ * Cleanup existing undo manager listeners
+ */
+function cleanupUndoManagerListeners() {
+	if (undoManager && stackUpdateHandler) {
+		undoManager.off('stack-item-added', stackUpdateHandler);
+		undoManager.off('stack-item-popped', stackUpdateHandler);
+		undoManager.off('stack-cleared', stackUpdateHandler);
+		stackUpdateHandler = null;
+	}
+}
+
+/**
  * Initialize undo manager
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function initializeUndoManager(shapesMap: Y.Map<any>) {
+	// Cleanup old listeners if re-initializing (HMR)
+	cleanupUndoManagerListeners();
+
 	undoManager = new UndoManager(shapesMap, {
 		// Only track transactions with 'user-action' origin
 		// This prevents system changes (like selection updates) from affecting undo/redo
@@ -31,8 +51,8 @@ export function initializeUndoManager(shapesMap: Y.Map<any>) {
 		captureTimeout: 500 // Group rapid changes within 500ms
 	});
 
-	// Update stack sizes on changes
-	const updateStacks = () => {
+	// Create and store handler reference for cleanup
+	stackUpdateHandler = () => {
 		if (undoManager) {
 			const undoSize = undoManager.undoStack.length;
 			const redoSize = undoManager.redoStack.length;
@@ -41,15 +61,23 @@ export function initializeUndoManager(shapesMap: Y.Map<any>) {
 		}
 	};
 
-	undoManager.on('stack-item-added', () => {
-		updateStacks();
-	});
-	undoManager.on('stack-item-popped', () => {
-		updateStacks();
-	});
-	undoManager.on('stack-cleared', () => {
-		updateStacks();
-	});
+	// Attach event listeners
+	undoManager.on('stack-item-added', stackUpdateHandler);
+	undoManager.on('stack-item-popped', stackUpdateHandler);
+	undoManager.on('stack-cleared', stackUpdateHandler);
+}
+
+/**
+ * Destroy undo manager and cleanup listeners
+ */
+export function destroyUndoManager() {
+	cleanupUndoManagerListeners();
+	if (undoManager) {
+		undoManager.clear();
+		undoManager = null;
+	}
+	undoStackSize.set(0);
+	redoStackSize.set(0);
 }
 
 /**

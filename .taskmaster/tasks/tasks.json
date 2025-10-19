@@ -171,7 +171,7 @@
         "description": "Activate culling at 20 shapes instead of 50 for earlier performance gains",
         "details": "**File:** `src/lib/utils/viewport-culling.ts:220`\n\n**Change:** `if (shapes.length < 20)` instead of `< 50`\n\n**Impact:** Better performance with 20-50 shapes",
         "testStrategy": "",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -182,7 +182,7 @@
         "description": "Cleanup undo manager event listeners on re-initialization",
         "details": "**File:** `src/lib/stores/history.ts:26-53`\n\n**Problem:** Listeners accumulate if initializeUndoManager called multiple times (HMR)\n\n**Steps:**\n1. Track handler reference globally\n2. Remove old listeners before creating new undo manager\n3. Add destroyUndoManager() cleanup function\n\n**Impact:** Prevents listener accumulation during development",
         "testStrategy": "",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -382,7 +382,7 @@
     "metadata": {
       "created": "2025-10-18T23:26:21.703Z",
       "description": "Default tasks context",
-      "updated": "2025-10-19T00:30:04.930Z"
+      "updated": "2025-10-19T00:34:57.433Z"
     }
   }
 }
