@@ -16,6 +16,12 @@ interface DraggedShapeInfo {
 	y: number;
 	userId: string;
 	timestamp: number;
+	// Optional transform properties for live resize/rotation
+	scaleX?: number;
+	scaleY?: number;
+	rotation?: number;
+	width?: number; // For shapes that use width/height directly
+	height?: number;
 }
 
 interface AwarenessStateData {
@@ -146,6 +152,7 @@ export class LiveShapeRenderer {
 		const ghost = new Konva.Group({
 			x: dragInfo.x,
 			y: dragInfo.y,
+			rotation: dragInfo.rotation || 0, // Apply rotation from transform
 			opacity: 0.6 // Semi-transparent
 		});
 
@@ -153,25 +160,25 @@ export class LiveShapeRenderer {
 		let shapeNode: Konva.Node | null = null;
 
 		switch (shapeData.type) {
-			case 'rectangle': {
-				const rect = shapeData as Extract<Shape, { type: 'rectangle' }>;
-				shapeNode = new Konva.Rect({
-					width: rect.width,
-					height: rect.height,
-					fill: rect.fill || userColor,
-					stroke: rect.stroke,
-					strokeWidth: rect.strokeWidth,
-					opacity: 0.6
-				});
-				break;
-			}
+		case 'rectangle': {
+			const rect = shapeData as Extract<Shape, { type: 'rectangle' }>;
+			shapeNode = new Konva.Rect({
+				width: dragInfo.width || rect.width, // Use live width if transforming
+				height: dragInfo.height || rect.height, // Use live height if transforming
+				fill: rect.fill || userColor,
+				stroke: rect.stroke,
+				strokeWidth: rect.strokeWidth,
+				opacity: 0.6
+			});
+			break;
+		}
 
 		case 'circle': {
 			const circle = shapeData as Extract<Shape, { type: 'circle' }>;
 			shapeNode = new Konva.Circle({
 				radius: circle.radius,
-				scaleX: circle.scaleX || 1,
-				scaleY: circle.scaleY || 1,
+				scaleX: dragInfo.scaleX || circle.scaleX || 1, // Use live scale if transforming
+				scaleY: dragInfo.scaleY || circle.scaleY || 1,
 				fill: circle.fill || userColor,
 				stroke: circle.stroke,
 				strokeWidth: circle.strokeWidth,
@@ -185,8 +192,8 @@ export class LiveShapeRenderer {
 			shapeNode = new Konva.RegularPolygon({
 				sides: 3,
 				radius: Math.max(triangle.width, triangle.height) / 2,
-				scaleX: triangle.scaleX || 1,
-				scaleY: triangle.scaleY || 1,
+				scaleX: dragInfo.scaleX || triangle.scaleX || 1, // Use live scale if transforming
+				scaleY: dragInfo.scaleY || triangle.scaleY || 1,
 				fill: triangle.fill || userColor,
 				stroke: triangle.stroke,
 				strokeWidth: triangle.strokeWidth,
@@ -200,8 +207,8 @@ export class LiveShapeRenderer {
 			shapeNode = new Konva.RegularPolygon({
 				sides: polygon.sides || 5,
 				radius: polygon.radius,
-				scaleX: polygon.scaleX || 1,
-				scaleY: polygon.scaleY || 1,
+				scaleX: dragInfo.scaleX || polygon.scaleX || 1, // Use live scale if transforming
+				scaleY: dragInfo.scaleY || polygon.scaleY || 1,
 				fill: polygon.fill || userColor,
 				stroke: polygon.stroke,
 				strokeWidth: polygon.strokeWidth,
@@ -216,8 +223,8 @@ export class LiveShapeRenderer {
 				numPoints: star.numPoints || 5,
 				innerRadius: star.innerRadius || 20,
 				outerRadius: star.outerRadius || 50,
-				scaleX: star.scaleX || 1,
-				scaleY: star.scaleY || 1,
+				scaleX: dragInfo.scaleX || star.scaleX || 1, // Use live scale if transforming
+				scaleY: dragInfo.scaleY || star.scaleY || 1,
 				fill: star.fill || userColor,
 				stroke: star.stroke,
 				strokeWidth: star.strokeWidth,

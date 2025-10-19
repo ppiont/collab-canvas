@@ -138,6 +138,41 @@ export function updateDraggedShape(shapeId: string, x: number, y: number, userId
 }
 
 /**
+ * Update live transformed shape (resize/rotation) in Awareness
+ * Called during transform to show other users the shape being resized/rotated
+ */
+export function updateTransformedShape(
+	shapeId: string,
+	x: number,
+	y: number,
+	userId: string,
+	transformProps: {
+		scaleX?: number;
+		scaleY?: number;
+		rotation?: number;
+		width?: number;
+		height?: number;
+	}
+): void {
+	if (!_provider) return;
+
+	const currentState = _provider.awareness.getLocalState() || {};
+	const draggedShapes = currentState.draggedShapes || {};
+
+	_provider.awareness.setLocalStateField('draggedShapes', {
+		...draggedShapes,
+		[shapeId]: {
+			id: shapeId,
+			x,
+			y,
+			userId,
+			timestamp: Date.now(),
+			...transformProps
+		}
+	});
+}
+
+/**
  * PHASE 6: Clear dragged shape from Awareness
  * Called on dragend to remove the ghost shape
  */
