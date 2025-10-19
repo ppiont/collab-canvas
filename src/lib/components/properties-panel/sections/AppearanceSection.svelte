@@ -33,9 +33,6 @@
 		onUpdate: (items: Shape[]) => void;
 	} = $props();
 
-	// Recent colors shared between fill and stroke
-	let recentColors = $state<string[]>([]);
-
 	// Compute mixed states for appearance properties
 	const appearance = $derived.by(() => {
 		if (items.length === 0) {
@@ -150,7 +147,7 @@
 					color={appearance.fill}
 					label="Fill"
 					onChange={updateFill}
-					bind:recentColors
+					storageKey="collab-canvas-recent-fill-colors"
 				/>
 			</FormField>
 		{/if}
@@ -179,14 +176,14 @@
 		</div>
 
 		{#if appearance.strokeEnabled || appearance.hasMixedStrokeEnabled}
-			<div class="grid grid-cols-[1fr_110px] gap-2">
+			<div class="space-y-2">
 				<!-- Stroke Color -->
 				<FormField id="stroke-color" label="" isMixed={appearance.hasMixedStroke}>
 					<ColorPickerField
 						color={appearance.stroke}
 						label="Stroke"
 						onChange={updateStroke}
-						bind:recentColors
+						storageKey="collab-canvas-recent-stroke-colors"
 					/>
 				</FormField>
 
@@ -238,7 +235,7 @@ Features:
 - Fill color picker with enable/disable checkbox
 - Stroke color picker with enable/disable checkbox
 - Stroke width input with arrow key support
-- Shared recent colors between fill and stroke
+- Separate persistent recent colors for fill and stroke (localStorage)
 - Conditional rendering (stroke width only when stroke enabled)
 - Mixed value handling with em dash (—)
 - Auto-select text on focus for quick editing
@@ -254,14 +251,19 @@ Layout:
 - Checkbox aligned right with label
 - "Mixed" indicator shown next to checkbox when applicable
 - Color pickers only shown when enabled (or mixed state)
-- Stroke width only shown when stroke enabled (or mixed state)
+- Stroke color and width on separate rows (space-y-2)
+- Full-width inputs for better usability
 
 Interaction:
 - Toggle checkboxes to enable/disable fill/stroke
 - Click color swatch to open picker
 - Choose colors from native picker
-- Copy colors in multiple formats
-- See contrast ratios and WCAG compliance
-- Use recent colors for quick reuse
+- Copy colors to clipboard
+- Use recent colors for quick reuse (persisted separately for fill/stroke)
 - Edit stroke width with keyboard or mouse
+
+Storage:
+- Fill recent colors: localStorage key "collab-canvas-recent-fill-colors"
+- Stroke recent colors: localStorage key "collab-canvas-recent-stroke-colors"
+- Persists across sessions and panel open/close cycles
 -->
