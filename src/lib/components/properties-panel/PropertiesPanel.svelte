@@ -62,7 +62,7 @@
   - Borders minimized (only panel border-l)
 -->
 <aside 
-	class="w-full h-full bg-background border-l border-border flex flex-col" 
+	class="w-full h-full bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 border-l border-slate-200 dark:border-slate-800 flex flex-col" 
 	data-testid="properties-panel"
 >
 	<ScrollArea class="flex-1">

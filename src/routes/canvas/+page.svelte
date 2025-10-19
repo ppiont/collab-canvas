@@ -679,12 +679,19 @@
 		right: 0;
 		bottom: 0;
 		width: 320px; /* Sidebar width */
-		background: hsl(var(--background));
-		border-left: 1px solid hsl(var(--border));
+		background: #ffffff;
+		border-left: 1px solid #e2e8f0;
 		overflow: hidden;
 		z-index: 100;
 		display: flex;
 		flex-direction: column;
+	}
+	
+	@media (prefers-color-scheme: dark) {
+		.properties-panel-container {
+			background: #0f172a;
+			border-left-color: #1e293b;
+		}
 	}
 
 	:global(body) {
