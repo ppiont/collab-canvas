@@ -237,11 +237,11 @@ export class ShapeRenderer {
 	private reorderShapesByZIndex(sortedShapes: Shape[]): void {
 		// Get all current layer children (including non-shape nodes like transformer)
 		const currentChildren = this.shapesLayer.getChildren();
-		
+
 		// Create map of shape nodes for quick lookup
 		const shapeNodeMap = new Map<string, Konva.Node>();
 		const nonShapeNodes: Konva.Node[] = [];
-		
+
 		currentChildren.forEach((node) => {
 			const id = node.id();
 			if (id) {
@@ -255,7 +255,7 @@ export class ShapeRenderer {
 
 		// Build new children array in correct order: shapes by zIndex, then non-shapes
 		const reorderedChildren: Konva.Node[] = [];
-		
+
 		// Add shapes in zIndex order
 		sortedShapes.forEach((shape) => {
 			const node = shapeNodeMap.get(shape.id);
@@ -263,7 +263,7 @@ export class ShapeRenderer {
 				reorderedChildren.push(node);
 			}
 		});
-		
+
 		// Add non-shape nodes at the end (they should be on top)
 		reorderedChildren.push(...nonShapeNodes);
 
@@ -337,7 +337,20 @@ export class ShapeRenderer {
 
 			case 'circle':
 				(node as Konva.Circle).radius(shape.radius);
+				// Apply scale for resizing (ellipse effect)
+				(node as Konva.Circle).scaleX(shape.scaleX || 1);
+				(node as Konva.Circle).scaleY(shape.scaleY || 1);
 				break;
+
+			case 'polygon': {
+				const polygon = node as Konva.RegularPolygon;
+				polygon.sides(shape.sides);
+				polygon.radius(shape.radius);
+				// Apply scale for resizing
+				polygon.scaleX(shape.scaleX || 1);
+				polygon.scaleY(shape.scaleY || 1);
+				break;
+			}
 
 			case 'line':
 				(node as Konva.Line).points(shape.points);
@@ -348,6 +361,9 @@ export class ShapeRenderer {
 				star.numPoints(shape.numPoints);
 				star.innerRadius(shape.innerRadius);
 				star.outerRadius(shape.outerRadius);
+				// Apply scale for resizing
+				star.scaleX(shape.scaleX || 1);
+				star.scaleY(shape.scaleY || 1);
 				break;
 			}
 
@@ -471,13 +487,13 @@ export class ShapeRenderer {
 					height: shape.height
 				});
 
-		case 'circle':
-			return new Konva.Circle({
-				...baseConfig,
-				radius: shape.radius,
-				scaleX: shape.scaleX || 1,
-				scaleY: shape.scaleY || 1
-			});
+			case 'circle':
+				return new Konva.Circle({
+					...baseConfig,
+					radius: shape.radius,
+					scaleX: shape.scaleX || 1,
+					scaleY: shape.scaleY || 1
+				});
 
 			case 'line':
 				return new Konva.Line({
@@ -486,38 +502,38 @@ export class ShapeRenderer {
 					fill: undefined // Lines don't have fill
 				});
 
-		case 'polygon': {
-			const polygonShape = shape as Extract<Shape, { type: 'polygon' }>;
-			return new Konva.RegularPolygon({
-				...baseConfig,
-				sides: polygonShape.sides,
-				radius: polygonShape.radius,
-				scaleX: polygonShape.scaleX || 1,
-				scaleY: polygonShape.scaleY || 1,
-				fill: polygonShape.fill || undefined,
-				stroke: polygonShape.stroke || undefined,
-				strokeWidth: polygonShape.strokeWidth || 0,
-				strokeEnabled: polygonShape.strokeEnabled !== false,
-				shadowColor: polygonShape.shadow?.color || undefined,
-				shadowBlur: polygonShape.shadow?.blur || 0,
-				shadowOpacity: polygonShape.shadow ? 0.5 : 0,
-				shadowOffset: polygonShape.shadow
-					? { x: polygonShape.shadow.offsetX, y: polygonShape.shadow.offsetY }
-					: { x: 0, y: 0 }
-			});
-		}
+			case 'polygon': {
+				const polygonShape = shape as Extract<Shape, { type: 'polygon' }>;
+				return new Konva.RegularPolygon({
+					...baseConfig,
+					sides: polygonShape.sides,
+					radius: polygonShape.radius,
+					scaleX: polygonShape.scaleX || 1,
+					scaleY: polygonShape.scaleY || 1,
+					fill: polygonShape.fill || undefined,
+					stroke: polygonShape.stroke || undefined,
+					strokeWidth: polygonShape.strokeWidth || 0,
+					strokeEnabled: polygonShape.strokeEnabled !== false,
+					shadowColor: polygonShape.shadow?.color || undefined,
+					shadowBlur: polygonShape.shadow?.blur || 0,
+					shadowOpacity: polygonShape.shadow ? 0.5 : 0,
+					shadowOffset: polygonShape.shadow
+						? { x: polygonShape.shadow.offsetX, y: polygonShape.shadow.offsetY }
+						: { x: 0, y: 0 }
+				});
+			}
 
-		case 'star': {
-			const starShape = shape as Extract<Shape, { type: 'star' }>;
-			return new Konva.Star({
-				...baseConfig,
-				numPoints: starShape.numPoints,
-				innerRadius: starShape.innerRadius,
-				outerRadius: starShape.outerRadius,
-				scaleX: starShape.scaleX || 1,
-				scaleY: starShape.scaleY || 1
-			});
-		}
+			case 'star': {
+				const starShape = shape as Extract<Shape, { type: 'star' }>;
+				return new Konva.Star({
+					...baseConfig,
+					numPoints: starShape.numPoints,
+					innerRadius: starShape.innerRadius,
+					outerRadius: starShape.outerRadius,
+					scaleX: starShape.scaleX || 1,
+					scaleY: starShape.scaleY || 1
+				});
+			}
 
 			case 'triangle': {
 				const triangleShape = shape as Extract<Shape, { type: 'triangle' }>;
