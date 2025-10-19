@@ -193,7 +193,7 @@
         "description": "Clean up active textarea in ShapeRenderer.destroy()",
         "details": "**File:** `src/lib/canvas/shapes/ShapeRenderer.ts:942-945`\n\n**Problem:** If component unmounts during text editing, textarea remains in DOM\n\n**Steps:**\n1. In destroy(), check if activeTextarea exists\n2. Call activeTextarea.remove()\n3. Call textEditingEndCallback if exists\n\n**Impact:** Prevents DOM pollution from orphaned textareas",
         "testStrategy": "",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -204,7 +204,7 @@
         "description": "Prevent memory leak from abandoned Konva.Tween objects",
         "details": "**File:** `src/lib/canvas/core/SelectionManager.ts:341-411`\n\n**Problem:** Tweens created but never destroyed if component unmounts mid-animation\n\n**Steps:**\n1. Add private field: `activeTweens: Konva.Tween[] = []`\n2. Create helper method that tracks tweens\n3. Clean up all active tweens in destroy()\n\n**Impact:** Prevents tween-related memory leaks",
         "testStrategy": "",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -382,7 +382,7 @@
     "metadata": {
       "created": "2025-10-18T23:26:21.703Z",
       "description": "Default tasks context",
-      "updated": "2025-10-19T00:37:20.300Z"
+      "updated": "2025-10-19T00:38:59.105Z"
     }
   }
 }

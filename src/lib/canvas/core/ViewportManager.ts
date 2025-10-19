@@ -20,6 +20,7 @@ import { viewportOperations } from '$lib/stores/canvas';
  */
 export class ViewportManager {
 	private stage: Konva.Stage;
+	private activeTweens: Konva.Tween[] = [];
 
 	constructor(stage: Konva.Stage) {
 		this.stage = stage;
@@ -61,7 +62,7 @@ export class ViewportManager {
 		};
 
 		// Smooth zoom with Konva.Tween
-		new Konva.Tween({
+		const tween = new Konva.Tween({
 			node: this.stage,
 			duration: 0.12, // 120ms for responsive feel
 			scaleX: clampedScale,
@@ -72,8 +73,13 @@ export class ViewportManager {
 			onFinish: () => {
 				// Update store after animation completes
 				viewportOperations.set(newPos.x, newPos.y, clampedScale);
+				// Remove from tracking
+				const index = this.activeTweens.indexOf(tween);
+				if (index > -1) this.activeTweens.splice(index, 1);
 			}
-		}).play();
+		});
+		this.activeTweens.push(tween);
+		tween.play();
 	}
 
 	/**
@@ -176,6 +182,10 @@ export class ViewportManager {
 	 * Clean up resources
 	 */
 	destroy(): void {
-		// No cleanup needed - store persists
+		// Clean up active tweens
+		this.activeTweens.forEach((tween) => {
+			tween.destroy();
+		});
+		this.activeTweens = [];
 	}
 }

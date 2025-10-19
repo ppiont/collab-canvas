@@ -56,6 +56,9 @@ export class CursorManager {
 	// Event handler references for cleanup
 	private awarenessChangeHandler: (() => void) | null = null;
 
+	// Track active tweens for cleanup
+	private activeTweens: Konva.Tween[] = [];
+
 	constructor(stage: Konva.Stage, cursorsLayer: Konva.Layer) {
 		this.stage = stage;
 		this.cursorsLayer = cursorsLayer;
@@ -341,14 +344,20 @@ export class CursorManager {
 					// Only animate if position changed significantly
 					if (distance > 1) {
 						const counterScale = this.getCounterScale();
-						new Konva.Tween({
+						const tween = new Konva.Tween({
 							node: cursorGroup,
 							duration: CURSOR.ANIMATION_DURATION / 1000,
 							x: cursor.x,
 							y: cursor.y,
 							...counterScale,
-							easing: Konva.Easings.EaseOut
-						}).play();
+							easing: Konva.Easings.EaseOut,
+							onFinish: () => {
+								const index = this.activeTweens.indexOf(tween);
+								if (index > -1) this.activeTweens.splice(index, 1);
+							}
+						});
+						this.activeTweens.push(tween);
+						tween.play();
 					} else {
 						// Update scale in case zoom changed
 						const counterScale = this.getCounterScale();
@@ -392,25 +401,37 @@ export class CursorManager {
 
 					if (distance > 1) {
 						const counterScale = this.getCounterScale();
-						new Konva.Tween({
+						const tween = new Konva.Tween({
 							node: cursorGroup,
 							duration: CURSOR.ANIMATION_DURATION / 1000,
 							x: edgeX,
 							y: edgeY,
 							rotation: (angle * 180) / Math.PI,
 							...counterScale,
-							easing: Konva.Easings.EaseOut
-						}).play();
+							easing: Konva.Easings.EaseOut,
+							onFinish: () => {
+								const index = this.activeTweens.indexOf(tween);
+								if (index > -1) this.activeTweens.splice(index, 1);
+							}
+						});
+						this.activeTweens.push(tween);
+						tween.play();
 
 						// Counter-rotate the text to keep it horizontal
 						const textNode = cursorGroup.findOne('Text');
 						if (textNode) {
-							new Konva.Tween({
+							const textTween = new Konva.Tween({
 								node: textNode,
 								duration: CURSOR.ANIMATION_DURATION / 1000,
 								rotation: -(angle * 180) / Math.PI,
-								easing: Konva.Easings.EaseOut
-							}).play();
+								easing: Konva.Easings.EaseOut,
+								onFinish: () => {
+									const index = this.activeTweens.indexOf(textTween);
+									if (index > -1) this.activeTweens.splice(index, 1);
+								}
+							});
+							this.activeTweens.push(textTween);
+							textTween.play();
 						}
 					} else {
 						// Update scale in case zoom changed
@@ -648,6 +669,12 @@ export class CursorManager {
 			this.followTween.destroy();
 			this.followTween = null;
 		}
+
+		// Clean up all active cursor animation tweens
+		this.activeTweens.forEach((tween) => {
+			tween.destroy();
+		});
+		this.activeTweens = [];
 
 		this.cursorNodes.forEach((node) => {
 			node.destroy();
