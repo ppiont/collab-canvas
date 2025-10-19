@@ -8,7 +8,7 @@
 	 * Spacing (8pt grid):
 	 * - Between controls: 12px (space-y-3)
 	 * - Within opacity control: 8px (space-y-2) for slider/input
-	 * 
+	 *
 	 * Features:
 	 * - Opacity slider (0-100%) with synchronized input
 	 * - Blend mode dropdown with all CSS blend modes
@@ -31,6 +31,28 @@
 		onUpdate: (items: Shape[]) => void;
 	} = $props();
 
+	// Local slider value state (prevents bind issues with derived values)
+	let sliderValue = $state(100);
+
+	// Cleanup on destroy
+	$effect.pre(() => {
+		return () => {
+			if (sliderTimeout) {
+				clearTimeout(sliderTimeout);
+				sliderTimeout = null;
+			}
+		};
+	});
+
+	// Sync slider state when items change
+	$effect(() => {
+		// Force re-evaluation of effects
+		void effects;
+		// Update slider to reflect current opacity
+		const currentOpacity = effects.hasMixedOpacity ? 100 : effects.opacity;
+		sliderValue = currentOpacity;
+	});
+
 	// Available blend modes
 	const blendModes: BlendMode[] = ['normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten'];
 
@@ -46,19 +68,29 @@
 		}
 
 		const first = items[0];
-		const opacity = (first.opacity || 1) * 100; // Convert 0-1 to 0-100
+		// Ensure opacity is always a valid number (0-1), default to 1
+		const rawOpacity = first.opacity ?? 1;
+		const safeOpacity = typeof rawOpacity === 'number' && !isNaN(rawOpacity) ? rawOpacity : 1;
+		const opacity = Math.max(0, Math.min(1, safeOpacity)) * 100; // Convert 0-1 to 0-100, clamp to valid range
 		const blendMode = (first.blendMode || 'normal') as BlendMode;
 
 		return {
-			opacity,
+			opacity: isNaN(opacity) ? 100 : opacity, // Fallback to 100 if still NaN
 			blendMode,
-			hasMixedOpacity: items.some((item) => (item.opacity || 1) * 100 !== opacity),
+			hasMixedOpacity: items.some((item) => {
+				const itemOpacity = (item.opacity ?? 1) * 100;
+				return isNaN(itemOpacity) || itemOpacity !== opacity;
+			}),
 			hasMixedBlendMode: items.some((item) => (item.blendMode || 'normal') !== blendMode)
 		};
 	});
 
 	// Update functions
 	function updateOpacity(value: number) {
+		// Ensure value is a valid number before processing
+		if (typeof value !== 'number' || isNaN(value)) {
+			return;
+		}
 		// Clamp value between 0-100
 		const clampedValue = Math.max(0, Math.min(100, value));
 		onUpdate(items.map((item) => ({ ...item, opacity: clampedValue / 100 })));
@@ -98,6 +130,35 @@
 			updateOpacity(newValue);
 		}
 	}
+
+	// Safe slider change handler with debouncing
+	let sliderTimeout: NodeJS.Timeout | null = null;
+	function handleSliderChange(value: number) {
+		if (typeof value !== 'number' || isNaN(value)) {
+			return;
+		}
+		
+		// Clear any pending updates
+		if (sliderTimeout) {
+			clearTimeout(sliderTimeout);
+		}
+		
+		// Debounce slider updates by 0ms to avoid multiple rapid updates
+		sliderTimeout = setTimeout(() => {
+			updateOpacity(value);
+			sliderTimeout = null;
+		}, 0);
+	}
+
+	// Watch slider value and update when user changes it
+	let prevSliderValue = $state(100);
+	$effect(() => {
+		// If the slider value changed due to user interaction (not our effect sync)
+		if (sliderValue !== prevSliderValue && sliderValue !== effects.opacity) {
+			prevSliderValue = sliderValue;
+			handleSliderChange(sliderValue);
+		}
+	});
 </script>
 
 <div class="space-y-3">
@@ -107,8 +168,7 @@
 			<!-- Slider -->
 			<Slider
 				type="single"
-				value={[effects.hasMixedOpacity ? 100 : effects.opacity]}
-				onValueChange={(values: number[]) => updateOpacity(values[0])}
+				bind:value={sliderValue}
 				min={0}
 				max={100}
 				step={1}
