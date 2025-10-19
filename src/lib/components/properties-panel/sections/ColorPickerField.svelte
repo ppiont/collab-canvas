@@ -12,10 +12,6 @@
 	 * - 44x44px touch targets
 	 */
 	
-	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/ui/popover';
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
-	import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import { Copy, Check } from 'lucide-svelte';
 	import {
 		parseColor,
@@ -41,22 +37,14 @@
 	} = $props();
 	
 	// State
-	let format = $state<'hex' | 'rgb' | 'hsl' | 'hsb'>('hex');
 	let copied = $state(false);
-	let open = $state(false);
+	let colorInputRef: HTMLInputElement | null = null;
 	
 	// Parse current color to RGB
 	const rgb = $derived<[number, number, number]>(parseColor(color) || [0, 0, 0]);
 	
-	// Convert to different formats
+	// Convert to hex for display
 	const hex = $derived(rgbToHex(rgb));
-	const hsl = $derived(rgbToHsl(rgb));
-	const hsb = $derived(rgbToHsb(rgb));
-	
-	// Format display values
-	const rgbStr = $derived(`rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`);
-	const hslStr = $derived(`hsl(${hsl[0].toFixed(0)}, ${hsl[1].toFixed(0)}%, ${hsl[2].toFixed(0)}%)`);
-	const hsbStr = $derived(`hsb(${hsb[0].toFixed(0)}, ${hsb[1].toFixed(0)}%, ${hsb[2].toFixed(0)}%)`);
 	
 	// Contrast checking (vs white background)
 	const contrastRatio = $derived(calculateContrastRatio(rgb, [255, 255, 255]));
@@ -77,133 +65,59 @@
 		}
 	}
 	
-	// Copy to clipboard
+	// Copy hex to clipboard
 	async function copyToClipboard() {
-		const valueToCopy = format === 'hex' ? hex : 
-		                    format === 'rgb' ? rgbStr :
-		                    format === 'hsl' ? hslStr : hsbStr;
-		
 		try {
-			await navigator.clipboard.writeText(valueToCopy);
+			await navigator.clipboard.writeText(hex);
 			copied = true;
-			setTimeout(() => copied = false, 2000);
+			setTimeout(() => (copied = false), 2000);
 		} catch (err) {
 			console.error('Failed to copy:', err);
 		}
 	}
+
+	// Open native color picker
+	function openColorPicker() {
+		colorInputRef?.click();
+	}
 </script>
 
 <div class="flex items-center gap-2">
-	<!-- Color swatch trigger -->
-	<Popover bind:open>
-		<PopoverTrigger>
-			<Button
-				variant="outline"
-				class="h-10 w-10 p-0 rounded-md border-2 border-border hover:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-				style="background-color: {color};"
-				aria-label="{label} color picker"
-			>
-			</Button>
-		</PopoverTrigger>
-		
-		<PopoverContent class="w-72 p-4 bg-popover border border-border shadow-md">
-			<div class="space-y-4">
-				<!-- Native color picker -->
-				<div class="space-y-2">
-					<label for="color-picker" class="text-xs font-medium text-foreground">
-						Pick Color
-					</label>
-					<input
-						id="color-picker"
-						type="color"
-						value={hex}
-						onchange={(e) => handleColorChange(e.currentTarget.value)}
-						class="w-full h-32 rounded border-2 border-border cursor-pointer bg-background"
-					/>
-				</div>
-				
-				<!-- Format tabs with copy button -->
-				<Tabs bind:value={format} class="w-full">
-					<TabsList class="grid grid-cols-4 w-full bg-muted">
-						<TabsTrigger value="hex" class="text-xs">HEX</TabsTrigger>
-						<TabsTrigger value="rgb" class="text-xs">RGB</TabsTrigger>
-						<TabsTrigger value="hsl" class="text-xs">HSL</TabsTrigger>
-						<TabsTrigger value="hsb" class="text-xs">HSB</TabsTrigger>
-					</TabsList>
-					
-					<div class="mt-3 flex gap-2">
-						<Input
-							value={format === 'hex' ? hex : format === 'rgb' ? rgbStr : format === 'hsl' ? hslStr : hsbStr}
-							readonly
-							class="text-sm font-mono flex-1 bg-background"
-							aria-label={`Color value in ${format} format`}
-						/>
-						<Button
-							variant="ghost"
-							size="icon"
-							onclick={copyToClipboard}
-							class="h-10 w-10 shrink-0 focus-visible:ring-2 hover:bg-accent"
-							aria-label="Copy to clipboard"
-						>
-							{#if copied}
-								<Check class="h-4 w-4" />
-							{:else}
-								<Copy class="h-4 w-4" />
-							{/if}
-						</Button>
-					</div>
-				</Tabs>
-				
-				<!-- Contrast checker -->
-				<div class="rounded-lg border border-border p-3 space-y-2 bg-muted/50">
-					<div class="text-xs font-medium text-foreground">
-						Contrast vs White
-					</div>
-					<div class="flex items-center justify-between">
-						<span class="text-sm font-mono text-foreground">{contrastRatio.toFixed(2)}:1</span>
-						<div class="flex gap-2">
-							<span
-								class="text-xs px-2 py-1 rounded-sm font-medium {passesAA
-									? 'bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/30'
-									: 'bg-red-500/20 text-red-700 dark:text-red-400 border border-red-500/30'}"
-							>
-								AA {passesAA ? '✓' : '✗'}
-							</span>
-							<span
-								class="text-xs px-2 py-1 rounded-sm font-medium {passesAAA
-									? 'bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/30'
-									: 'bg-red-500/20 text-red-700 dark:text-red-400 border border-red-500/30'}"
-							>
-								AAA {passesAAA ? '✓' : '✗'}
-							</span>
-						</div>
-					</div>
-				</div>
-				
-				<!-- Recent colors -->
-				{#if recentColors.length > 0}
-					<div class="space-y-2">
-						<div class="text-xs font-medium text-foreground">Recent Colors</div>
-						<div class="flex flex-wrap gap-2">
-							{#each recentColors as recentColor}
-								<button
-									class="h-8 w-8 rounded-md border-2 border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:scale-110 hover:border-ring transition-all bg-background"
-									style="background-color: {recentColor} !important;"
-									onclick={() => handleColorChange(recentColor)}
-									aria-label="Use recent color {recentColor}"
-								>
-								</button>
-							{/each}
-						</div>
-					</div>
-				{/if}
-			</div>
-		</PopoverContent>
-	</Popover>
-	
-	<!-- Current color value display -->
-	<div class="flex-1 min-w-0">
-		<div class="text-xs text-muted-foreground truncate">{hex}</div>
+	<!-- Hidden native color input -->
+	<input
+		bind:this={colorInputRef}
+		type="color"
+		value={hex}
+		onchange={(e) => handleColorChange(e.currentTarget.value)}
+		class="sr-only"
+		aria-label="{label} color picker"
+	/>
+
+	<!-- Color swatch button that opens native picker -->
+	<button
+		type="button"
+		onclick={openColorPicker}
+		class="h-10 w-10 rounded-md border-2 border-border hover:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus:outline-none transition-colors"
+		style="background-color: {color};"
+		aria-label="Pick {label} color"
+	></button>
+
+	<!-- Color value display with copy button -->
+	<div class="flex items-center gap-1 flex-1 min-w-0">
+		<div class="text-xs text-muted-foreground truncate font-mono">{hex}</div>
+		<button
+			type="button"
+			onclick={copyToClipboard}
+			class="p-1 hover:bg-accent rounded focus-visible:ring-2 focus-visible:ring-ring focus:outline-none transition-colors"
+			aria-label="Copy {label} color"
+			title="Copy color"
+		>
+			{#if copied}
+				<Check class="h-3 w-3 text-green-600" />
+			{:else}
+				<Copy class="h-3 w-3 text-muted-foreground" />
+			{/if}
+		</button>
 	</div>
 </div>
 
