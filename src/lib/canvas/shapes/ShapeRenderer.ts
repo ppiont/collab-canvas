@@ -331,7 +331,8 @@ export class ShapeRenderer {
 				konvaShape.stroke(shape.stroke);
 				konvaShape.strokeWidth(shape.strokeWidth);
 			} else {
-				konvaShape.stroke(undefined);
+				// Use empty string to properly clear stroke in Konva
+				konvaShape.stroke('');
 				konvaShape.strokeWidth(0);
 			}
 		}
@@ -432,8 +433,14 @@ export class ShapeRenderer {
 			// Restore original values from shape data
 			// EXCEPTION: Text shapes should never have stroke
 			if (shapeData.type !== 'text') {
-				konvaShape.stroke(shapeData.stroke);
-				konvaShape.strokeWidth(shapeData.strokeWidth);
+				// Respect strokeEnabled flag when restoring
+				if (shapeData.strokeEnabled !== false) {
+					konvaShape.stroke(shapeData.stroke);
+					konvaShape.strokeWidth(shapeData.strokeWidth);
+				} else {
+					konvaShape.stroke('');
+					konvaShape.strokeWidth(0);
+				}
 			}
 			konvaShape.dash([]);
 		}
@@ -483,7 +490,7 @@ export class ShapeRenderer {
 			y: shape.y,
 			rotation: shape.rotation || 0, // Apply stored rotation
 			fill: shape.fillEnabled !== false ? shape.fill : undefined,
-			stroke: shape.strokeEnabled !== false ? shape.stroke : undefined,
+			stroke: shape.strokeEnabled !== false ? shape.stroke : '',
 			strokeWidth: shape.strokeEnabled !== false ? shape.strokeWidth : 0,
 			strokeScaleEnabled: false, // Keep stroke width constant when scaling
 			draggable: (('draggable' in shape ? shape.draggable : true) ?? true) && !isDraggedByOther,
@@ -530,11 +537,8 @@ export class ShapeRenderer {
 					sides: polygonShape.sides,
 					radius: polygonShape.radius,
 					scaleX: polygonShape.scaleX || 1,
-					scaleY: polygonShape.scaleY || 1,
-					fill: polygonShape.fill || undefined,
-					stroke: polygonShape.stroke || undefined,
-					strokeWidth: polygonShape.strokeWidth || 0,
-					strokeEnabled: polygonShape.strokeEnabled !== false
+					scaleY: polygonShape.scaleY || 1
+					// fill, stroke, strokeWidth already handled in baseConfig
 				});
 			}
 
@@ -557,11 +561,8 @@ export class ShapeRenderer {
 					sides: 3,
 					radius: Math.max(triangleShape.width, triangleShape.height) / 2,
 					scaleX: triangleShape.scaleX || 1,
-					scaleY: triangleShape.scaleY || 1,
-					fill: triangleShape.fill || undefined,
-					stroke: triangleShape.stroke || undefined,
-					strokeWidth: triangleShape.strokeWidth || 0,
-					strokeEnabled: triangleShape.strokeEnabled !== false
+					scaleY: triangleShape.scaleY || 1
+					// fill, stroke, strokeWidth already handled in baseConfig
 				});
 			}
 
@@ -595,12 +596,12 @@ export class ShapeRenderer {
 					// NOTE: Intentionally NOT including stroke or strokeWidth
 					// Konva.Text stroke rendering creates visual artifacts
 				});
-				
+
 				// Set rotation pivot to center of text
 				// Use actual rendered dimensions
 				textNode.offsetX(textNode.width() / 2);
 				textNode.offsetY(textNode.height() / 2);
-				
+
 				return textNode;
 			}
 
