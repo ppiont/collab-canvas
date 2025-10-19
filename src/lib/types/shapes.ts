@@ -52,6 +52,8 @@ export interface RectangleShape extends BaseShape {
 export interface CircleShape extends BaseShape {
 	type: 'circle';
 	radius: number;
+	scaleX?: number; // For non-uniform scaling (ellipse effect)
+	scaleY?: number;
 }
 
 /** Line/polyline shape */
@@ -84,6 +86,8 @@ export interface PolygonShape extends BaseShape {
 	type: 'polygon';
 	sides: number; // 3-12
 	radius: number;
+	scaleX?: number; // For non-uniform scaling
+	scaleY?: number;
 }
 
 /** Star shape */
@@ -92,6 +96,8 @@ export interface StarShape extends BaseShape {
 	numPoints: number; // 5-12
 	innerRadius: number;
 	outerRadius: number;
+	scaleX?: number; // For non-uniform scaling
+	scaleY?: number;
 }
 
 /** Triangle shape */

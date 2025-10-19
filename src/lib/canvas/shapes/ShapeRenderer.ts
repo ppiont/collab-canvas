@@ -471,11 +471,13 @@ export class ShapeRenderer {
 					height: shape.height
 				});
 
-			case 'circle':
-				return new Konva.Circle({
-					...baseConfig,
-					radius: shape.radius
-				});
+		case 'circle':
+			return new Konva.Circle({
+				...baseConfig,
+				radius: shape.radius,
+				scaleX: shape.scaleX || 1,
+				scaleY: shape.scaleY || 1
+			});
 
 			case 'line':
 				return new Konva.Line({
@@ -484,34 +486,38 @@ export class ShapeRenderer {
 					fill: undefined // Lines don't have fill
 				});
 
-			case 'polygon': {
-				const polygonShape = shape as Extract<Shape, { type: 'polygon' }>;
-				return new Konva.RegularPolygon({
-					...baseConfig,
-					sides: polygonShape.sides,
-					radius: polygonShape.radius,
-					fill: polygonShape.fill || undefined,
-					stroke: polygonShape.stroke || undefined,
-					strokeWidth: polygonShape.strokeWidth || 0,
-					strokeEnabled: polygonShape.strokeEnabled !== false,
-					shadowColor: polygonShape.shadow?.color || undefined,
-					shadowBlur: polygonShape.shadow?.blur || 0,
-					shadowOpacity: polygonShape.shadow ? 0.5 : 0,
-					shadowOffset: polygonShape.shadow
-						? { x: polygonShape.shadow.offsetX, y: polygonShape.shadow.offsetY }
-						: { x: 0, y: 0 }
-				});
-			}
+		case 'polygon': {
+			const polygonShape = shape as Extract<Shape, { type: 'polygon' }>;
+			return new Konva.RegularPolygon({
+				...baseConfig,
+				sides: polygonShape.sides,
+				radius: polygonShape.radius,
+				scaleX: polygonShape.scaleX || 1,
+				scaleY: polygonShape.scaleY || 1,
+				fill: polygonShape.fill || undefined,
+				stroke: polygonShape.stroke || undefined,
+				strokeWidth: polygonShape.strokeWidth || 0,
+				strokeEnabled: polygonShape.strokeEnabled !== false,
+				shadowColor: polygonShape.shadow?.color || undefined,
+				shadowBlur: polygonShape.shadow?.blur || 0,
+				shadowOpacity: polygonShape.shadow ? 0.5 : 0,
+				shadowOffset: polygonShape.shadow
+					? { x: polygonShape.shadow.offsetX, y: polygonShape.shadow.offsetY }
+					: { x: 0, y: 0 }
+			});
+		}
 
-			case 'star': {
-				const starShape = shape as Extract<Shape, { type: 'star' }>;
-				return new Konva.Star({
-					...baseConfig,
-					numPoints: starShape.numPoints,
-					innerRadius: starShape.innerRadius,
-					outerRadius: starShape.outerRadius
-				});
-			}
+		case 'star': {
+			const starShape = shape as Extract<Shape, { type: 'star' }>;
+			return new Konva.Star({
+				...baseConfig,
+				numPoints: starShape.numPoints,
+				innerRadius: starShape.innerRadius,
+				outerRadius: starShape.outerRadius,
+				scaleX: starShape.scaleX || 1,
+				scaleY: starShape.scaleY || 1
+			});
+		}
 
 			case 'triangle': {
 				const triangleShape = shape as Extract<Shape, { type: 'triangle' }>;

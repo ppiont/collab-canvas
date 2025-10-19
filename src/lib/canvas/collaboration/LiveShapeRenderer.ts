@@ -85,12 +85,12 @@ export class LiveShapeRenderer {
 		this.awareness.getStates().forEach((state: AwarenessStateData) => {
 			if (state.draggedShapes && state.user) {
 				const user = state.user; // Store in const to satisfy TypeScript
-				
+
 				// Skip local user - don't render ghosts for own drags
 				if (user.id === this.localUserId) {
 					return;
 				}
-				
+
 				const userColor = user.color || '#3b82f6';
 				this.userColors.set(user.id, userColor);
 
