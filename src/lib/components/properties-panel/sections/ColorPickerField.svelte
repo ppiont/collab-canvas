@@ -86,7 +86,7 @@
 	}
 </script>
 
-<div class="flex items-center gap-2">
+<div class="flex items-center gap-2" data-testid="{label.toLowerCase().replace(/\s+/g, '-')}-color-picker">
 	<!-- Hidden native color input -->
 	<input
 		bind:this={colorInputRef}

@@ -45,7 +45,7 @@
   - 8px = space-2 (between label and input)
   - Within field: space-y-2
 -->
-<div class="space-y-2">
+<div class="space-y-2" data-form-field={id}>
 	<!-- Label row with mixed value indicator -->
 	<div class="flex justify-between items-center">
 		<Label 

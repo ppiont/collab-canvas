@@ -61,7 +61,10 @@
   - 24px = space-y-6 (between sections)
   - Borders minimized (only panel border-l)
 -->
-<aside class="w-full h-full bg-background border-l border-border flex flex-col">
+<aside 
+	class="w-full h-full bg-background border-l border-border flex flex-col" 
+	data-testid="properties-panel"
+>
 	<ScrollArea class="flex-1">
 		<div class="p-4 space-y-6">
 			<!-- Header with selection info and clear button -->
@@ -79,7 +82,7 @@
 					class="w-full"
 				>
 					<!-- Dimensions Section -->
-					<AccordionItem value="dimensions" class="border-b">
+					<AccordionItem value="dimensions" class="border-b" data-accordion-item="dimensions">
 						<AccordionTrigger class="text-sm font-medium py-3 hover:no-underline">
 							Dimensions
 						</AccordionTrigger>
@@ -92,7 +95,7 @@
 					</AccordionItem>
 					
 					<!-- Appearance Section -->
-					<AccordionItem value="appearance" class="border-b">
+					<AccordionItem value="appearance" class="border-b" data-accordion-item="appearance">
 						<AccordionTrigger class="text-sm font-medium py-3 hover:no-underline">
 							Appearance
 						</AccordionTrigger>
@@ -105,7 +108,7 @@
 					</AccordionItem>
 					
 					<!-- Effects Section -->
-					<AccordionItem value="effects" class="border-b">
+					<AccordionItem value="effects" class="border-b" data-accordion-item="effects">
 						<AccordionTrigger class="text-sm font-medium py-3 hover:no-underline">
 							Effects
 						</AccordionTrigger>
