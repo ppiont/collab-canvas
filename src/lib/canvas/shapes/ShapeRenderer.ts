@@ -219,7 +219,9 @@ export class ShapeRenderer {
 
 		// Reorder shapes in layer based on zIndex
 		// This ensures visual stacking matches data (bottom to top order)
-		this.reorderShapesByZIndex(sortedShapes);
+		// CRITICAL: Use ALL shapes, not just visible ones, for correct z-order
+		const allShapesSorted = [...shapes].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+		this.reorderShapesByZIndex(allShapesSorted);
 
 		// CRITICAL: Move transformer to top after rendering shapes
 		// This ensures the transformer is always visible above shapes
