@@ -263,7 +263,7 @@
         "description": "Simplify StrokeWidthControl and ColorPicker prop syncing",
         "details": "**Files:**\n- `src/lib/components/controls/StrokeWidthControl.svelte`\n- `src/lib/components/ui/ColorPicker.svelte`\n\n**Problem:** Two $effect blocks fighting each other, eslint rules disabled\n\n**Solution:** Use explicit change handlers instead of reactive effects\n\n**Impact:** Cleaner code, easier to maintain",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "low",
         "subtasks": []
@@ -274,7 +274,7 @@
         "description": "Clean up commented code blocks that should use git history",
         "details": "**File:** `src/app.d.ts:13-14`\n\n```typescript\n// interface Error {}\n// interface Platform {}\n```\n\n**Steps:**\n1. Remove all commented code blocks\n2. Use git history if old code is needed\n\n**Impact:** Cleaner code, less noise",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "low",
         "subtasks": []
@@ -285,7 +285,7 @@
         "description": "Remove isRectangle, isCircle, etc. type guards that are never used",
         "details": "**File:** `src/lib/types/shapes.ts:114-141`\n\n**Functions to DELETE:**\n- isRectangle()\n- isCircle()\n- isLine()\n- isText()\n- isPolygon()\n- isStar()\n- isTriangle()\n\n**Rationale:** Code uses switch/case with direct casting instead\n\n**Impact:** Simpler API, less exported surface",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "low",
         "subtasks": []
@@ -296,7 +296,7 @@
         "description": "Use currentColor instead of hardcoded black in logout.svg",
         "details": "**File:** `src/lib/assets/logout.svg:1`\n\n**Change:** `stroke=\"#000000\"` to `stroke=\"currentColor\"`\n\n**Impact:** Logout icon adapts to theme",
         "testStrategy": "",
-        "status": "pending",
+        "status": "cancelled",
         "dependencies": [],
         "priority": "low",
         "subtasks": []
@@ -318,7 +318,7 @@
         "description": "Add JSDoc comments explaining why Svelte stores are kept vs migrating to runes",
         "details": "**Files:** All files in `src/lib/stores/`\n\n**Add Documentation:**\n```typescript\n/**\n * Global shapes store (read-only, synced from Yjs)\n * \n * NOTE: Using Svelte 4 stores instead of runes because:\n * 1. Global state shared across many components\n * 2. Yjs integration requires stable reference\n * 3. Store pattern provides consistent API for subscriptions\n * \n * This is an acceptable pattern for global singleton state.\n */\nexport const shapes = writable<Shape[]>([]);\n```\n\n**Impact:** Clarity for future developers",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "low",
         "subtasks": []
@@ -373,7 +373,7 @@
         "description": "Replace multiple $effects with single $derived computation",
         "details": "**File:** `src/routes/canvas/+page.svelte:84-105`\n\n**Problem:** Multiple $effect blocks that could be consolidated\n\n**Solution:** Use $derived for formatting state, single $effect for side effect only\n\n**Impact:** Simpler reactive logic, easier to debug",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "low",
         "subtasks": []
@@ -382,7 +382,7 @@
     "metadata": {
       "created": "2025-10-18T23:26:21.703Z",
       "description": "Default tasks context",
-      "updated": "2025-10-19T01:44:45.280Z"
+      "updated": "2025-10-19T02:15:29.044Z"
     }
   }
 }
