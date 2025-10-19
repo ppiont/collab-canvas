@@ -6,7 +6,7 @@
 /** Canvas configuration constants */
 export const CANVAS = {
 	GRID_SIZE: 50,
-	GRID_COLOR: '#e2e8f0',
+	GRID_COLOR: '#f1f5f9', // Lighter grid (slate-100)
 	BACKGROUND_COLOR: '#ffffff',
 	MIN_ZOOM: 0.1,
 	MAX_ZOOM: 5,
